@@ -54,9 +54,11 @@ describe("HIMAM Package 1A", () => {
     expect(s.get(c.id)!.status).toBe("minimum_inputs_complete");
   });
 
-  it("PKG1A-T05: missing assessment ⇒ dependent domains marked not_reviewable, never failed [TC09]", () => {
+  it("PKG1A-T05: missing optional inputs ⇒ dependent domains marked not_reviewable, never failed [TC09]", () => {
     const scope = getReviewScope(["age_phase", "plan"]);
-    expect(scope.notReviewableDomains).toContain("D2");
+    // D4 (supports/implementation) depends on the supports input;
+    // absence must appear as not_reviewable, never as a failure verdict.
+    expect(scope.notReviewableDomains).toContain("D4");
     for (const v of Object.values(scope.perDomain)) {
       expect(["available", "not_reviewable", "not_applicable"]).toContain(v);
     }
