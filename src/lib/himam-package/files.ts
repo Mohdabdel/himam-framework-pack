@@ -20,6 +20,7 @@ import f15 from "../../../himam-preprogramming-package-v1.0/15_HIMAM_PROGRAMMING
 import f16 from "../../../himam-preprogramming-package-v1.0/16_HIMAM_SAFETY_GATE_CHECKLIST.md?raw";
 import f17 from "../../../himam-preprogramming-package-v1.0/17_HIMAM_TRACEABILITY_MATRIX.csv?raw";
 import f18 from "../../../himam-preprogramming-package-v1.0/18_HIMAM_PREPROGRAMMING_READINESS_REPORT.md?raw";
+import f19 from "../../../himam-preprogramming-package-v1.0/19_HIMAM_PROGRAMMING_PACKAGE_01_FOUNDATION_AR.md?raw";
 import fManifest from "../../../himam-preprogramming-package-v1.0/MANIFEST.md?raw";
 
 export interface PackageFile {
@@ -57,6 +58,7 @@ export const PACKAGE_FILES: PackageFile[] = [
   md("16_HIMAM_SAFETY_GATE_CHECKLIST.md", f16),
   csv("17_HIMAM_TRACEABILITY_MATRIX.csv", f17),
   md("18_HIMAM_PREPROGRAMMING_READINESS_REPORT.md", f18),
+  md("19_HIMAM_PROGRAMMING_PACKAGE_01_FOUNDATION_AR.md", f19),
   md("MANIFEST.md", fManifest),
 ];
 
