@@ -43,16 +43,12 @@ const INPUT_ID_MAP: Record<ReviewInputType, string> = {
   prior_progress: "prior_progress",
 };
 
-function normalize(
-  input: ReviewInputType[] | ReviewScopeContext,
-): ReviewScopeContext {
+function normalize(input: ReviewInputType[] | ReviewScopeContext): ReviewScopeContext {
   if (Array.isArray(input)) return { inputs: input, phaseId: null };
   return input;
 }
 
-export function getReviewScope(
-  input: ReviewInputType[] | ReviewScopeContext,
-): ScopeResult {
+export function getReviewScope(input: ReviewInputType[] | ReviewScopeContext): ScopeResult {
   const ctx = normalize(input);
   const bundle = loadKnowledgeBundle();
 

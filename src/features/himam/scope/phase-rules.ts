@@ -36,10 +36,7 @@ function level(p: ReviewPhaseId): number {
 //   true / false — the clause resolves for the given phase
 //   null         — the clause is not an age gate (e.g. `goal_text!=null`) or
 //                  it references null when we cannot decide.
-export function evaluateAgeClause(
-  clause: string,
-  phase: ReviewPhaseId | null,
-): boolean | null {
+export function evaluateAgeClause(clause: string, phase: ReviewPhaseId | null): boolean | null {
   const m = clause.trim().match(/^age\s*(<=|>=|<|>|!=|=)\s*([a-z_]+|null)$/i);
   if (!m) return null;
   const op = m[1];
