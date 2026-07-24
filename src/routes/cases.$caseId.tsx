@@ -29,20 +29,20 @@ const DOMAIN_LABEL: Record<string, string> = {
 
 function CaseDetail() {
   const { caseId } = Route.useParams();
-  const navigate = useNavigate();
   const [c, setC] = useState<ReviewCase | null>(null);
   const [sources, setSources] = useState<InputSource[]>([]);
   const [scope, setScope] = useState<ReviewScopeSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = () => {
+  const refresh = async () => {
     const svc = new CaseService();
+    await svc.reconcile();
     setC(svc.get(caseId));
     setSources(svc.sourcesFor(caseId));
     setScope(svc.latestScope(caseId));
   };
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [caseId]);
 
   if (!c) {
@@ -65,7 +65,7 @@ function CaseDetail() {
     setError(null);
     try {
       svc.generateScope(caseId);
-      refresh();
+      void refresh();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -74,7 +74,7 @@ function CaseDetail() {
     setError(null);
     try {
       svc.confirmScope(caseId);
-      refresh();
+      void refresh();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -83,7 +83,16 @@ function CaseDetail() {
     setError(null);
     try {
       svc.closeCase(caseId);
-      refresh();
+      void refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const doRemove = async (sourceId: string) => {
+    setError(null);
+    try {
+      await svc.removeSource(sourceId);
+      await refresh();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -121,15 +130,43 @@ function CaseDetail() {
         ) : (
           <ul className="text-sm">
             {sources.map((s) => (
-              <li key={s.id} className="flex justify-between py-1">
-                <span>
+              <li key={s.id} className="flex items-center justify-between gap-3 py-1">
+                <span className="min-w-0 truncate">
                   {s.type} — {s.fileName}
                 </span>
-                <span className="text-muted-foreground">{s.status}</span>
+                <span className="flex items-center gap-2">
+                  <span
+                    className={
+                      s.status === "file_missing"
+                        ? "text-destructive"
+                        : s.status === "unreadable"
+                          ? "text-amber-600"
+                          : "text-muted-foreground"
+                    }
+                  >
+                    {s.status === "ready_for_future_ingestion"
+                      ? "محفوظ محليًا"
+                      : s.status === "file_missing"
+                        ? "الملف مفقود"
+                        : s.status === "unreadable"
+                          ? "غير قابل للقراءة"
+                          : "مسجَّل بدون ملف"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void doRemove(s.id)}
+                    className="rounded-md border border-input px-2 py-0.5 text-xs hover:bg-accent"
+                  >
+                    إزالة
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
         )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          الملف يُحفظ محليًا داخل المتصفح (IndexedDB) ولا يُرفع لأي خدمة خارجية ولا يتاح كرابط عام.
+        </p>
         <p className="mt-3 text-xs text-muted-foreground">
           المصادر الأخرى (تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم، ملاحظات مهنية، خطة سابقة،
           تقدم سابق) مقفلة للحزم التالية.

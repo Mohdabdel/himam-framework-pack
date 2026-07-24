@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import * as PublicSurface from "..";
 import {
   CaseService,
   createInMemoryRepository,
   getReviewScope,
+  InMemoryPlanFileStorage,
+  planStoragePath,
   loadCriteriaIndex,
   loadInputActivationMatrix,
   loadKnowledgeBundle,
@@ -12,7 +16,7 @@ import {
 import { ALL_DOMAINS } from "../knowledge/knowledge-types";
 
 function svc() {
-  return new CaseService(createInMemoryRepository());
+  return new CaseService(createInMemoryRepository(), new InMemoryPlanFileStorage());
 }
 
 describe("HIMAM Package 1A", () => {
@@ -83,10 +87,24 @@ describe("HIMAM Package 1A", () => {
       mimeType: "application/pdf",
     });
     const { scope } = s.generateScope(c.id);
-    expect(scope.perDomain).toBeDefined();
-    for (const v of Object.values(scope.perDomain)) {
-      expect(["available", "not_reviewable", "not_applicable"]).toContain(v);
-    }
+    const by = new Map(scope.criterionScope.map((x) => [x.criterionId, x]));
+    // General age-alignment criterion stays available in elementary.
+    expect(by.get("C060")?.status).toBe("available");
+    // Transition-only criterion (age>=high_school) is not applicable, not a failure.
+    expect(by.get("C062")?.status).toBe("not_applicable");
+    expect(by.get("C062")?.reasonCode).toBe("phase_not_applicable");
+    // Preschool-only criterion is not applicable in elementary.
+    expect(by.get("C063")?.status).toBe("not_applicable");
+    // D6 remains available overall — one N/A criterion does not sink the domain.
+    expect(scope.availableDomains).toContain("D6");
+    // No goal/transition target is fabricated by the scope service.
+    expect(JSON.stringify(scope)).not.toMatch(/goal|transition_target/i);
+    // The scope service source must not contain a hard-coded numeric age.
+    const src = fs.readFileSync(
+      path.join(process.cwd(), "src/features/himam/scope/scope-service.ts"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/\bage\s*[<>=]+\s*\d+/);
   });
 
   it("PKG1A-T08: confirming scope creates snapshot and moves to scope_confirmed", () => {
@@ -145,26 +163,108 @@ describe("HIMAM Package 1A", () => {
       }
     }
     const manifest = loadKnowledgeManifest();
-    expect(["GO", "CONDITIONAL_GO", "NO_GO"]).toContain(manifest.readiness);
+    expect(manifest.readiness).toBe("CONDITIONAL_GO");
     loadKnowledgeBundle();
   });
 
-  it("PKG1A-T12: architecture forbids Package 1B entities, AI, findings, reports", () => {
-    const surface = Object.keys(PublicSurface);
-    for (const forbidden of [
+  it("PKG1A-T12: architecture forbids Package 1B entities, AI, findings, reports (source scan)", () => {
+    const FORBIDDEN = [
+      "StudentMasterRecord",
+      "LearnerProfile",
+      "Student",
       "ExtractionService",
       "ReviewEngine",
       "RelationshipService",
       "ReportAssemblyService",
       "AIService",
-      "StudentMasterRecord",
-      "LearnerProfile",
-      "Student",
       "ReviewFinding",
       "SupervisorDecision",
       "ReportVersion",
-    ]) {
-      expect(surface).not.toContain(forbidden);
+    ];
+    const surface = Object.keys(PublicSurface);
+    for (const w of FORBIDDEN) expect(surface).not.toContain(w);
+
+    const roots = [
+      path.join(process.cwd(), "src/features/himam"),
+      path.join(process.cwd(), "src/routes"),
+    ];
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === "__tests__" || entry.name === "node_modules") continue;
+          walk(full);
+        } else if (/\.(ts|tsx)$/.test(entry.name)) {
+          files.push(full);
+        }
+      }
+    };
+    for (const r of roots) walk(r);
+    const scoped = files.filter(
+      (f) =>
+        f.includes(`${path.sep}features${path.sep}himam${path.sep}`) ||
+        /(^|[\\/])cases[.\\/]/i.test(f) ||
+        /[\\/]cases\.[a-z$.]+\.tsx?$/i.test(f),
+    );
+    for (const f of scoped) {
+      const src = fs.readFileSync(f, "utf8");
+      for (const w of FORBIDDEN) {
+        const re = new RegExp(`\\b(class|interface|type|enum)\\s+${w}\\b`);
+        expect(re.test(src), `${w} defined as an entity in ${f}`).toBe(false);
+        const svcRe = new RegExp(
+          `\\b(new\\s+${w}|${w}\\.(?:instance|singleton|create|resolve))\\b`,
+        );
+        expect(svcRe.test(src), `${w} instantiated in ${f}`).toBe(false);
+      }
     }
+  });
+
+  it("PKG1A-T13: plan file is persisted in the storage layer and reconciles on reload", async () => {
+    const repo = createInMemoryRepository();
+    const storage = new InMemoryPlanFileStorage();
+    const s1 = new CaseService(repo, storage);
+    const c = s1.createCase({ ageYears: 8, phaseId: "elementary", planType: "IEP" });
+    const src = s1.registerSource({
+      reviewCaseId: c.id,
+      type: "plan",
+      fileName: "plan.pdf",
+      mimeType: "application/pdf",
+    });
+    const blob = new Blob(["dummy-plan-bytes"], { type: "application/pdf" });
+    await s1.attachPlanFile(src.id, blob);
+
+    // Blob stored; storagePath recorded on the source.
+    expect(await storage.has(src.id)).toBe(true);
+    const stored = await storage.get(src.id);
+    expect(stored).not.toBeNull();
+    expect(s1.sourcesFor(c.id)[0].storagePath).toBe(planStoragePath(src.id));
+    expect(s1.get(c.id)!.status).toBe("minimum_inputs_complete");
+
+    // New service instance over the same repository/storage recovers state.
+    const s2 = new CaseService(repo, storage);
+    await s2.reconcile();
+    expect(s2.sourcesFor(c.id)[0].status).toBe("ready_for_future_ingestion");
+    expect(s2.get(c.id)!.status).toBe("minimum_inputs_complete");
+
+    // Simulate the Blob being lost (browser cleared storage): case reverts.
+    await storage.delete(src.id);
+    await s2.reconcile();
+    expect(s2.sourcesFor(c.id)[0].status).toBe("file_missing");
+    expect(s2.get(c.id)!.status).toBe("draft");
+
+    // Removing the source cleans up both metadata and any lingering Blob.
+    const src2 = s2.registerSource({
+      reviewCaseId: c.id,
+      type: "plan",
+      fileName: "plan2.pdf",
+      mimeType: "application/pdf",
+    });
+    await s2.attachPlanFile(src2.id, new Blob(["x"]));
+    expect(await storage.has(src2.id)).toBe(true);
+    await s2.removeSource(src2.id);
+    expect(await storage.has(src2.id)).toBe(false);
+    expect(s2.sourcesFor(c.id).find((x) => x.id === src2.id)).toBeUndefined();
   });
 });

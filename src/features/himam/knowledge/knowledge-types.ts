@@ -25,6 +25,8 @@ export interface CriterionRecord {
   criterionType: string;
   requiredInputs: string[];
   sourceIds: string[];
+  activationRule: string;
+  notApplicableRule: string;
 }
 
 export interface CriteriaIndex {

@@ -68,13 +68,16 @@ function NewCase() {
           size: planFile.size,
           type: planFile.type,
         });
-        svc.registerSource({
+        const src = svc.registerSource({
           reviewCaseId: c.id,
           type: "plan",
           fileName: planFile.name,
           mimeType: planFile.type || null,
-          status: v.ok ? "ready_for_future_ingestion" : v.status,
+          status: v.ok ? "registered" : v.status,
         });
+        if (v.ok) {
+          await svc.attachPlanFile(src.id, planFile);
+        }
       }
       navigate({ to: "/cases/$caseId", params: { caseId: c.id } });
     } finally {

@@ -61,6 +61,16 @@ export interface ReviewScopeSnapshot {
   notReviewableDomains: string[];
   notApplicableDomains: string[];
   inputTypes: string[];
+  criterionScope: {
+    criterionId: string;
+    domainId: string;
+    status: "available" | "not_reviewable" | "not_applicable";
+    reasonCode:
+      | "inputs_available"
+      | "missing_required_input"
+      | "phase_not_applicable"
+      | "conditional_requirement_not_triggered";
+  }[];
   confirmedAt: string | null;
   createdAt: string;
 }

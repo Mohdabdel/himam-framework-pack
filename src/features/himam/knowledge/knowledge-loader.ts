@@ -72,6 +72,8 @@ export function loadCriteriaIndex(): CriteriaIndex {
         .split(/[,;\s]+/)
         .map((s) => s.trim())
         .filter(Boolean),
+      activationRule: r["activation_rule"] ?? "",
+      notApplicableRule: r["not_applicable_rule"] ?? "",
     };
     criteria.push(rec);
     byId.set(id, rec);
