@@ -3,6 +3,11 @@ import type { AuditEvent } from "../audit/audit-types";
 import { getKnowledgePackageVersion } from "../knowledge/knowledge-version";
 import type { ReviewInputType } from "../knowledge/knowledge-types";
 import { getReviewScope, type ScopeResult } from "../scope/scope-service";
+import {
+  getDefaultPlanFileStorage,
+  planStoragePath,
+  type PlanFileStorage,
+} from "../sources/plan-file-storage";
 import type { HimamStore, ReviewCaseRepository } from "./case-repository";
 import { getDefaultRepository } from "./case-repository";
 import { applyTransition, canTransition } from "./case-state-machine";
@@ -58,8 +63,10 @@ function inputsForCase(store: HimamStore, c: ReviewCase): ReviewInputType[] {
 
 export class CaseService {
   private repo: ReviewCaseRepository;
-  constructor(repo?: ReviewCaseRepository) {
+  private storage: PlanFileStorage;
+  constructor(repo?: ReviewCaseRepository, storage?: PlanFileStorage) {
     this.repo = repo ?? getDefaultRepository();
+    this.storage = storage ?? getDefaultPlanFileStorage();
   }
 
   private mutate<T>(fn: (store: HimamStore) => T): T {
@@ -72,12 +79,17 @@ export class CaseService {
   private recomputeStatus(store: HimamStore, c: ReviewCase): void {
     const hasAgeOrPhase = c.ageYears !== null || c.phaseId !== null;
     const hasPlan = hasReadyPlan(store, c.id);
+    if (c.status === "closed" || c.status === "scope_confirmed") return;
     if (c.status === "draft" && hasAgeOrPhase && hasPlan) {
       c.status = applyTransition(c.status, "complete_minimum_inputs");
       c.updatedAt = new Date().toISOString();
     } else if (c.status === "minimum_inputs_complete" && !(hasAgeOrPhase && hasPlan)) {
       c.status = "draft";
       c.updatedAt = new Date().toISOString();
+      // Any unconfirmed scope depending on this state is voided.
+      store.scopeSnapshots = store.scopeSnapshots.filter(
+        (sn) => sn.reviewCaseId !== c.id || sn.confirmedAt !== null,
+      );
     }
   }
 
@@ -195,7 +207,14 @@ export class CaseService {
     });
   }
 
-  removeSource(sourceId: string): void {
+  async removeSource(sourceId: string): Promise<void> {
+    // Delete Blob before mutating the store, so a partial failure never
+    // leaves an `idb://` reference to a phantom object.
+    try {
+      await this.storage.delete(sourceId);
+    } catch {
+      /* best-effort cleanup */
+    }
     this.mutate((store) => {
       const idx = store.sources.findIndex((s) => s.id === sourceId);
       if (idx < 0) return;
@@ -213,6 +232,39 @@ export class CaseService {
     });
   }
 
+  async attachPlanFile(sourceId: string, blob: Blob): Promise<InputSource> {
+    await this.storage.put(sourceId, blob);
+    return this.mutate((store) => {
+      const s = store.sources.find((x) => x.id === sourceId);
+      if (!s) throw new Error("Source not found");
+      s.storagePath = planStoragePath(sourceId);
+      if (s.type === "plan") s.status = "ready_for_future_ingestion";
+      const c = store.cases.find((x) => x.id === s.reviewCaseId);
+      if (c) this.recomputeStatus(store, c);
+      return s;
+    });
+  }
+
+  async reconcile(): Promise<void> {
+    const store = this.repo.load();
+    let changed = false;
+    for (const s of store.sources) {
+      if (s.type !== "plan" || !s.storagePath) continue;
+      const ok = await this.storage.has(s.id);
+      if (!ok && s.status !== "file_missing") {
+        s.status = "file_missing";
+        changed = true;
+      } else if (ok && s.status === "file_missing") {
+        s.status = "ready_for_future_ingestion";
+        changed = true;
+      }
+    }
+    if (changed) {
+      for (const c of store.cases) this.recomputeStatus(store, c);
+      this.repo.save(store);
+    }
+  }
+
   generateScope(caseId: string): {
     snapshot: ReviewScopeSnapshot;
     scope: ScopeResult;
@@ -224,7 +276,7 @@ export class CaseService {
         throw new Error("Cannot generate scope unless minimum inputs are complete.");
       }
       const inputs = inputsForCase(store, c);
-      const scope = getReviewScope(inputs);
+      const scope = getReviewScope({ inputs, phaseId: c.phaseId });
       const snapshot: ReviewScopeSnapshot = {
         id: randomId(),
         reviewCaseId: c.id,
@@ -233,6 +285,7 @@ export class CaseService {
         notReviewableDomains: scope.notReviewableDomains,
         notApplicableDomains: scope.notApplicableDomains,
         inputTypes: inputs,
+        criterionScope: scope.criterionScope,
         confirmedAt: null,
         createdAt: new Date().toISOString(),
       };

@@ -3,7 +3,20 @@ export { createInMemoryRepository, getDefaultRepository } from "./cases/case-rep
 export type { ReviewCaseRepository } from "./cases/case-repository";
 export * from "./cases/case-types";
 export { getReviewScope } from "./scope/scope-service";
-export type { ScopeResult } from "./scope/scope-service";
+export type {
+  ScopeResult,
+  CriterionScopeItem,
+  CriterionReasonCode,
+  ReviewScopeContext,
+} from "./scope/scope-service";
+export {
+  InMemoryPlanFileStorage,
+  IndexedDbPlanFileStorage,
+  getDefaultPlanFileStorage,
+  planStoragePath,
+  PLAN_FILE_STORE,
+} from "./sources/plan-file-storage";
+export type { PlanFileStorage } from "./sources/plan-file-storage";
 export {
   loadCriteriaIndex,
   loadInputActivationMatrix,
