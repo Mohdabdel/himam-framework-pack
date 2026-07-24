@@ -1,8 +1,4 @@
-export type ReviewCaseStatus =
-  | "draft"
-  | "minimum_inputs_complete"
-  | "scope_confirmed"
-  | "closed";
+export type ReviewCaseStatus = "draft" | "minimum_inputs_complete" | "scope_confirmed" | "closed";
 
 export const REVIEW_PHASES = [
   "early_intervention",

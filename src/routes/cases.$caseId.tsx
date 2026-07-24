@@ -1,11 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CaseService } from "@/features/himam";
-import type {
-  InputSource,
-  ReviewCase,
-  ReviewScopeSnapshot,
-} from "@/features/himam";
+import type { InputSource, ReviewCase, ReviewScopeSnapshot } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/$caseId")({
   head: () => ({
@@ -61,8 +57,7 @@ function CaseDetail() {
   }
 
   const svc = new CaseService();
-  const canGenerate =
-    c.status === "minimum_inputs_complete" || c.status === "scope_confirmed";
+  const canGenerate = c.status === "minimum_inputs_complete" || c.status === "scope_confirmed";
   const canConfirm = c.status === "minimum_inputs_complete" && !!scope;
   const canClose = c.status === "scope_confirmed";
 
@@ -136,24 +131,21 @@ function CaseDetail() {
           </ul>
         )}
         <p className="mt-3 text-xs text-muted-foreground">
-          المصادر الأخرى (تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم،
-          ملاحظات مهنية، خطة سابقة، تقدم سابق) مقفلة للحزم التالية.
+          المصادر الأخرى (تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم، ملاحظات مهنية، خطة سابقة،
+          تقدم سابق) مقفلة للحزم التالية.
         </p>
       </section>
 
       <section className="mb-6 rounded-md border border-border p-4">
         <h2 className="mb-2 text-lg font-semibold">نطاق المراجعة المبدئي</h2>
         <p className="mb-3 text-xs text-muted-foreground">
-          هذه ليست نتائج مراجعة. إنها حدود المراجعة التي ستصبح ممكنة بعد
-          تنفيذ الحزم التالية.
+          هذه ليست نتائج مراجعة. إنها حدود المراجعة التي ستصبح ممكنة بعد تنفيذ الحزم التالية.
         </p>
         {scope ? (
           <div className="space-y-3 text-sm">
             <div>
               <div className="font-medium">المدخلات المتاحة:</div>
-              <div className="text-muted-foreground">
-                {scope.inputTypes.join("، ") || "—"}
-              </div>
+              <div className="text-muted-foreground">{scope.inputTypes.join("، ") || "—"}</div>
             </div>
             <div>
               <div className="font-medium">المجالات المتاحة:</div>
@@ -218,9 +210,7 @@ function CaseDetail() {
           <li>تشغيل معايير المراجعة — مقفل.</li>
           <li>توليد التقرير — مقفل.</li>
         </ul>
-        <p className="mt-3 text-xs text-muted-foreground">
-          لم تُنفذ مراجعة الخطة بعد.
-        </p>
+        <p className="mt-3 text-xs text-muted-foreground">لم تُنفذ مراجعة الخطة بعد.</p>
       </section>
     </div>
   );

@@ -1,9 +1,5 @@
 import type { AuditEvent } from "../audit/audit-types";
-import type {
-  InputSource,
-  ReviewCase,
-  ReviewScopeSnapshot,
-} from "./case-types";
+import type { InputSource, ReviewCase, ReviewScopeSnapshot } from "./case-types";
 
 export interface HimamStore {
   cases: ReviewCase[];

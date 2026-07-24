@@ -10,9 +10,7 @@ export function validateKnowledgeBundle(): { ok: true } {
     }
     seen.add(c.criterionId);
     if (!ALL_DOMAINS.includes(c.domainId)) {
-      throw new Error(
-        `Criterion ${c.criterionId} has invalid domain ${c.domainId}`,
-      );
+      throw new Error(`Criterion ${c.criterionId} has invalid domain ${c.domainId}`);
     }
   }
   return { ok: true };

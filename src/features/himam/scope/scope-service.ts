@@ -1,9 +1,5 @@
 import { loadKnowledgeBundle } from "../knowledge/knowledge-loader";
-import type {
-  DomainId,
-  ReviewInputType,
-  ScopeItemStatus,
-} from "../knowledge/knowledge-types";
+import type { DomainId, ReviewInputType, ScopeItemStatus } from "../knowledge/knowledge-types";
 import { ALL_DOMAINS } from "../knowledge/knowledge-types";
 
 export interface ScopeResult {
@@ -41,9 +37,7 @@ export function getReviewScope(inputs: ReviewInputType[]): ScopeResult {
   const notReviewable: DomainId[] = [];
   for (const d of ALL_DOMAINS) {
     const domainCriteria = bundle.criteria.byDomain.get(d) ?? [];
-    const hasActivated = domainCriteria.some((c) =>
-      activatedCriteria.has(c.criterionId),
-    );
+    const hasActivated = domainCriteria.some((c) => activatedCriteria.has(c.criterionId));
     if (hasActivated) {
       perDomain[d] = "available";
       available.push(d);

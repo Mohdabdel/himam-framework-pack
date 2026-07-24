@@ -53,9 +53,7 @@ export function loadCriteriaIndex(): CriteriaIndex {
     const domain = r["domain_id"];
     if (!id) continue;
     if (!DOMAIN_IDS.has(domain)) {
-      throw new Error(
-        `HIMAM knowledge: criterion ${id} references unknown domain "${domain}".`,
-      );
+      throw new Error(`HIMAM knowledge: criterion ${id} references unknown domain "${domain}".`);
     }
     if (byId.has(id)) {
       throw new Error(`HIMAM knowledge: duplicate criterion id "${id}".`);
@@ -84,9 +82,7 @@ export function loadCriteriaIndex(): CriteriaIndex {
   return { criteria, byId, byDomain };
 }
 
-export function loadInputActivationMatrix(
-  criteriaIndex?: CriteriaIndex,
-): InputActivationMatrix {
+export function loadInputActivationMatrix(criteriaIndex?: CriteriaIndex): InputActivationMatrix {
   const idx = criteriaIndex ?? loadCriteriaIndex();
   const records = toRecords(parseCsv(inputActivationCsvRaw));
   const rows: InputActivationRow[] = [];

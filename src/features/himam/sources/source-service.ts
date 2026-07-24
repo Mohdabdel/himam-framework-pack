@@ -1,8 +1,4 @@
-import type {
-  InputSource,
-  InputSourceStatus,
-  InputSourceType,
-} from "../cases/case-types";
+import type { InputSource, InputSourceStatus, InputSourceType } from "../cases/case-types";
 
 const ALLOWED_MIME = new Set([
   "application/pdf",
@@ -27,8 +23,7 @@ export function validatePlanFile(file: {
     };
   }
   const name = file.name.toLowerCase();
-  const okExt =
-    name.endsWith(".pdf") || name.endsWith(".docx") || name.endsWith(".txt");
+  const okExt = name.endsWith(".pdf") || name.endsWith(".docx") || name.endsWith(".txt");
   const okMime = ALLOWED_MIME.has(file.type) || file.type === "" || okExt;
   if (!okExt && !okMime) {
     return {

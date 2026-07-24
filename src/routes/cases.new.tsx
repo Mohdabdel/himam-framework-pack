@@ -86,8 +86,7 @@ function NewCase() {
     <div dir="rtl" className="mx-auto max-w-2xl px-6 py-10 font-sans">
       <h1 className="text-2xl font-bold">إنشاء حالة مراجعة</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند
-        الحاجة.
+        لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة.
       </p>
       <form onSubmit={submit} className="mt-6 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

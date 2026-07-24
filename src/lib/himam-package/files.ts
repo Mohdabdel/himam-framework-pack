@@ -32,10 +32,16 @@ export interface PackageFile {
 
 const stripBom = (s: string) => s.replace(/^\uFEFF/, "");
 const md = (name: string, content: string): PackageFile => ({
-  name, content, mime: "text/markdown", isCsv: false,
+  name,
+  content,
+  mime: "text/markdown",
+  isCsv: false,
 });
 const csv = (name: string, content: string): PackageFile => ({
-  name, content: stripBom(content), mime: "text/csv", isCsv: true,
+  name,
+  content: stripBom(content),
+  mime: "text/csv",
+  isCsv: true,
 });
 
 export const PACKAGE_FILES: PackageFile[] = [

@@ -1,27 +1,8 @@
 // Types for the read-only HIMAM knowledge assets.
 // Package 1A only exposes descriptive types; no criterion is evaluated.
-export type DomainId =
-  | "D0"
-  | "D1"
-  | "D2"
-  | "D3"
-  | "D4"
-  | "D5"
-  | "D6"
-  | "D7"
-  | "D8";
+export type DomainId = "D0" | "D1" | "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8";
 
-export const ALL_DOMAINS: DomainId[] = [
-  "D0",
-  "D1",
-  "D2",
-  "D3",
-  "D4",
-  "D5",
-  "D6",
-  "D7",
-  "D8",
-];
+export const ALL_DOMAINS: DomainId[] = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"];
 
 export type ReviewInputType =
   | "age_phase"
@@ -34,10 +15,7 @@ export type ReviewInputType =
   | "prior_plan"
   | "prior_progress";
 
-export type ScopeItemStatus =
-  | "available"
-  | "not_reviewable"
-  | "not_applicable";
+export type ScopeItemStatus = "available" | "not_reviewable" | "not_applicable";
 
 export interface CriterionRecord {
   criterionId: string;

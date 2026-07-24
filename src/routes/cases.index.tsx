@@ -37,12 +37,9 @@ function CasesDashboard() {
     <div dir="rtl" className="mx-auto max-w-5xl px-6 py-10 font-sans">
       <header className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            لوحة حالات المراجعة
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">لوحة حالات المراجعة</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            HIMAM Package 1A — Foundation. لا استخراج ولا مراجعة ولا تقرير في
-            هذه الجولة.
+            HIMAM Package 1A — Foundation. لا استخراج ولا مراجعة ولا تقرير في هذه الجولة.
           </p>
         </div>
         <Link

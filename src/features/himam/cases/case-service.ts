@@ -3,10 +3,7 @@ import type { AuditEvent } from "../audit/audit-types";
 import { getKnowledgePackageVersion } from "../knowledge/knowledge-version";
 import type { ReviewInputType } from "../knowledge/knowledge-types";
 import { getReviewScope, type ScopeResult } from "../scope/scope-service";
-import type {
-  HimamStore,
-  ReviewCaseRepository,
-} from "./case-repository";
+import type { HimamStore, ReviewCaseRepository } from "./case-repository";
 import { getDefaultRepository } from "./case-repository";
 import { applyTransition, canTransition } from "./case-state-machine";
 import type {
@@ -33,9 +30,7 @@ function nextReferenceCode(store: HimamStore): string {
 function hasReadyPlan(store: HimamStore, caseId: string): boolean {
   return store.sources.some(
     (s) =>
-      s.reviewCaseId === caseId &&
-      s.type === "plan" &&
-      s.status === "ready_for_future_ingestion",
+      s.reviewCaseId === caseId && s.type === "plan" && s.status === "ready_for_future_ingestion",
   );
 }
 
@@ -80,10 +75,7 @@ export class CaseService {
     if (c.status === "draft" && hasAgeOrPhase && hasPlan) {
       c.status = applyTransition(c.status, "complete_minimum_inputs");
       c.updatedAt = new Date().toISOString();
-    } else if (
-      c.status === "minimum_inputs_complete" &&
-      !(hasAgeOrPhase && hasPlan)
-    ) {
+    } else if (c.status === "minimum_inputs_complete" && !(hasAgeOrPhase && hasPlan)) {
       c.status = "draft";
       c.updatedAt = new Date().toISOString();
     }
@@ -228,13 +220,8 @@ export class CaseService {
     return this.mutate((store) => {
       const c = store.cases.find((x) => x.id === caseId);
       if (!c) throw new Error("Case not found");
-      if (
-        c.status !== "minimum_inputs_complete" &&
-        c.status !== "scope_confirmed"
-      ) {
-        throw new Error(
-          "Cannot generate scope unless minimum inputs are complete.",
-        );
+      if (c.status !== "minimum_inputs_complete" && c.status !== "scope_confirmed") {
+        throw new Error("Cannot generate scope unless minimum inputs are complete.");
       }
       const inputs = inputsForCase(store, c);
       const scope = getReviewScope(inputs);
@@ -266,9 +253,7 @@ export class CaseService {
       const c = store.cases.find((x) => x.id === caseId);
       if (!c) throw new Error("Case not found");
       if (!canTransition(c.status, "confirm_scope")) {
-        throw new Error(
-          `Cannot confirm scope while case status is ${c.status}.`,
-        );
+        throw new Error(`Cannot confirm scope while case status is ${c.status}.`);
       }
       const snap = store.scopeSnapshots
         .filter((s) => s.reviewCaseId === c.id)
@@ -279,9 +264,7 @@ export class CaseService {
       snap.confirmedAt = new Date().toISOString();
       c.status = applyTransition(c.status, "confirm_scope");
       c.updatedAt = new Date().toISOString();
-      store.auditEvents.push(
-        newAuditEvent(c.id, "scope_confirmed", { snapshotId: snap.id }),
-      );
+      store.auditEvents.push(newAuditEvent(c.id, "scope_confirmed", { snapshotId: snap.id }));
       return c;
     });
   }
