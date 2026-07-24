@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import JSZip from "jszip";
 import { PACKAGE_FILES, PACKAGE_FOLDER, BOM } from "@/lib/himam-package/files";
@@ -7,9 +7,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "HIMAM Pre-Programming Package v1.0" },
-      { name: "description", content: "حزمة الملفات المعرفية والتشغيلية الكاملة قبل برمجة محرك HIMAM." },
+      {
+        name: "description",
+        content: "حزمة الملفات المعرفية والتشغيلية الكاملة قبل برمجة محرك HIMAM.",
+      },
       { property: "og:title", content: "HIMAM Pre-Programming Package v1.0" },
-      { property: "og:description", content: "حزمة الملفات المعرفية والتشغيلية الكاملة قبل برمجة محرك HIMAM." },
+      {
+        property: "og:description",
+        content: "حزمة الملفات المعرفية والتشغيلية الكاملة قبل برمجة محرك HIMAM.",
+      },
     ],
   }),
   component: Index,
@@ -18,7 +24,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [busy, setBusy] = useState(false);
 
-  const fileContent = (f: typeof PACKAGE_FILES[number]) =>
+  const fileContent = (f: (typeof PACKAGE_FILES)[number]) =>
     f.isCsv ? BOM + f.content : f.content;
 
   const triggerDownload = (blob: Blob, filename: string) => {
@@ -32,7 +38,7 @@ function Index() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadOne = (f: typeof PACKAGE_FILES[number]) => {
+  const downloadOne = (f: (typeof PACKAGE_FILES)[number]) => {
     const blob = new Blob([fileContent(f)], { type: `${f.mime};charset=utf-8` });
     triggerDownload(blob, f.name);
   };
@@ -63,9 +69,17 @@ function Index() {
           <h1 className="text-3xl font-bold tracking-tight">HIMAM Pre-Programming Package v1.0</h1>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">
             حزمة الملفات المعرفية والتشغيلية الكاملة الواجب اعتمادها قبل الشروع في برمجة محرك HIMAM.
-            الغرض الوحيد لهذه الأداة هو إنتاج ملف ZIP قابل للتنزيل يحتوي على {PACKAGE_FILES.length} ملفًا
-            بترميز UTF-8، وملفات CSV بـ BOM لضمان الفتح العربي.
+            الغرض الوحيد لهذه الأداة هو إنتاج ملف ZIP قابل للتنزيل يحتوي على {PACKAGE_FILES.length}{" "}
+            ملفًا بترميز UTF-8، وملفات CSV بـ BOM لضمان الفتح العربي.
           </p>
+          <div className="mt-4">
+            <Link
+              to="/cases"
+              className="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              فتح لوحة حالات المراجعة (HIMAM Package 1A)
+            </Link>
+          </div>
         </header>
 
         <section className="mb-8 rounded-lg border border-border bg-card p-6">
@@ -73,7 +87,8 @@ function Index() {
             <div>
               <div className="text-sm text-muted-foreground">المحتوى</div>
               <div className="mt-1 text-lg font-semibold">
-                18 ملفًا معرفيًا/تشغيليًا + Traceability (17) + Readiness (18) + Package 1A (19) + README/MANIFEST = {PACKAGE_FILES.length} ملفًا
+                18 ملفًا معرفيًا/تشغيليًا + Traceability (17) + Readiness (18) + Package 1A (19) +
+                README/MANIFEST = {PACKAGE_FILES.length} ملفًا
               </div>
             </div>
             <button
@@ -88,7 +103,9 @@ function Index() {
         </section>
 
         <section className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-6 py-4 text-sm font-semibold">قائمة الملفات</div>
+          <div className="border-b border-border px-6 py-4 text-sm font-semibold">
+            قائمة الملفات
+          </div>
           <ul className="divide-y divide-border">
             {PACKAGE_FILES.map((f, i) => (
               <li key={f.name} className="flex items-center justify-between gap-4 px-6 py-3">
