@@ -24,7 +24,7 @@ status منفصل عن severity، ونتيجة الهدف منفصلة عن نت
 09_HIMAM_DECISION_LOGIC.md — منطق القرار والبوابات
 10_HIMAM_REPORT_CONTRACT.md — عقد التقرير
 11_HIMAM_AI_GOVERNANCE.md — حوكمة الذكاء الاصطناعي
-12_HIMAM_REFERENCE_TEST_CASES.csv — حالات اختبار مرجعية (44+)
+12_HIMAM_REFERENCE_TEST_CASES.csv — حالات اختبار مرجعية (45+)
 13_HIMAM_ACCEPTANCE_CRITERIA.md — معايير القبول
 14_HIMAM_OUT_OF_SCOPE_REGISTER.md — سجل خارج النطاق
 15_HIMAM_PROGRAMMING_HANDOFF.md — التسليم للبرمجة

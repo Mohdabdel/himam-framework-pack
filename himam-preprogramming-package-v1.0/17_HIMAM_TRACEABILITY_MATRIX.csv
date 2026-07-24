@@ -45,7 +45,7 @@ C082,D8,SRC-QF-01,"plan","TC15","القسم 3 — جاهزية الرصد","Revi
 C083,D8,SRC-QF-01,"plan","TC15|TC28|TC38|TC40","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
 C084,D8,SRC-QF-01,"prior_progress","","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
 C090,D2,SRC-CF-01,"assessment","TC01|TC18","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
-C091,D1,SRC-QF-01,"plan","","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C091,D1,SRC-QF-01,"plan","TC45","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
 C092,D4,SRC-QF-01,"supports","","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
 C093,D7,SRC-INT-04,"age,plan","TC24","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
 C094,D0,SRC-INT-02,"plan","TC16","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
