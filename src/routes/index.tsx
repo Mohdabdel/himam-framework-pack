@@ -57,8 +57,8 @@ function Index() {
       <div className="mx-auto max-w-3xl px-6 py-12">
         <header className="mb-8 border-b border-border pb-6">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-            جاهزة للمراجعة قبل البرمجة
+            <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+            CONDITIONAL GO — راجع تقرير الجاهزية (الملف 18)
           </div>
           <h1 className="text-3xl font-bold tracking-tight">HIMAM Pre-Programming Package v1.0</h1>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">
@@ -73,7 +73,7 @@ function Index() {
             <div>
               <div className="text-sm text-muted-foreground">المحتوى</div>
               <div className="mt-1 text-lg font-semibold">
-                16 ملفًا أساسيًا + README + MANIFEST = {PACKAGE_FILES.length} ملفًا
+                18 ملفًا معرفيًا/تشغيليًا + Traceability (17) + Readiness (18) + README/MANIFEST = {PACKAGE_FILES.length} ملفًا
               </div>
             </div>
             <button
