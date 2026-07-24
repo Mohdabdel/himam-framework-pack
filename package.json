@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "validate:himam-package": "node scripts/validate-himam-package.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
