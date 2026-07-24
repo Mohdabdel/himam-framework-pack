@@ -73,7 +73,7 @@ function Index() {
             <div>
               <div className="text-sm text-muted-foreground">المحتوى</div>
               <div className="mt-1 text-lg font-semibold">
-                18 ملفًا معرفيًا/تشغيليًا + Traceability (17) + Readiness (18) + README/MANIFEST = {PACKAGE_FILES.length} ملفًا
+                18 ملفًا معرفيًا/تشغيليًا + Traceability (17) + Readiness (18) + Package 1A (19) + README/MANIFEST = {PACKAGE_FILES.length} ملفًا
               </div>
             </div>
             <button

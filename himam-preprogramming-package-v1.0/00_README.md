@@ -11,7 +11,7 @@ HIMAM محرك مساندة إشرافية لمراجعة جودة قرارات 
 status منفصل عن severity، ونتيجة الهدف منفصلة عن نتيجة الخطة.
 الذكاء الاصطناعي: يستخرج ويقارن ويقترح فقط. المشرف: يعتمد.
 
-## قائمة الملفات (20 ملفًا)
+## قائمة الملفات (21 ملفًا)
 00_README.md — هذا الملف
 01_HIMAM_PRODUCT_IDENTITY_AND_SCOPE.md — الهوية والنطاق
 02_HIMAM_KNOWLEDGE_FRAMEWORK.md — الإطار المعرفي والمجالات التسعة
@@ -31,6 +31,7 @@ status منفصل عن severity، ونتيجة الهدف منفصلة عن نت
 16_HIMAM_SAFETY_GATE_CHECKLIST.md — بوابة السلامة G1-G12
 17_HIMAM_TRACEABILITY_MATRIX.csv — مصفوفة التتبع (معيار ⇢ مصدر/مدخل/اختبار/تقرير/مكوّن)
 18_HIMAM_PREPROGRAMMING_READINESS_REPORT.md — تقرير الجاهزية الفعلي (G1-G12)
+19_HIMAM_PROGRAMMING_PACKAGE_01_FOUNDATION_AR.md — حزمة البرمجة الأولى Package 1A (أمر تنفيذ)
 MANIFEST.md — بيان الحزمة
 
 ## قواعد الاستخدام
