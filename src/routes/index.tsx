@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import JSZip from "jszip";
 import { PACKAGE_FILES, PACKAGE_FOLDER, BOM } from "@/lib/himam-package/files";
@@ -66,6 +66,14 @@ function Index() {
             الغرض الوحيد لهذه الأداة هو إنتاج ملف ZIP قابل للتنزيل يحتوي على {PACKAGE_FILES.length} ملفًا
             بترميز UTF-8، وملفات CSV بـ BOM لضمان الفتح العربي.
           </p>
+          <div className="mt-4">
+            <Link
+              to="/cases"
+              className="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              فتح لوحة حالات المراجعة (HIMAM Package 1A)
+            </Link>
+          </div>
         </header>
 
         <section className="mb-8 rounded-lg border border-border bg-card p-6">
