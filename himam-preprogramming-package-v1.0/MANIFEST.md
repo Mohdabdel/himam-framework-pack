@@ -6,7 +6,7 @@ language: ar
 encoding: UTF-8
 status: ready_for_pre_programming_review
 
-## Files (18)
+## Files (20)
 - 00_README.md
 - 01_HIMAM_PRODUCT_IDENTITY_AND_SCOPE.md
 - 02_HIMAM_KNOWLEDGE_FRAMEWORK.md
@@ -24,9 +24,13 @@ status: ready_for_pre_programming_review
 - 14_HIMAM_OUT_OF_SCOPE_REGISTER.md
 - 15_HIMAM_PROGRAMMING_HANDOFF.md
 - 16_HIMAM_SAFETY_GATE_CHECKLIST.md
+- 17_HIMAM_TRACEABILITY_MATRIX.csv
+- 18_HIMAM_PREPROGRAMMING_READINESS_REPORT.md
 - MANIFEST.md
 
 ## Notes
 - CSV files include UTF-8 BOM for correct Arabic rendering in spreadsheet apps.
 - All files are UTF-8 plain text.
 - No external network dependencies are required to consume this package.
+- Handoff (15) does NOT include Student Master Record as an implementation entity.
+- status is separate from severity; goal outcome is separate from plan outcome.

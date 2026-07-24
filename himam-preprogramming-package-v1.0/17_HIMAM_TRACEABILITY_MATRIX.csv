@@ -1,0 +1,56 @@
+﻿criterion_id,domain_id,source_ids,required_inputs,test_case_ids,report_section,implementation_component,verification_status
+C001,D0,SRC-INT-01,"plan","TC23|TC24|TC25","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C002,D0,SRC-INT-01,"age","TC24","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C003,D0,SRC-INT-02,"plan,assessment","TC16","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C004,D0,SRC-INT-01,"plan","TC24|TC25","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C010,D1,SRC-QF-01,"plan","TC01|TC02|TC04|TC23","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C011,D1,SRC-QF-01,"plan","TC26","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C012,D1,SRC-QF-01,"plan","TC01|TC02|TC04","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C013,D1,SRC-QF-01,"plan","TC27","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C014,D1,SRC-QF-01,"plan","TC01|TC28","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C015,D1,SRC-QF-01,"plan","","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C016,D1,SRC-QF-01,"plan","TC01|TC03","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C020,D2,SRC-CF-01,"plan,assessment","TC01|TC04|TC05|TC06","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C021,D2,SRC-QF-01,"plan","TC01|TC29","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C022,D2,SRC-CF-01,"assessment","TC01|TC04|TC05|TC18","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C023,D2,SRC-QF-01,"plan","TC01|TC04|TC07","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C024,D2,SRC-CF-01,"assessment","TC01|TC05|TC30","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C030,D3,SRC-QF-01,"plan","TC31","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C031,D3,SRC-QF-01,"plan","TC32","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C032,D3,SRC-QF-01,"plan","TC19","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C033,D3,SRC-INT-03,"family_priorities","TC08|TC09","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C034,D3,SRC-INT-03,"student_preference","","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C040,D4,SRC-QF-01,"supports","TC13|TC33|TC34","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
+C041,D4,SRC-QF-01,"supports,plan","TC13|TC33|TC34","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
+C042,D4,SRC-QF-01,"supports","TC13|TC33","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
+C043,D4,SRC-QF-01,"professional_notes","TC14","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
+C050,D5,SRC-INT-03,"family_priorities","TC08|TC09","القسم 3 — الأسرة/المتعلم/السياق","ReviewEngine",verified_internal
+C051,D5,SRC-INT-03,"student_preference","TC44","القسم 3 — الأسرة/المتعلم/السياق","ReviewEngine",verified_internal
+C052,D5,SRC-QF-01,"plan","TC22|TC35","القسم 3 — الأسرة/المتعلم/السياق","ReviewEngine",verified_internal
+C053,D5,SRC-QF-01,"plan","","القسم 3 — الأسرة/المتعلم/السياق","ReviewEngine",verified_internal
+C060,D6,SRC-INT-04,"age,plan","TC10|TC24|TC41|TC43","القسم 3 — المواءمة العمرية","ReviewEngine",verified_internal
+C061,D6,SRC-INT-04,"age,plan","TC10|TC24|TC43","القسم 3 — المواءمة العمرية","ReviewEngine",verified_internal
+C062,D6,SRC-INT-04,"age,plan","TC10|TC24|TC41|TC43","القسم 3 — المواءمة العمرية","ReviewEngine",verified_internal
+C063,D6,SRC-INT-04,"age,plan","TC24|TC41","القسم 3 — المواءمة العمرية","ReviewEngine",verified_internal
+C070,D7,SRC-QF-01,"plan","TC11|TC36|TC37|TC42","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C071,D7,SRC-QF-01,"plan,prior_plan","TC17","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C072,D7,SRC-QF-01,"plan","TC11|TC36|TC37","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C073,D7,SRC-QF-01,"plan","TC11","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C074,D7,SRC-CF-01,"plan,assessment","TC01|TC12","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C075,D7,SRC-QF-01,"plan","","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C076,D7,SRC-QF-01,"plan","","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C080,D8,SRC-QF-01,"plan","TC15|TC28|TC38","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C081,D8,SRC-QF-01,"plan","TC15|TC38|TC39","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C082,D8,SRC-QF-01,"plan","TC15","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C083,D8,SRC-QF-01,"plan","TC15|TC28|TC38|TC40","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C084,D8,SRC-QF-01,"prior_progress","","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C090,D2,SRC-CF-01,"assessment","TC01|TC18","القسم 3 — التخصيص وقاعدة الأدلة","ReviewEngine/ExtractionService",verified_internal
+C091,D1,SRC-QF-01,"plan","","القسم 3 — بنية الهدف","ReviewEngine",verified_internal
+C092,D4,SRC-QF-01,"supports","","القسم 3 — الدعم والتنفيذ","ReviewEngine",verified_internal
+C093,D7,SRC-INT-04,"age,plan","TC24","القسم 3 — ترابط الأهداف","RelationshipService",verified_internal
+C094,D0,SRC-INT-02,"plan","TC16","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C095,D3,SRC-INT-05,"plan","TC20","القسم 3 — القيمة والجدوى","ReviewEngine",verified_internal
+C096,D0,SRC-INT-01,"assessment","TC01|TC21","القسم 2 — قابلية المراجعة","CriteriaActivationService/GovernanceService",verified_internal
+C097,D5,SRC-QF-01,"plan,assessment","TC22","القسم 3 — الأسرة/المتعلم/السياق","ReviewEngine",verified_internal
+C098,D8,SRC-QF-01,"plan","","القسم 3 — جاهزية الرصد","ReviewEngine",verified_internal
+C099,D6,SRC-INT-04,"plan","TC23|TC24|TC42","القسم 3 — المواءمة العمرية","ReviewEngine",verified_internal
