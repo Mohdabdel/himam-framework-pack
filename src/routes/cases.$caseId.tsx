@@ -13,7 +13,6 @@ import {
   statusLabelAr,
 } from "@/features/himam";
 import type {
-  ExtractedEvidence,
   InputSource,
   ReviewCase,
   ReviewScopeSnapshot,
@@ -42,6 +41,38 @@ const DOMAIN_LABEL: Record<string, string> = {
   D7: "D7 — ترابط الأهداف",
   D8: "D8 — جاهزية الرصد",
 };
+
+function ScopeDiff({
+  previous,
+  draft,
+}: {
+  previous: ReviewScopeSnapshot;
+  draft: ReviewScopeSnapshot;
+}) {
+  const prevMap = new Map(previous.criterionScope.map((x) => [x.criterionId, x.state]));
+  const draftMap = new Map(draft.criterionScope.map((x) => [x.criterionId, x.state]));
+  const changed: { id: string; from: string; to: string }[] = [];
+  for (const [id, to] of draftMap) {
+    const from = prevMap.get(id) ?? "—";
+    if (from !== to) changed.push({ id, from, to });
+  }
+  for (const [id, from] of prevMap) {
+    if (!draftMap.has(id)) changed.push({ id, from, to: "—" });
+  }
+  if (changed.length === 0) {
+    return <p className="text-xs text-muted-foreground">لا فروق في المعايير.</p>;
+  }
+  return (
+    <ul className="list-inside list-disc text-xs text-amber-900">
+      {changed.slice(0, 20).map((c) => (
+        <li key={c.id}>
+          {c.id}: {c.from} → {c.to}
+        </li>
+      ))}
+      {changed.length > 20 && <li>… ({changed.length - 20} إضافيًا)</li>}
+    </ul>
+  );
+}
 
 function CaseDetail() {
   const { caseId } = Route.useParams();
