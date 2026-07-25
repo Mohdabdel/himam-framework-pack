@@ -5,7 +5,12 @@ export type AuditEventType =
   | "source_removed"
   | "scope_generated"
   | "scope_confirmed"
-  | "case_closed";
+  | "case_closed"
+  | "source_ingested"
+  | "source_ingest_failed"
+  | "evidence_proposed"
+  | "evidence_confirmed"
+  | "evidence_rejected";
 
 export interface AuditEvent {
   id: string;
