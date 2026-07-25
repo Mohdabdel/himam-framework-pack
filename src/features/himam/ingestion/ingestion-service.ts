@@ -194,4 +194,82 @@ export class IngestionService {
   artifactFor(sourceId: string): TextArtifact | null {
     return this.repo.load().textArtifacts.find((a) => a.sourceId === sourceId) ?? null;
   }
+
+  // Package 1B.3 helper: ingest free manual text (e.g. family_priorities as
+  // typed notes). Bypasses the file-based extractor path but produces the
+  // same TextArtifact + TextChunk shape so the evidence UI works the same
+  // way. No blob is stored; the text lives in the artifact store only.
+  async ingestManualText(sourceId: string, text: string): Promise<IngestionResult> {
+    const store0 = this.repo.load();
+    const src = store0.sources.find((s) => s.id === sourceId);
+    if (!src) throw new Error("Source not found");
+    const trimmed = text.trim();
+    if (!trimmed) throw new Error("Manual text is empty");
+    const contentHash = await sha256Hex(trimmed);
+    const artifactId = randomId();
+    await this.storage.putText(artifactId, trimmed);
+    const chunks = await buildChunks(
+      sourceId,
+      artifactId,
+      [
+        {
+          pageNumber: null,
+          text: trimmed,
+          locatorKind: "manual_text",
+          manualSectionId: sourceId,
+        },
+      ],
+      { sourceHash: contentHash },
+    );
+    const store = this.repo.load();
+    // Purge any prior artifact/chunks for this source
+    for (const a of store.textArtifacts.filter((x) => x.sourceId === sourceId)) {
+      try {
+        await this.storage.deleteText(a.id);
+      } catch {
+        /* best-effort */
+      }
+    }
+    store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
+    store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
+    const now = new Date().toISOString();
+    const artifact: TextArtifact = {
+      id: artifactId,
+      sourceId,
+      reviewCaseId: src.reviewCaseId,
+      byteSize: trimmed.length,
+      charCount: trimmed.length,
+      pageCount: 1,
+      storagePath: textArtifactPath(artifactId),
+      extractedAt: now,
+      sourceHash: contentHash,
+      fullTextHash: contentHash,
+      parserName: "manual",
+      parserVersion: "1.0",
+      generatedAt: now,
+    };
+    store.textArtifacts.push(artifact);
+    store.textChunks.push(...chunks);
+    const s = store.sources.find((x) => x.id === sourceId)!;
+    s.sourceHash = contentHash;
+    s.extractionStage = "text_extracted";
+    s.manualTextArtifactId = artifactId;
+    if (s.status !== "ready_for_future_ingestion") s.status = "ready_for_future_ingestion";
+    const caseRow = store.cases.find((x) => x.id === s.reviewCaseId);
+    if (
+      caseRow &&
+      (caseRow.extractionStage === "not_started" ||
+        caseRow.extractionStage === "sources_registered")
+    ) {
+      caseRow.extractionStage = "text_ready";
+    }
+    store.auditEvents.push(
+      newAuditEvent(s.reviewCaseId, "source_manual_text_added", {
+        sourceId,
+        chunkCount: chunks.length,
+      }),
+    );
+    this.repo.save(store);
+    return { artifact, chunks, source: { ...s }, reused: false };
+  }
 }

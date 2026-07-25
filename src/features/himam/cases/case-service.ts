@@ -390,6 +390,53 @@ export class CaseService {
     });
   }
 
+  // Package 1B.3 — reconfirm the scope after sources changed. Produces a
+  // brand-new confirmed snapshot and clears scopeNeedsReconfirmation. Old
+  // snapshots are preserved for audit.
+  reconfirmScope(caseId: string): {
+    snapshot: ReviewScopeSnapshot;
+    scope: ScopeResult;
+  } {
+    return this.mutate((store) => {
+      const c = store.cases.find((x) => x.id === caseId);
+      if (!c) throw new Error("Case not found");
+      if (c.status === "closed") throw new Error("Case is closed");
+      if (!c.scopeNeedsReconfirmation) {
+        throw new Error("Scope does not need reconfirmation");
+      }
+      const inputs = inputsForCase(store, c);
+      const scope = getReviewScope({ inputs, phaseId: c.phaseId });
+      const now = new Date().toISOString();
+      const snapshot: ReviewScopeSnapshot = {
+        id: randomId(),
+        reviewCaseId: c.id,
+        knowledgePackageVersion: c.knowledgePackageVersion,
+        availableDomains: scope.availableDomains,
+        notReviewableDomains: scope.notReviewableDomains,
+        notApplicableDomains: scope.notApplicableDomains,
+        inputTypes: inputs,
+        criterionScope: scope.criterionScope,
+        confirmedAt: now,
+        createdAt: now,
+      };
+      store.scopeSnapshots.push(snapshot);
+      c.scopeNeedsReconfirmation = false;
+      c.updatedAt = now;
+      store.auditEvents.push(newAuditEvent(c.id, "scope_reconfirmed", { snapshotId: snapshot.id }));
+      return { snapshot, scope };
+    });
+  }
+
+  // Package 1B.3 — the last confirmed scope, used to diff against the
+  // current draft for reconfirmation.
+  lastConfirmedScope(caseId: string): ReviewScopeSnapshot | null {
+    const list = this.repo
+      .load()
+      .scopeSnapshots.filter((s) => s.reviewCaseId === caseId && s.confirmedAt !== null)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return list[0] ?? null;
+  }
+
   attemptIllegalTransition(
     caseId: string,
     target: ReviewCaseStatus,
