@@ -15,6 +15,9 @@ export interface HumanReviewInput {
   humanRationale?: string;
   humanRecommendation?: string;
   actorId?: string | null;
+  // Package 1C.3 — controls surfacing in the report's needs-clarification
+  // section for `request_more_information`. Defaults to true.
+  includeInReport?: boolean;
 }
 
 export class HumanReviewService {
@@ -58,11 +61,13 @@ export class HumanReviewService {
       f.humanSeverity = f.automatedSeverity;
       f.humanRationale = input.humanRationale ?? null;
       f.humanRecommendation = input.humanRecommendation ?? null;
+      f.humanIncludeInReport = input.includeInReport ?? true;
     } else if (input.decision === "defer") {
       f.humanStatus = null;
       f.humanSeverity = null;
       f.humanRationale = input.humanRationale ?? null;
       f.humanRecommendation = null;
+      f.humanIncludeInReport = null;
     }
     store.auditEvents.push(
       newAuditEvent(f.caseId, "finding_decided", {

@@ -35,7 +35,16 @@ export type AuditEventType =
   | "review_marked_stale"
   | "review_completed"
   | "finding_decided"
-  | "report_published";
+  | "report_published"
+  // Package 1C.3 report events
+  | "report_gate_checked"
+  | "report_draft_generated"
+  | "report_finalized"
+  | "report_marked_stale"
+  | "report_superseded"
+  | "report_version_viewed"
+  | "report_version_compared"
+  | "case_closed_after_report";
 
 export interface AuditEvent {
   id: string;

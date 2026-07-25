@@ -75,6 +75,11 @@ export interface ReviewFinding {
   reviewedAt: string | null;
   // Set to true when a newer version invalidates this finding.
   isStale: boolean;
+  // Package 1C.3 — when the reviewer decides `request_more_information`
+  // (or otherwise wants the finding surfaced in the "needs clarification"
+  // section), this flag controls inclusion in the final governed report.
+  // Defaults to `true` for request_more_information; ignored otherwise.
+  humanIncludeInReport?: boolean | null;
 }
 
 // One row per engine execution. Older versions stay in the store to keep
@@ -109,3 +114,128 @@ export interface ReviewCoverage {
 }
 
 export const ENGINE_VERSION = "himam-deterministic-review/1.0.0";
+
+// ============================================================
+// Package 1C.3 — Governed Report
+// ============================================================
+
+export const GOVERNED_REPORT_ENGINE_VERSION = "himam-governed-report/1.0.0";
+
+export type ReportVersionStatus = "draft" | "finalized" | "superseded" | "stale";
+
+export type ReportGateReason =
+  | "case_not_found"
+  | "no_review_version"
+  | "review_not_completed"
+  | "review_stale"
+  | "scope_needs_reconfirmation"
+  | "extraction_not_confirmed"
+  | "identity_conflict_unresolved"
+  | "critical_findings_pending"
+  | "evidence_drift_detected"
+  | "case_closed_read_only";
+
+export type ReportGateResult = { ok: true } | { ok: false; reason: ReportGateReason };
+
+export interface ReportFindingItem {
+  findingId: string;
+  criterionId: string;
+  domainId: DomainId;
+  reviewLevel: string;
+  targetType: FindingTargetType;
+  targetId: string | null;
+  finalStatus: FindingStatus;
+  finalSeverity: FindingSeverity;
+  finalRationale: string;
+  finalRecommendation: string;
+  limitations: string;
+  evidenceIds: string[];
+  sourceIds: string[];
+  activationReason: ActivationReason;
+  humanDecision: HumanDecision;
+  uncertainty: "low" | "medium" | "high";
+}
+
+export interface ExcludedFindingRecord {
+  findingId: string;
+  criterionId: string;
+  reason: "rejected_by_reviewer" | "deferred" | "not_applicable";
+}
+
+export interface GovernedReportSections {
+  actionRequired: ReportFindingItem[];
+  majorPlanGaps: ReportFindingItem[];
+  qualityImprovements: ReportFindingItem[];
+  guidanceNotes: ReportFindingItem[];
+  needsClarificationItems: ReportFindingItem[];
+  notReviewableItems: ReportFindingItem[];
+  excludedFindings: ExcludedFindingRecord[];
+  governanceStatement: string;
+  limitations: string[];
+}
+
+export interface GovernedReportMetadata {
+  caseReferenceCode: string;
+  caseIdShort: string;
+  phaseId: string | null;
+  planType: string | null;
+  generatedAt: string;
+  generatedBy: string | null;
+  finalizedAt: string | null;
+  finalizedBy: string | null;
+  reviewVersionId: string;
+  scopeSnapshotId: string;
+  engineVersion: string;
+  reportEngineVersion: string;
+  knowledgePackageVersion: string;
+}
+
+export interface GovernedReportScopeSummary {
+  availableDomains: string[];
+  notReviewableDomains: string[];
+  notApplicableDomains: string[];
+  inputTypes: string[];
+}
+
+export interface GovernedReportCoverage {
+  activeCriteriaCount: number;
+  reviewedCriteriaCount: number;
+  pendingHumanDecisionCount: number;
+  acceptedCount: number;
+  modifiedCount: number;
+  rejectedCount: number;
+  deferredCount: number;
+  requestedInfoCount: number;
+  notReviewableCount: number;
+  notApplicableCount: number;
+}
+
+export interface GovernedReportVersion {
+  reportVersionId: string;
+  caseId: string;
+  reviewVersionId: string;
+  versionNumber: number;
+  status: ReportVersionStatus;
+  createdAt: string;
+  finalizedAt: string | null;
+  finalizedBy: string | null;
+  supersededAt: string | null;
+  staleReason: string | null;
+  metadata: GovernedReportMetadata;
+  scopeSummary: GovernedReportScopeSummary;
+  coverage: GovernedReportCoverage;
+  sections: GovernedReportSections;
+  // The report is a self-contained snapshot: any post-finalization change
+  // in review findings never mutates these arrays. New reports supersede.
+}
+
+export interface ReportVersionDiff {
+  addedFindings: string[]; // finding ids present in b but not a
+  removedFindings: string[]; // finding ids present in a but not b
+  changedFindings: {
+    findingId: string;
+    changes: string[]; // human-readable change tags
+  }[];
+  scopeChanges: string[];
+  coverageDelta: Partial<Record<keyof GovernedReportCoverage, number>>;
+}

@@ -390,6 +390,41 @@ export class CaseService {
     });
   }
 
+  // Package 1C.3 — closing after a governed report requires a finalized,
+  // non-stale report that references the current (non-stale) review
+  // version. This is stricter than plain `closeCase`.
+  closeCaseAfterFinalReport(caseId: string): ReviewCase {
+    return this.mutate((store) => {
+      const c = store.cases.find((x) => x.id === caseId);
+      if (!c) throw new Error("Case not found");
+      const current = store.reviewVersions
+        .filter((v) => v.caseId === caseId && !v.isStale)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const latest = store.reportVersions
+        .filter((r) => r.caseId === caseId && r.status === "finalized")
+        .sort((a, b) => b.versionNumber - a.versionNumber)[0];
+      if (!latest) throw new Error("No finalized governed report");
+      if (latest.staleReason) throw new Error("Latest finalized report is stale");
+      if (!current || current.versionId !== latest.reviewVersionId) {
+        throw new Error("Latest finalized report does not match the active review version");
+      }
+      if (!canTransition(c.status, "close_case")) {
+        throw new Error(`Cannot close case while status is ${c.status}.`);
+      }
+      c.status = applyTransition(c.status, "close_case");
+      const now = new Date().toISOString();
+      c.closedAt = now;
+      c.updatedAt = now;
+      store.auditEvents.push(
+        newAuditEvent(c.id, "case_closed_after_report", {
+          reportVersionId: latest.reportVersionId,
+          versionNumber: latest.versionNumber,
+        }),
+      );
+      return c;
+    });
+  }
+
   // Package 1B.3 — reconfirm the scope after sources changed. Produces a
   // brand-new confirmed snapshot and clears scopeNeedsReconfirmation. Old
   // snapshots are preserved for audit.

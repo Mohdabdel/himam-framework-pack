@@ -267,9 +267,20 @@ function CaseDetail() {
               <span className="text-xs text-muted-foreground">مقفل</span>
             )}
           </li>
-          <li className="flex items-center justify-between rounded-md border border-dashed border-border/60 p-2 text-muted-foreground">
-            <span>التقرير</span>
-            <span className="text-xs">قريبًا</span>
+          <li className="flex items-center justify-between rounded-md border border-border/60 p-2">
+            <span>التقرير المحكوم</span>
+            {c.extractionStage === "extraction_confirmed" ? (
+              <Link
+                to="/cases/$caseId/report"
+                params={{ caseId }}
+                className="text-xs underline"
+                data-testid="open-report-link"
+              >
+                فتح
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground">مقفل</span>
+            )}
           </li>
         </ol>
         {completeStatus && !completeStatus.ok && c.extractionStage !== "extraction_confirmed" && (
