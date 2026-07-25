@@ -1,15 +1,23 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  CaseExtractionService,
   CaseService,
+  CASE_STAGE_LABELS_AR,
   STATUS_BADGE_CLASSES,
   detectPhaseAgeInconsistency,
   formatArabicDate,
+  getDefaultRepository,
   phaseLabelAr,
   shortCaseId,
   statusLabelAr,
 } from "@/features/himam";
-import type { InputSource, ReviewCase, ReviewScopeSnapshot } from "@/features/himam";
+import type {
+  ExtractedEvidence,
+  InputSource,
+  ReviewCase,
+  ReviewScopeSnapshot,
+} from "@/features/himam";
 
 export const Route = createFileRoute("/cases/$caseId")({
   head: () => ({
@@ -41,6 +49,11 @@ function CaseDetail() {
   const [sources, setSources] = useState<InputSource[]>([]);
   const [scope, setScope] = useState<ReviewScopeSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastConfirmedScope, setLastConfirmedScope] = useState<ReviewScopeSnapshot | null>(null);
+  const [evidenceCount, setEvidenceCount] = useState({ total: 0, pending: 0, confirmed: 0 });
+  const [completeStatus, setCompleteStatus] = useState<
+    ReturnType<CaseExtractionService["canCompleteExtractionConfirmation"]> | null
+  >(null);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -48,6 +61,17 @@ function CaseDetail() {
     setC(svc.get(caseId));
     setSources(svc.sourcesFor(caseId));
     setScope(svc.latestScope(caseId));
+    setLastConfirmedScope(svc.lastConfirmedScope(caseId));
+    const repo = getDefaultRepository();
+    const store = repo.load();
+    const list = store.extractedEvidence.filter((e) => e.reviewCaseId === caseId);
+    setEvidenceCount({
+      total: list.length,
+      pending: list.filter((e) => e.status === "pending").length,
+      confirmed: list.filter((e) => e.status === "confirmed" || e.status === "edited").length,
+    });
+    const cx = new CaseExtractionService(repo);
+    setCompleteStatus(cx.canCompleteExtractionConfirmation(caseId));
   };
   useEffect(() => {
     void refresh();
@@ -68,6 +92,16 @@ function CaseDetail() {
   const canGenerate = c.status === "minimum_inputs_complete" || c.status === "scope_confirmed";
   const canConfirm = c.status === "minimum_inputs_complete" && !!scope;
   const canClose = c.status === "scope_confirmed";
+
+  const doReconfirmScope = () => {
+    setError(null);
+    try {
+      svc.reconfirmScope(caseId);
+      void refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
   const doGenerate = () => {
     setError(null);
@@ -159,8 +193,93 @@ function CaseDetail() {
         )}
       </section>
 
-      <section className="mb-6 rounded-md border border-border p-4">
-        <h2 className="mb-2 text-lg font-semibold">مصادر المراجعة</h2>
+        <section className="mb-6 rounded-md border border-border p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">رحلة الحالة</h2>
+          </div>
+          <ol className="space-y-2 text-sm">
+            <li className="flex items-center justify-between rounded-md border border-border/60 p-2">
+              <span>البيانات الأساسية</span>
+              <Link
+                to="/cases/$caseId/sources"
+                params={{ caseId }}
+                className="text-xs underline"
+              >
+                إدارة المصادر
+              </Link>
+            </li>
+            <li className="flex items-center justify-between rounded-md border border-border/60 p-2">
+              <span>
+                تجهيز النصوص —{" "}
+                {sources.filter((s) => s.extractionStage === "text_extracted").length}/
+                {sources.length}
+              </span>
+              <Link
+                to="/cases/$caseId/ingestion"
+                params={{ caseId }}
+                className="text-xs underline"
+              >
+                فتح
+              </Link>
+            </li>
+            <li className="flex items-center justify-between rounded-md border border-border/60 p-2">
+              <span>
+                تأكيد الأدلة — {evidenceCount.confirmed}/{evidenceCount.total} (معلق:{" "}
+                {evidenceCount.pending})
+              </span>
+              <Link
+                to="/cases/$caseId/extraction"
+                params={{ caseId }}
+                className="text-xs underline"
+              >
+                فتح
+              </Link>
+            </li>
+            <li className="flex items-center justify-between rounded-md border border-border/60 p-2 text-muted-foreground">
+              <span>
+                مرحلة المعالجة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}
+              </span>
+            </li>
+            <li className="flex items-center justify-between rounded-md border border-dashed border-border/60 p-2 text-muted-foreground">
+              <span>مراجعة جودة الخطة</span>
+              <span className="text-xs">مقفل</span>
+            </li>
+            <li className="flex items-center justify-between rounded-md border border-dashed border-border/60 p-2 text-muted-foreground">
+              <span>التقرير</span>
+              <span className="text-xs">مقفل</span>
+            </li>
+          </ol>
+          {completeStatus && !completeStatus.ok && c.extractionStage !== "extraction_confirmed" && (
+            <p className="mt-2 text-xs text-amber-700" data-testid="journey-blocker">
+              متعذر إكمال تأكيد الاستخراج: {completeStatus.reason}
+            </p>
+          )}
+        </section>
+
+        {c.scopeNeedsReconfirmation && lastConfirmedScope && scope && (
+          <section
+            className="mb-6 rounded-md border border-amber-200 bg-amber-50/50 p-4"
+            data-testid="scope-diff-section"
+          >
+            <h2 className="mb-2 text-lg font-semibold text-amber-900">
+              إعادة تأكيد نطاق المراجعة
+            </h2>
+            <p className="mb-2 text-xs text-amber-800">
+              تغيّرت المصادر منذ آخر تأكيد. راجع الفروق قبل الإكمال.
+            </p>
+            <ScopeDiff previous={lastConfirmedScope} draft={scope} />
+            <button
+              type="button"
+              onClick={doReconfirmScope}
+              className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+            >
+              تأكيد نطاق المراجعة المحدَّث
+            </button>
+          </section>
+        )}
+
+        <section className="mb-6 rounded-md border border-border p-4">
+          <h2 className="mb-2 text-lg font-semibold">مصادر المراجعة</h2>
         {sources.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             لم يُسجَّل أي مصدر. الخطة إلزامية للانتقال إلى المدخلات الدنيا.

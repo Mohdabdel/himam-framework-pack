@@ -16,6 +16,7 @@ import { Route as CasesNewRouteImport } from './routes/cases.new'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CasesCaseIdSourcesRouteImport } from './routes/cases.$caseId.sources'
 import { Route as CasesCaseIdIngestionRouteImport } from './routes/cases.$caseId.ingestion'
+import { Route as CasesCaseIdExtractionRouteImport } from './routes/cases.$caseId.extraction'
 import { Route as ApiHimamExtractEvidenceRouteImport } from './routes/api.himam.extract-evidence'
 
 const CasesRoute = CasesRouteImport.update({
@@ -53,6 +54,11 @@ const CasesCaseIdIngestionRoute = CasesCaseIdIngestionRouteImport.update({
   path: '/ingestion',
   getParentRoute: () => CasesCaseIdRoute,
 } as any)
+const CasesCaseIdExtractionRoute = CasesCaseIdExtractionRouteImport.update({
+  id: '/extraction',
+  path: '/extraction',
+  getParentRoute: () => CasesCaseIdRoute,
+} as any)
 const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
   id: '/api/himam/extract-evidence',
   path: '/api/himam/extract-evidence',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/cases/new': typeof CasesNewRoute
   '/cases': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/cases/new'
     | '/cases/'
     | '/api/himam/extract-evidence'
+    | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
     | '/cases/$caseId/sources'
   fileRoutesByTo: FileRoutesByTo
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/cases/new'
     | '/cases'
     | '/api/himam/extract-evidence'
+    | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
     | '/cases/$caseId/sources'
   id:
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/cases/new'
     | '/cases/'
     | '/api/himam/extract-evidence'
+    | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
     | '/cases/$caseId/sources'
   fileRoutesById: FileRoutesById
@@ -178,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdIngestionRouteImport
       parentRoute: typeof CasesCaseIdRoute
     }
+    '/cases/$caseId/extraction': {
+      id: '/cases/$caseId/extraction'
+      path: '/extraction'
+      fullPath: '/cases/$caseId/extraction'
+      preLoaderRoute: typeof CasesCaseIdExtractionRouteImport
+      parentRoute: typeof CasesCaseIdRoute
+    }
     '/api/himam/extract-evidence': {
       id: '/api/himam/extract-evidence'
       path: '/api/himam/extract-evidence'
@@ -189,11 +208,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface CasesCaseIdRouteChildren {
+  CasesCaseIdExtractionRoute: typeof CasesCaseIdExtractionRoute
   CasesCaseIdIngestionRoute: typeof CasesCaseIdIngestionRoute
   CasesCaseIdSourcesRoute: typeof CasesCaseIdSourcesRoute
 }
 
 const CasesCaseIdRouteChildren: CasesCaseIdRouteChildren = {
+  CasesCaseIdExtractionRoute: CasesCaseIdExtractionRoute,
   CasesCaseIdIngestionRoute: CasesCaseIdIngestionRoute,
   CasesCaseIdSourcesRoute: CasesCaseIdSourcesRoute,
 }
