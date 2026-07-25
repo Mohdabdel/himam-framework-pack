@@ -36,7 +36,14 @@ export { buildChunks } from "./ingestion/text-chunker";
 export type { PageInput } from "./ingestion/text-chunker";
 export { sha256Hex } from "./ingestion/hash";
 export { EvidenceService } from "./evidence/evidence-service";
-export type { AddManualEvidenceInput } from "./evidence/evidence-service";
+export type {
+  CreateManualEvidenceInput,
+  AiEvidenceDraft,
+} from "./evidence/evidence-service";
+export {
+  ALLOWED_EVIDENCE_TYPES,
+  isEvidenceTypeAllowed,
+} from "./evidence/evidence-service";
 export {
   loadCriteriaIndex,
   loadInputActivationMatrix,
