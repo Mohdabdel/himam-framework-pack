@@ -11,7 +11,11 @@ import type {
   TextChunk,
   TextLocator,
 } from "./case-types";
-import type { ReviewFinding, ReviewVersion } from "../review/review-types";
+import type {
+  GovernedReportVersion,
+  ReviewFinding,
+  ReviewVersion,
+} from "../review/review-types";
 
 export interface HimamStore {
   cases: ReviewCase[];
@@ -25,6 +29,7 @@ export interface HimamStore {
   identityChecks: IdentityIntegrityCheck[];
   reviewVersions: ReviewVersion[];
   reviewFindings: ReviewFinding[];
+  reportVersions: GovernedReportVersion[];
 }
 
 export interface ReviewCaseRepository {
@@ -45,6 +50,7 @@ const EMPTY: HimamStore = {
   identityChecks: [],
   reviewVersions: [],
   reviewFindings: [],
+  reportVersions: [],
 };
 
 const STORAGE_KEY = "himam.pkg1a.store.v1";
@@ -166,6 +172,7 @@ function localStorageRepo(): ReviewCaseRepository {
           identityChecks: parsed.identityChecks ?? [],
           reviewVersions: parsed.reviewVersions ?? [],
           reviewFindings: parsed.reviewFindings ?? [],
+          reportVersions: parsed.reportVersions ?? [],
         };
       } catch {
         return structuredClone(EMPTY);
