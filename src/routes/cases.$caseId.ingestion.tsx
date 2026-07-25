@@ -9,12 +9,7 @@ import {
   getDefaultPlanFileStorage,
   getDefaultRepository,
 } from "@/features/himam";
-import type {
-  InputSource,
-  ReviewCase,
-  TextChunk,
-  TextLocator,
-} from "@/features/himam";
+import type { InputSource, ReviewCase, TextChunk, TextLocator } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/$caseId/ingestion")({
   head: () => ({
@@ -100,7 +95,10 @@ function IngestionPage() {
     }
   };
 
-  const doResolveUnavailable = (s: InputSource, resolution: "manual_evidence_added" | "source_replaced" | "source_excluded_with_reason") => {
+  const doResolveUnavailable = (
+    s: InputSource,
+    resolution: "manual_evidence_added" | "source_replaced" | "source_excluded_with_reason",
+  ) => {
     if (readOnly) return;
     const repo = getDefaultRepository();
     const store = repo.load();
@@ -120,8 +118,8 @@ function IngestionPage() {
         </Link>
       </header>
       <p className="mb-4 text-xs text-muted-foreground">
-        لا يوجد image recognition. المصادر غير القابلة للاستخراج تحتاج قرارًا صريحًا: استبدال أو دليل يدوي أو
-        استبعاد مع سبب.
+        لا يوجد image recognition. المصادر غير القابلة للاستخراج تحتاج قرارًا صريحًا: استبدال أو
+        دليل يدوي أو استبعاد مع سبب.
       </p>
 
       {sources.length === 0 ? (
@@ -143,9 +141,7 @@ function IngestionPage() {
                     <div className="font-medium">
                       {SOURCE_TYPE_LABELS_AR[s.type]} — {s.fileName}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      حالة التجهيز: {stageLabel}
-                    </div>
+                    <div className="text-xs text-muted-foreground">حالة التجهيز: {stageLabel}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {s.manualTextArtifactId ? null : (
@@ -187,9 +183,7 @@ function IngestionPage() {
                     data-testid={`unavailable-${s.id}`}
                     className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
                   >
-                    <p className="mb-2 font-medium">
-                      لا يوجد نص قابل للاستخراج. اختر معالجة:
-                    </p>
+                    <p className="mb-2 font-medium">لا يوجد نص قابل للاستخراج. اختر معالجة:</p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -216,9 +210,7 @@ function IngestionPage() {
                         استبعاد مع سبب
                       </button>
                     </div>
-                    {s.unavailableResolution && (
-                      <p className="mt-2 text-xs">تمت المعالجة.</p>
-                    )}
+                    {s.unavailableResolution && <p className="mt-2 text-xs">تمت المعالجة.</p>}
                   </div>
                 )}
 

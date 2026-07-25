@@ -139,11 +139,7 @@ function SourcesPage() {
     <div dir="rtl" className="mx-auto max-w-4xl px-6 py-10 font-sans">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">إدارة المصادر</h1>
-        <Link
-          to="/cases/$caseId"
-          params={{ caseId }}
-          className="text-sm underline"
-        >
+        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
           العودة إلى ملخص الحالة
         </Link>
       </header>
@@ -167,9 +163,7 @@ function SourcesPage() {
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{SOURCE_TYPE_LABELS_AR[t]}</h2>
                 <span className="text-xs text-muted-foreground">
-                  {SINGLE_ACTIVE_SOURCE_TYPES.includes(t)
-                    ? "مصدر نشط واحد"
-                    : "مصدر أو أكثر"}
+                  {SINGLE_ACTIVE_SOURCE_TYPES.includes(t) ? "مصدر نشط واحد" : "مصدر أو أكثر"}
                 </span>
               </div>
               {items.length === 0 ? (

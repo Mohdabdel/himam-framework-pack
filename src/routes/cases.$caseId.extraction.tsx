@@ -80,7 +80,9 @@ function ExtractionPage() {
     setSources(store.sources.filter((s) => s.reviewCaseId === caseId));
     setChunks(
       store.textChunks
-        .filter((ch) => store.sources.some((s) => s.id === ch.sourceId && s.reviewCaseId === caseId))
+        .filter((ch) =>
+          store.sources.some((s) => s.id === ch.sourceId && s.reviewCaseId === caseId),
+        )
         .sort((a, b) => a.order - b.order),
     );
     setEvidence(
@@ -99,7 +101,10 @@ function ExtractionPage() {
   useEffect(() => {
     refresh();
     const provider = new ServerEvidenceExtractionProvider();
-    void provider.availability().then(setAiAvailability).catch(() => setAiAvailability("not_configured"));
+    void provider
+      .availability()
+      .then(setAiAvailability)
+      .catch(() => setAiAvailability("not_configured"));
   }, [caseId]);
 
   const chunksForSource = useMemo(
@@ -179,8 +184,9 @@ function ExtractionPage() {
     }
   };
 
-  const canComplete = new CaseExtractionService(getDefaultRepository())
-    .canCompleteExtractionConfirmation(caseId);
+  const canComplete = new CaseExtractionService(
+    getDefaultRepository(),
+  ).canCompleteExtractionConfirmation(caseId);
 
   // Group filters
   const filtered = evidence.filter((e) => {
@@ -225,8 +231,8 @@ function ExtractionPage() {
         ) : (
           <>
             <p className="text-sm">
-              مزود الاستخراج الآلي متاح. سيتم إرسال بيانات مُقلَّصة فقط (نصوص Chunks بدون أسماء ملفات
-              أو هوية).
+              مزود الاستخراج الآلي متاح. سيتم إرسال بيانات مُقلَّصة فقط (نصوص Chunks بدون أسماء
+              ملفات أو هوية).
             </p>
             <button
               type="button"
@@ -341,9 +347,7 @@ function ExtractionPage() {
         ) : identity.status === "consistent" ? (
           <p className="text-sm text-green-700">علامات الهوية متسقة.</p>
         ) : identity.status === "acknowledged" ? (
-          <p className="text-sm text-muted-foreground">
-            تم الإقرار بتعارض علامات الهوية سابقًا.
-          </p>
+          <p className="text-sm text-muted-foreground">تم الإقرار بتعارض علامات الهوية سابقًا.</p>
         ) : (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
             <p className="mb-2 text-destructive">

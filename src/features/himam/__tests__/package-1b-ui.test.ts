@@ -117,8 +117,10 @@ describe("Package 1B — Operational UI (1B.3)", () => {
     // The 'بدء الاستخراج المنظم' button only renders under 'configured' branch and is disabled
     expect(extractionRoute).toMatch(/not_configured[\s\S]{0,400}الاستخراج الآلي غير مهيأ/);
     // Assert the trigger button appears only inside the configured branch, and is disabled
-    expect(extractionRoute).toMatch(/aiAvailability === "not_configured"[\s\S]*aiAvailability === "unavailable"[\s\S]*بدء الاستخراج المنظم/);
-    expect(extractionRoute).toContain('disabled\n              className');
+    expect(extractionRoute).toMatch(
+      /aiAvailability === "not_configured"[\s\S]*aiAvailability === "unavailable"[\s\S]*بدء الاستخراج المنظم/,
+    );
+    expect(extractionRoute).toContain("disabled\n              className");
   });
 
   it("PKG1B-UI-T07: manual evidence rejects non-verbatim quote", async () => {

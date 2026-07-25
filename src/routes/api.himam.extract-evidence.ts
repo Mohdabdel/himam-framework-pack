@@ -8,8 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/himam/extract-evidence")({
   server: {
     handlers: {
-      GET: async () =>
-        Response.json({ availability: "not_configured" }, { status: 200 }),
+      GET: async () => Response.json({ availability: "not_configured" }, { status: 200 }),
       POST: async () =>
         Response.json(
           {
