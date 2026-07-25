@@ -1,11 +1,21 @@
 import type { AuditEvent } from "../audit/audit-types";
-import type { InputSource, ReviewCase, ReviewScopeSnapshot } from "./case-types";
+import type {
+  EvidenceCandidate,
+  InputSource,
+  ReviewCase,
+  ReviewScopeSnapshot,
+  TextArtifact,
+  TextChunk,
+} from "./case-types";
 
 export interface HimamStore {
   cases: ReviewCase[];
   sources: InputSource[];
   scopeSnapshots: ReviewScopeSnapshot[];
   auditEvents: AuditEvent[];
+  textArtifacts: TextArtifact[];
+  textChunks: TextChunk[];
+  evidenceCandidates: EvidenceCandidate[];
 }
 
 export interface ReviewCaseRepository {
@@ -19,9 +29,19 @@ const EMPTY: HimamStore = {
   sources: [],
   scopeSnapshots: [],
   auditEvents: [],
+  textArtifacts: [],
+  textChunks: [],
+  evidenceCandidates: [],
 };
 
 const STORAGE_KEY = "himam.pkg1a.store.v1";
+
+function migrateSources(list: InputSource[] | undefined): InputSource[] {
+  return (list ?? []).map((s) => ({
+    ...s,
+    extractionStage: s.extractionStage ?? "not_started",
+  }));
+}
 
 function inMemoryRepo(): ReviewCaseRepository {
   let state: HimamStore = structuredClone(EMPTY);
@@ -42,12 +62,15 @@ function localStorageRepo(): ReviewCaseRepository {
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) return structuredClone(EMPTY);
-        const parsed = JSON.parse(raw) as HimamStore;
+        const parsed = JSON.parse(raw) as Partial<HimamStore>;
         return {
           cases: parsed.cases ?? [],
-          sources: parsed.sources ?? [],
+          sources: migrateSources(parsed.sources),
           scopeSnapshots: parsed.scopeSnapshots ?? [],
           auditEvents: parsed.auditEvents ?? [],
+          textArtifacts: parsed.textArtifacts ?? [],
+          textChunks: parsed.textChunks ?? [],
+          evidenceCandidates: parsed.evidenceCandidates ?? [],
         };
       } catch {
         return structuredClone(EMPTY);
