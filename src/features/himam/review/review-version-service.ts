@@ -72,6 +72,15 @@ export class ReviewVersionService {
     for (const f of store.reviewFindings.filter((f) => f.caseId === caseId && !f.isStale)) {
       f.isStale = true;
     }
+    // Package 1C.3 — any live report versions become stale on rerun.
+    for (const r of store.reportVersions.filter((r) => r.caseId === caseId)) {
+      if (r.status === "draft") {
+        r.status = "stale";
+        r.staleReason = staleReason ?? "review_rerun";
+      } else if (r.status === "finalized" && !r.staleReason) {
+        r.staleReason = staleReason ?? "review_rerun";
+      }
+    }
     this.repo.save(store);
 
     const versionId = randomId();
@@ -156,6 +165,14 @@ export class ReviewVersionService {
     }
     for (const f of store.reviewFindings.filter((f) => f.caseId === caseId && !f.isStale)) {
       f.isStale = true;
+    }
+    for (const r of store.reportVersions.filter((r) => r.caseId === caseId)) {
+      if (r.status === "draft") {
+        r.status = "stale";
+        r.staleReason = reason;
+      } else if (r.status === "finalized" && !r.staleReason) {
+        r.staleReason = reason;
+      }
     }
     store.auditEvents.push(newAuditEvent(caseId, "review_marked_stale", { reason }));
     this.repo.save(store);
