@@ -155,6 +155,16 @@ export class IngestionService {
     store.textChunks.push(...chunks);
     s.sourceHash = blobHash;
     s.extractionStage = "text_extracted";
+    // Bump case pipeline stage when at least one source has usable text and
+    // the case has not yet moved past `text_ready`.
+    const caseRow = store.cases.find((x) => x.id === s.reviewCaseId);
+    if (
+      caseRow &&
+      (caseRow.extractionStage === "not_started" ||
+        caseRow.extractionStage === "sources_registered")
+    ) {
+      caseRow.extractionStage = "text_ready";
+    }
     store.auditEvents.push(
       newAuditEvent(s.reviewCaseId, "source_ingested", {
         sourceId,
