@@ -29,3 +29,13 @@ export * from "./knowledge/knowledge-types";
 export { validatePlanFile } from "./sources/source-service";
 export { canTransition, applyTransition } from "./cases/case-state-machine";
 export type { AuditEvent } from "./audit/audit-types";
+export {
+  PHASE_LABELS_AR,
+  phaseLabelAr,
+  STATUS_LABELS_AR,
+  statusLabelAr,
+  STATUS_BADGE_CLASSES,
+  formatArabicDate,
+  detectPhaseAgeInconsistency,
+  shortCaseId,
+} from "./cases/case-labels";

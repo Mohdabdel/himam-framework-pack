@@ -12,6 +12,8 @@ import {
   loadInputActivationMatrix,
   loadKnowledgeBundle,
   loadKnowledgeManifest,
+  detectPhaseAgeInconsistency,
+  PHASE_LABELS_AR,
 } from "..";
 import { ALL_DOMAINS } from "../knowledge/knowledge-types";
 
@@ -266,5 +268,86 @@ describe("HIMAM Package 1A", () => {
     await s2.removeSource(src2.id);
     expect(await storage.has(src2.id)).toBe(false);
     expect(s2.sourcesFor(c.id).find((x) => x.id === src2.id)).toBeUndefined();
+  });
+
+  it("PKG1A-T18: dashboard uses Arabic phase labels, never raw phaseId technical values", () => {
+    // Central label dictionary covers every phase and has no underscored technical ids.
+    for (const [id, label] of Object.entries(PHASE_LABELS_AR)) {
+      expect(label).not.toMatch(/_/);
+      expect(label).not.toBe(id);
+      expect(label.length).toBeGreaterThan(0);
+    }
+    const dashboard = fs.readFileSync(
+      path.join(process.cwd(), "src/routes/cases.index.tsx"),
+      "utf8",
+    );
+    const detail = fs.readFileSync(
+      path.join(process.cwd(), "src/routes/cases.$caseId.tsx"),
+      "utf8",
+    );
+    const RAW = [
+      "early_intervention",
+      "preschool",
+      "elementary",
+      "middle",
+      "high_school",
+      "adult_transition",
+      "postsecondary_employment",
+    ];
+    for (const src of [dashboard, detail]) {
+      // Raw technical phase strings must not appear as display literals.
+      for (const raw of RAW) {
+        expect(src).not.toContain(`"${raw}"`);
+        expect(src).not.toContain(`'${raw}'`);
+      }
+      // No raw `phaseId` fallback rendering (`c.phaseId ??`, `{c.phaseId}`).
+      expect(src).not.toMatch(/\{[^}]*\.phaseId\s*\?\?/);
+      expect(src).not.toMatch(/\{\s*[a-zA-Z_.]+\.phaseId\s*\}/);
+    }
+  });
+
+  it("PKG1A-T19: creating a case without referenceCode generates a unique RC-YYYY-XXXX code", () => {
+    const a = s.createCase({ ageYears: 8, phaseId: "elementary", planType: "IEP" });
+    const b = s.createCase({ ageYears: 9, phaseId: "elementary", planType: "IEP" });
+    const c = s.createCase({ ageYears: 10, phaseId: "elementary", planType: "IEP" });
+    const year = new Date().getFullYear();
+    const re = new RegExp(`^RC-${year}-\\d{4}$`);
+    for (const x of [a, b, c]) {
+      expect(x.referenceCode).toMatch(re);
+    }
+    expect(new Set([a.referenceCode, b.referenceCode, c.referenceCode]).size).toBe(3);
+  });
+
+  it("PKG1A-T20: dashboard hides Package 1A operational chrome", () => {
+    const dashboard = fs.readFileSync(
+      path.join(process.cwd(), "src/routes/cases.index.tsx"),
+      "utf8",
+    );
+    expect(dashboard).not.toMatch(/Package\s*1A/i);
+    expect(dashboard).not.toContain("العودة إلى صفحة حزمة ما قبل البرمجة");
+    expect(dashboard).not.toContain("حزمة ما قبل البرمجة");
+  });
+
+  it("PKG1A-T21: phase/age inconsistency surfaces a non-blocking hint and does not prevent opening the case", () => {
+    // Heuristic detects the mismatch.
+    expect(detectPhaseAgeInconsistency(8, "high_school")).toBe(true);
+    expect(detectPhaseAgeInconsistency(15, "high_school")).toBe(false);
+    // Case can still be created and progressed normally.
+    const c = s.createCase({ ageYears: 8, phaseId: "high_school", planType: "IEP" });
+    expect(c.status).toBe("draft");
+    s.registerSource({
+      reviewCaseId: c.id,
+      type: "plan",
+      fileName: "plan.pdf",
+      mimeType: "application/pdf",
+    });
+    expect(s.get(c.id)!.status).toBe("minimum_inputs_complete");
+    // Detail route renders the warning element for inconsistent cases.
+    const detail = fs.readFileSync(
+      path.join(process.cwd(), "src/routes/cases.$caseId.tsx"),
+      "utf8",
+    );
+    expect(detail).toContain("يرجى مراجعة المرحلة المختارة.");
+    expect(detail).toContain("detectPhaseAgeInconsistency");
   });
 });
