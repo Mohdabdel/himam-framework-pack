@@ -175,11 +175,9 @@ describe("HIMAM Package 1A", () => {
       "LearnerProfile",
       "Student",
       "ExtractionService",
-      "ReviewEngine",
       "RelationshipService",
       "ReportAssemblyService",
       "AIService",
-      "ReviewFinding",
       "SupervisorDecision",
       "ReportVersion",
     ];
@@ -204,9 +202,14 @@ describe("HIMAM Package 1A", () => {
       }
     };
     for (const r of roots) walk(r);
+    // Package 1C legitimately introduces the deterministic review engine and
+    // findings under src/features/himam/review/. Exclude that subtree from
+    // the 1A architectural scan.
+    const excludedSubtree = `${path.sep}features${path.sep}himam${path.sep}review${path.sep}`;
     const scoped = files.filter(
       (f) =>
-        f.includes(`${path.sep}features${path.sep}himam${path.sep}`) ||
+        (f.includes(`${path.sep}features${path.sep}himam${path.sep}`) &&
+          !f.includes(excludedSubtree)) ||
         /(^|[\\/])cases[.\\/]/i.test(f) ||
         /[\\/]cases\.[a-z$.]+\.tsx?$/i.test(f),
     );
