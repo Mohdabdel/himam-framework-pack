@@ -198,6 +198,7 @@ export class CaseService {
         sourceDate: null,
         status: input.status ?? "ready_for_future_ingestion",
         createdAt: new Date().toISOString(),
+        extractionStage: "not_started",
       };
       store.sources.push(src);
       store.auditEvents.push(
