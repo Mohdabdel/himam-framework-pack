@@ -41,6 +41,16 @@ export type InputSourceStatus =
   | "unreadable"
   | "ready_for_future_ingestion";
 
+// Package 1B stage. `not_started` is the default for freshly registered
+// sources. `text_extracted` means an artifact + chunks exist. `text_unavailable`
+// covers scanned/empty documents (no OCR is attempted). `failed` covers hard
+// errors that are worth surfacing but should not corrupt case state.
+export type ExtractionStage =
+  | "not_started"
+  | "text_extracted"
+  | "text_unavailable"
+  | "failed";
+
 export interface InputSource {
   id: string;
   reviewCaseId: string;
@@ -51,6 +61,7 @@ export interface InputSource {
   sourceDate: string | null;
   status: InputSourceStatus;
   createdAt: string;
+  extractionStage: ExtractionStage;
 }
 
 export interface ReviewScopeSnapshot {
@@ -73,4 +84,47 @@ export interface ReviewScopeSnapshot {
   }[];
   confirmedAt: string | null;
   createdAt: string;
+}
+
+// Package 1B artifacts ----------------------------------------------------
+
+export interface TextArtifact {
+  id: string;
+  sourceId: string;
+  reviewCaseId: string;
+  byteSize: number;
+  charCount: number;
+  pageCount: number;
+  storagePath: string;
+  extractedAt: string;
+}
+
+export interface TextChunk {
+  chunkId: string;
+  sourceId: string;
+  artifactId: string;
+  order: number;
+  text: string;
+  charOffsetStart: number;
+  charOffsetEnd: number;
+  pageNumber: number | null;
+}
+
+export type EvidenceStatus = "proposed" | "confirmed" | "rejected";
+export type EvidenceOrigin = "manual" | "ai";
+
+export interface EvidenceCandidate {
+  id: string;
+  reviewCaseId: string;
+  sourceId: string;
+  chunkId: string;
+  criterionId: string;
+  domainId: string;
+  quote: string;
+  origin: EvidenceOrigin;
+  status: EvidenceStatus;
+  confidence: number | null;
+  provenance: Record<string, unknown> | null;
+  createdAt: string;
+  decidedAt: string | null;
 }
