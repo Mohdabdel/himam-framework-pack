@@ -59,15 +59,10 @@ function CasesDashboard() {
           {cases.map((c) => {
             const inconsistent = detectPhaseAgeInconsistency(c.ageYears, c.phaseId);
             return (
-              <li
-                key={c.id}
-                className="rounded-md border border-border bg-card p-4 shadow-sm"
-              >
+              <li key={c.id} className="rounded-md border border-border bg-card p-4 shadow-sm">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-base font-semibold text-foreground">
-                      {c.referenceCode}
-                    </div>
+                    <div className="text-base font-semibold text-foreground">{c.referenceCode}</div>
                     <div className="text-[11px] text-muted-foreground">
                       المعرّف المختصر: {shortCaseId(c)}
                     </div>

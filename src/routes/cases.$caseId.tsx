@@ -114,9 +114,7 @@ function CaseDetail() {
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>المعرّف المختصر: {shortCaseId(c)}</span>
             <span>·</span>
-            <span
-              className={`rounded-full border px-2 py-0.5 ${STATUS_BADGE_CLASSES[c.status]}`}
-            >
+            <span className={`rounded-full border px-2 py-0.5 ${STATUS_BADGE_CLASSES[c.status]}`}>
               {statusLabelAr(c.status)}
             </span>
           </div>
