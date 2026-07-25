@@ -49,8 +49,8 @@ function ScopeDiff({
   previous: ReviewScopeSnapshot;
   draft: ReviewScopeSnapshot;
 }) {
-  const prevMap = new Map(previous.criterionScope.map((x) => [x.criterionId, x.state]));
-  const draftMap = new Map(draft.criterionScope.map((x) => [x.criterionId, x.state]));
+  const prevMap = new Map(previous.criterionScope.map((x) => [x.criterionId, x.status]));
+  const draftMap = new Map(draft.criterionScope.map((x) => [x.criterionId, x.status]));
   const changed: { id: string; from: string; to: string }[] = [];
   for (const [id, to] of draftMap) {
     const from = prevMap.get(id) ?? "—";
