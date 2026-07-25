@@ -43,7 +43,7 @@ export type InputSourceStatus =
 
 // Package 1B stage. `not_started` is the default for freshly registered
 // sources. `text_extracted` means an artifact + chunks exist. `text_unavailable`
-// covers scanned/empty documents (no OCR is attempted). `failed` covers hard
+// covers scanned/empty documents (no image recognition is attempted). `failed` covers hard
 // errors that are worth surfacing but should not corrupt case state.
 export type ExtractionStage =
   | "not_started"

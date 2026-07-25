@@ -1,6 +1,6 @@
 // File storage boundary for both plan Blobs and Package 1B text artifacts.
 // Everything stays on the device (IndexedDB) — no public URL, no upload, no
-// OCR. The text-artifact store is a separate object store keyed by artifact
+// image recognition. The text-artifact store is a separate object store keyed by artifact
 // id so a plan blob and its extracted text live side by side without name
 // collisions.
 

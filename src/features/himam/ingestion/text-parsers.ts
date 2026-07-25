@@ -1,7 +1,7 @@
 import type { PageInput } from "./text-chunker";
 
 // Result of trying to convert a Blob into text. `text_unavailable` covers
-// scanned PDFs, empty documents, and unsupported file kinds. No OCR is
+// scanned PDFs, empty documents, and unsupported file kinds. No image recognition is
 // attempted anywhere in Package 1B.
 export type ExtractionOutcome =
   | { kind: "text"; pages: PageInput[]; byteSize: number }
@@ -65,7 +65,7 @@ export class DefaultDocumentTextExtractor implements DocumentTextExtractor {
       const pages = await this.pdfExtractor(blob);
       const combined = pages.map((p) => p.text).join("").trim();
       if (!combined) {
-        // No text layer at all — treat as a scanned PDF and stop; OCR is
+        // No text layer at all — treat as a scanned PDF and stop; image recognition is
         // explicitly out of scope for Package 1B.
         return { kind: "text_unavailable", reason: "scanned_or_empty_pdf" };
       }
