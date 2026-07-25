@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as CasesNewRouteImport } from './routes/cases.new'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
+import { Route as ApiHimamExtractEvidenceRouteImport } from './routes/api.himam.extract-evidence'
 
 const CasesRoute = CasesRouteImport.update({
   id: '/cases',
@@ -40,6 +41,11 @@ const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   path: '/$caseId',
   getParentRoute: () => CasesRoute,
 } as any)
+const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
+  id: '/api/himam/extract-evidence',
+  path: '/api/himam/extract-evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,12 +53,14 @@ export interface FileRoutesByFullPath {
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
+  '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases': typeof CasesIndexRoute
+  '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,18 +69,38 @@ export interface FileRoutesById {
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
+  '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cases' | '/cases/$caseId' | '/cases/new' | '/cases/'
+  fullPaths:
+    | '/'
+    | '/cases'
+    | '/cases/$caseId'
+    | '/cases/new'
+    | '/cases/'
+    | '/api/himam/extract-evidence'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cases/$caseId' | '/cases/new' | '/cases'
-  id: '__root__' | '/' | '/cases' | '/cases/$caseId' | '/cases/new' | '/cases/'
+  to:
+    | '/'
+    | '/cases/$caseId'
+    | '/cases/new'
+    | '/cases'
+    | '/api/himam/extract-evidence'
+  id:
+    | '__root__'
+    | '/'
+    | '/cases'
+    | '/cases/$caseId'
+    | '/cases/new'
+    | '/cases/'
+    | '/api/himam/extract-evidence'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CasesRoute: typeof CasesRouteWithChildren
+  ApiHimamExtractEvidenceRoute: typeof ApiHimamExtractEvidenceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -112,6 +140,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof CasesRoute
     }
+    '/api/himam/extract-evidence': {
+      id: '/api/himam/extract-evidence'
+      path: '/api/himam/extract-evidence'
+      fullPath: '/api/himam/extract-evidence'
+      preLoaderRoute: typeof ApiHimamExtractEvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -132,6 +167,7 @@ const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CasesRoute: CasesRouteWithChildren,
+  ApiHimamExtractEvidenceRoute: ApiHimamExtractEvidenceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
