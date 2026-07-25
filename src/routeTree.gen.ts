@@ -15,6 +15,9 @@ import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as CasesNewRouteImport } from './routes/cases.new'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as ApiHimamExtractEvidenceRouteImport } from './routes/api.himam.extract-evidence'
+import { Route as CasesCaseIdSourcesRouteImport } from './routes/cases.$caseId.sources'
+import { Route as CasesCaseIdIngestionRouteImport } from './routes/cases.$caseId.ingestion'
+import { Route as CasesCaseIdExtractionRouteImport } from './routes/cases.$caseId.extraction'
 
 const CasesRoute = CasesRouteImport.update({
   id: '/cases',
@@ -41,6 +44,21 @@ const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   path: '/$caseId',
   getParentRoute: () => CasesRoute,
 } as any)
+const CasesCaseIdSourcesRoute = CasesCaseIdSourcesRouteImport.update({
+  id: '/$caseId/sources',
+  path: '/$caseId/sources',
+  getParentRoute: () => CasesRoute,
+} as any)
+const CasesCaseIdIngestionRoute = CasesCaseIdIngestionRouteImport.update({
+  id: '/$caseId/ingestion',
+  path: '/$caseId/ingestion',
+  getParentRoute: () => CasesRoute,
+} as any)
+const CasesCaseIdExtractionRoute = CasesCaseIdExtractionRouteImport.update({
+  id: '/$caseId/extraction',
+  path: '/$caseId/extraction',
+  getParentRoute: () => CasesRoute,
+} as any)
 const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
   id: '/api/himam/extract-evidence',
   path: '/api/himam/extract-evidence',
@@ -53,6 +71,9 @@ export interface FileRoutesByFullPath {
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
+  '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +81,9 @@ export interface FileRoutesByTo {
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases': typeof CasesIndexRoute
+  '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRoutesById {
@@ -69,6 +93,9 @@ export interface FileRoutesById {
   '/cases/$caseId': typeof CasesCaseIdRoute
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
+  '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
 }
 export interface FileRouteTypes {
@@ -79,6 +106,9 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
+    | '/cases/$caseId/sources'
+    | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/extraction'
     | '/api/himam/extract-evidence'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -86,6 +116,9 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/cases/new'
     | '/cases'
+    | '/cases/$caseId/sources'
+    | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/extraction'
     | '/api/himam/extract-evidence'
   id:
     | '__root__'
@@ -94,6 +127,9 @@ export interface FileRouteTypes {
     | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
+    | '/cases/$caseId/sources'
+    | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/extraction'
     | '/api/himam/extract-evidence'
   fileRoutesById: FileRoutesById
 }
@@ -140,6 +176,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof CasesRoute
     }
+    '/cases/$caseId/sources': {
+      id: '/cases/$caseId/sources'
+      path: '/$caseId/sources'
+      fullPath: '/cases/$caseId/sources'
+      preLoaderRoute: typeof CasesCaseIdSourcesRouteImport
+      parentRoute: typeof CasesRoute
+    }
+    '/cases/$caseId/ingestion': {
+      id: '/cases/$caseId/ingestion'
+      path: '/$caseId/ingestion'
+      fullPath: '/cases/$caseId/ingestion'
+      preLoaderRoute: typeof CasesCaseIdIngestionRouteImport
+      parentRoute: typeof CasesRoute
+    }
+    '/cases/$caseId/extraction': {
+      id: '/cases/$caseId/extraction'
+      path: '/$caseId/extraction'
+      fullPath: '/cases/$caseId/extraction'
+      preLoaderRoute: typeof CasesCaseIdExtractionRouteImport
+      parentRoute: typeof CasesRoute
+    }
     '/api/himam/extract-evidence': {
       id: '/api/himam/extract-evidence'
       path: '/api/himam/extract-evidence'
@@ -154,12 +211,18 @@ interface CasesRouteChildren {
   CasesCaseIdRoute: typeof CasesCaseIdRoute
   CasesNewRoute: typeof CasesNewRoute
   CasesIndexRoute: typeof CasesIndexRoute
+  CasesCaseIdSourcesRoute: typeof CasesCaseIdSourcesRoute
+  CasesCaseIdIngestionRoute: typeof CasesCaseIdIngestionRoute
+  CasesCaseIdExtractionRoute: typeof CasesCaseIdExtractionRoute
 }
 
 const CasesRouteChildren: CasesRouteChildren = {
   CasesCaseIdRoute: CasesCaseIdRoute,
   CasesNewRoute: CasesNewRoute,
   CasesIndexRoute: CasesIndexRoute,
+  CasesCaseIdSourcesRoute: CasesCaseIdSourcesRoute,
+  CasesCaseIdIngestionRoute: CasesCaseIdIngestionRoute,
+  CasesCaseIdExtractionRoute: CasesCaseIdExtractionRoute,
 }
 
 const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
