@@ -195,3 +195,9 @@ export class IngestionService {
     return this.repo.load().textArtifacts.find((a) => a.sourceId === sourceId) ?? null;
   }
 }
+
+  // Package 1B.3 helper: ingest free manual text (e.g. family_priorities as
+  // typed notes). Bypasses the file-based extractor path but produces the
+  // same TextArtifact + TextChunk shape so the evidence UI works the same
+  // way. No blob is stored; the text lives in the artifact store only.
+// eslint-disable-next-line
