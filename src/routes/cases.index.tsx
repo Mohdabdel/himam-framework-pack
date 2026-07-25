@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CaseService } from "@/features/himam";
+import {
+  CaseService,
+  STATUS_BADGE_CLASSES,
+  detectPhaseAgeInconsistency,
+  formatArabicDate,
+  phaseLabelAr,
+  shortCaseId,
+  statusLabelAr,
+} from "@/features/himam";
 import type { ReviewCase } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/")({
@@ -21,13 +29,6 @@ export const Route = createFileRoute("/cases/")({
   component: CasesDashboard,
 });
 
-const STATUS_LABEL: Record<ReviewCase["status"], string> = {
-  draft: "مسودة",
-  minimum_inputs_complete: "المدخلات الدنيا مكتملة",
-  scope_confirmed: "النطاق مؤكد",
-  closed: "مغلقة",
-};
-
 function CasesDashboard() {
   const [cases, setCases] = useState<ReviewCase[]>([]);
   useEffect(() => {
@@ -39,7 +40,7 @@ function CasesDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">لوحة حالات المراجعة</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            HIMAM Package 1A — Foundation. لا استخراج ولا مراجعة ولا تقرير في هذه الجولة.
+            إدارة حالات المراجعة: إنشاء، تحديد النطاق، الإغلاق. لا استخراج ولا مراجعة تلقائية.
           </p>
         </div>
         <Link
@@ -54,36 +55,62 @@ function CasesDashboard() {
           لا توجد حالات مراجعة بعد. ابدأ بإنشاء حالة لخطة واحدة.
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-md border border-border">
-          {cases.map((c) => (
-            <li key={c.id} className="flex items-center justify-between p-4">
-              <div className="space-y-1">
-                <div className="font-semibold">{c.referenceCode}</div>
-                <div className="text-xs text-muted-foreground">
-                  {c.ageYears !== null ? `العمر: ${c.ageYears}` : "بلا عمر"} ·{" "}
-                  {c.phaseId ?? "بلا مرحلة"} · {c.planType ?? "بلا نوع خطة"}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  الحالة: {STATUS_LABEL[c.status]} · أنشئت{" "}
-                  {new Date(c.createdAt).toLocaleDateString("ar")}
-                </div>
-              </div>
-              <Link
-                to="/cases/$caseId"
-                params={{ caseId: c.id }}
-                className="inline-flex items-center rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {cases.map((c) => {
+            const inconsistent = detectPhaseAgeInconsistency(c.ageYears, c.phaseId);
+            return (
+              <li
+                key={c.id}
+                className="rounded-md border border-border bg-card p-4 shadow-sm"
               >
-                فتح الحالة
-              </Link>
-            </li>
-          ))}
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-base font-semibold text-foreground">
+                      {c.referenceCode}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      المعرّف المختصر: {shortCaseId(c)}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${STATUS_BADGE_CLASSES[c.status]}`}
+                  >
+                    {statusLabelAr(c.status)}
+                  </span>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <dt className="text-muted-foreground">العمر</dt>
+                  <dd>{c.ageYears !== null ? `${c.ageYears} سنة` : "غير محدد"}</dd>
+                  <dt className="text-muted-foreground">المرحلة</dt>
+                  <dd>{phaseLabelAr(c.phaseId)}</dd>
+                  <dt className="text-muted-foreground">نوع الخطة</dt>
+                  <dd>{c.planType ?? "غير محدد"}</dd>
+                  <dt className="text-muted-foreground">تاريخ الإنشاء</dt>
+                  <dd>{formatArabicDate(c.createdAt)}</dd>
+                </dl>
+                {inconsistent && (
+                  <div
+                    role="note"
+                    className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                    data-testid="phase-age-warning"
+                  >
+                    يرجى مراجعة المرحلة المختارة.
+                  </div>
+                )}
+                <div className="mt-4 flex justify-end">
+                  <Link
+                    to="/cases/$caseId"
+                    params={{ caseId: c.id }}
+                    className="inline-flex items-center rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent"
+                  >
+                    فتح الحالة
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
-      <div className="mt-8 text-center text-xs text-muted-foreground">
-        <Link to="/" className="underline">
-          العودة إلى صفحة حزمة ما قبل البرمجة
-        </Link>
-      </div>
     </div>
   );
 }
