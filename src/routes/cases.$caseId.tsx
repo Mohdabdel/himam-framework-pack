@@ -252,13 +252,24 @@ function CaseDetail() {
           <li className="flex items-center justify-between rounded-md border border-border/60 p-2 text-muted-foreground">
             <span>مرحلة المعالجة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}</span>
           </li>
-          <li className="flex items-center justify-between rounded-md border border-dashed border-border/60 p-2 text-muted-foreground">
+          <li className="flex items-center justify-between rounded-md border border-border/60 p-2">
             <span>مراجعة جودة الخطة</span>
-            <span className="text-xs">مقفل</span>
+            {c.extractionStage === "extraction_confirmed" ? (
+              <Link
+                to="/cases/$caseId/review"
+                params={{ caseId }}
+                className="text-xs underline"
+                data-testid="open-review-link"
+              >
+                فتح
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground">مقفل</span>
+            )}
           </li>
           <li className="flex items-center justify-between rounded-md border border-dashed border-border/60 p-2 text-muted-foreground">
             <span>التقرير</span>
-            <span className="text-xs">مقفل</span>
+            <span className="text-xs">قريبًا</span>
           </li>
         </ol>
         {completeStatus && !completeStatus.ok && c.extractionStage !== "extraction_confirmed" && (

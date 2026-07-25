@@ -29,7 +29,13 @@ export type AuditEventType =
   | "identity_conflict_acknowledged"
   | "scope_reconfirmation_required"
   | "scope_reconfirmed"
-  | "extraction_confirmation_completed";
+  | "extraction_confirmation_completed"
+  // Package 1C additions
+  | "review_engine_run"
+  | "review_marked_stale"
+  | "review_completed"
+  | "finding_decided"
+  | "report_published";
 
 export interface AuditEvent {
   id: string;

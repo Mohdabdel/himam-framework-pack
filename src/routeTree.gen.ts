@@ -15,6 +15,7 @@ import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as CasesNewRouteImport } from './routes/cases.new'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CasesCaseIdSourcesRouteImport } from './routes/cases.$caseId.sources'
+import { Route as CasesCaseIdReviewRouteImport } from './routes/cases.$caseId.review'
 import { Route as CasesCaseIdIngestionRouteImport } from './routes/cases.$caseId.ingestion'
 import { Route as CasesCaseIdExtractionRouteImport } from './routes/cases.$caseId.extraction'
 import { Route as ApiHimamExtractEvidenceRouteImport } from './routes/api.himam.extract-evidence'
@@ -49,6 +50,11 @@ const CasesCaseIdSourcesRoute = CasesCaseIdSourcesRouteImport.update({
   path: '/sources',
   getParentRoute: () => CasesCaseIdRoute,
 } as any)
+const CasesCaseIdReviewRoute = CasesCaseIdReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => CasesCaseIdRoute,
+} as any)
 const CasesCaseIdIngestionRoute = CasesCaseIdIngestionRouteImport.update({
   id: '/ingestion',
   path: '/ingestion',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
   '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
   '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
   '/cases/$caseId/extraction': typeof CasesCaseIdExtractionRoute
   '/cases/$caseId/ingestion': typeof CasesCaseIdIngestionRoute
+  '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/api/himam/extract-evidence'
     | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/review'
     | '/cases/$caseId/sources'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/api/himam/extract-evidence'
     | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/review'
     | '/cases/$caseId/sources'
   id:
     | '__root__'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/api/himam/extract-evidence'
     | '/cases/$caseId/extraction'
     | '/cases/$caseId/ingestion'
+    | '/cases/$caseId/review'
     | '/cases/$caseId/sources'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesCaseIdSourcesRouteImport
       parentRoute: typeof CasesCaseIdRoute
     }
+    '/cases/$caseId/review': {
+      id: '/cases/$caseId/review'
+      path: '/review'
+      fullPath: '/cases/$caseId/review'
+      preLoaderRoute: typeof CasesCaseIdReviewRouteImport
+      parentRoute: typeof CasesCaseIdRoute
+    }
     '/cases/$caseId/ingestion': {
       id: '/cases/$caseId/ingestion'
       path: '/ingestion'
@@ -210,12 +229,14 @@ declare module '@tanstack/react-router' {
 interface CasesCaseIdRouteChildren {
   CasesCaseIdExtractionRoute: typeof CasesCaseIdExtractionRoute
   CasesCaseIdIngestionRoute: typeof CasesCaseIdIngestionRoute
+  CasesCaseIdReviewRoute: typeof CasesCaseIdReviewRoute
   CasesCaseIdSourcesRoute: typeof CasesCaseIdSourcesRoute
 }
 
 const CasesCaseIdRouteChildren: CasesCaseIdRouteChildren = {
   CasesCaseIdExtractionRoute: CasesCaseIdExtractionRoute,
   CasesCaseIdIngestionRoute: CasesCaseIdIngestionRoute,
+  CasesCaseIdReviewRoute: CasesCaseIdReviewRoute,
   CasesCaseIdSourcesRoute: CasesCaseIdSourcesRoute,
 }
 
@@ -245,13 +266,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

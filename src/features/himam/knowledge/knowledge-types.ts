@@ -27,6 +27,17 @@ export interface CriterionRecord {
   sourceIds: string[];
   activationRule: string;
   notApplicableRule: string;
+  // Package 1C additions — pulled from the same CSV row.
+  notReviewableRule: string;
+  reviewQuestion: string;
+  expectedEvidence: string;
+  comparisonObjects: string;
+  defaultSeverity: string;
+  requiresHumanConfirmation: boolean;
+  sourceStrength: string;
+  reportMessageTemplate: string;
+  recommendationTemplate: string;
+  limitations: string;
 }
 
 export interface CriteriaIndex {

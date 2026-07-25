@@ -226,13 +226,13 @@ describe("HIMAM Package 1B — Ingestion, Extraction & Confirmation", () => {
     const FORBIDDEN_ENTITIES = [
       "StudentMasterRecord",
       "LearnerProfile",
-      "ReviewFinding",
       "SupervisorDecision",
       "ReportAssemblyService",
-      "ReviewEngine",
       "RelationshipService",
     ];
-    for (const f of files) {
+    // Exclude the review/ subtree — Package 1C owns those entities.
+    const excludedSubtree = `${path.sep}features${path.sep}himam${path.sep}review${path.sep}`;
+    for (const f of files.filter((f) => !f.includes(excludedSubtree))) {
       const src = fs.readFileSync(f, "utf8");
       for (const w of FORBIDDEN_ENTITIES) {
         const decl = new RegExp(`\\b(class|interface|type|enum)\\s+${w}\\b`);
