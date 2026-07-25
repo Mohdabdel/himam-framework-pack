@@ -28,8 +28,13 @@ function randomId(): string {
 }
 
 function nextReferenceCode(store: HimamStore): string {
-  const n = store.cases.length + 1;
-  return "RC-" + String(n).padStart(4, "0");
+  const year = new Date().getFullYear();
+  const prefix = `RC-${year}-`;
+  const usedThisYear = store.cases.filter((c) => c.referenceCode.startsWith(prefix)).length;
+  let n = usedThisYear + 1;
+  const existing = new Set(store.cases.map((c) => c.referenceCode));
+  while (existing.has(prefix + String(n).padStart(4, "0"))) n++;
+  return prefix + String(n).padStart(4, "0");
 }
 
 function hasReadyPlan(store: HimamStore, caseId: string): boolean {
