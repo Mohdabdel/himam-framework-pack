@@ -198,6 +198,7 @@ export class CaseService {
         sourceDate: null,
         status: input.status ?? "ready_for_future_ingestion",
         createdAt: new Date().toISOString(),
+        extractionStage: "not_started",
       };
       store.sources.push(src);
       store.auditEvents.push(
@@ -220,10 +221,25 @@ export class CaseService {
     } catch {
       /* best-effort cleanup */
     }
+    // Delete any text artifact Blobs bound to this source, then the metadata
+    // gets removed in the mutate() block below.
+    const preStore = this.repo.load();
+    for (const a of preStore.textArtifacts.filter((x) => x.sourceId === sourceId)) {
+      try {
+        await this.storage.deleteText(a.id);
+      } catch {
+        /* best-effort cleanup */
+      }
+    }
     this.mutate((store) => {
       const idx = store.sources.findIndex((s) => s.id === sourceId);
       if (idx < 0) return;
       const [removed] = store.sources.splice(idx, 1);
+      store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
+      store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
+      store.evidenceCandidates = store.evidenceCandidates.filter(
+        (e) => e.sourceId !== sourceId,
+      );
       const c = store.cases.find((x) => x.id === removed.reviewCaseId);
       if (c) {
         store.auditEvents.push(

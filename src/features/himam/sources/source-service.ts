@@ -51,5 +51,6 @@ export function makeInputSourceStub(
     sourceDate: null,
     status: "ready_for_future_ingestion",
     createdAt: new Date().toISOString(),
+    extractionStage: "not_started",
   };
 }

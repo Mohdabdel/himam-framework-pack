@@ -1,24 +1,39 @@
-// Package 1A file storage boundary. The plan file is a first-class artifact,
-// not a piece of metadata — it must survive reloads without ever leaving the
-// device. There is no server upload path in this package, so we persist the
-// raw Blob in IndexedDB and keep only an `idb://` path in the review case
-// store. No public URL, no OCR, no AI, no text extraction happens here.
+// File storage boundary for both plan Blobs and Package 1B text artifacts.
+// Everything stays on the device (IndexedDB) — no public URL, no upload, no
+// image recognition. The text-artifact store is a separate object store keyed by artifact
+// id so a plan blob and its extracted text live side by side without name
+// collisions.
 
 export const PLAN_FILE_STORE = "himam-plan-files";
+export const TEXT_ARTIFACT_STORE = "himam-text-artifacts";
 
+// Kept as the public name for backward compatibility with Package 1A. Package
+// 1B extends it with text-artifact APIs.
 export interface PlanFileStorage {
   put(sourceId: string, blob: Blob): Promise<void>;
   get(sourceId: string): Promise<Blob | null>;
   has(sourceId: string): Promise<boolean>;
   delete(sourceId: string): Promise<void>;
+  putText(artifactId: string, text: string): Promise<void>;
+  getText(artifactId: string): Promise<string | null>;
+  hasText(artifactId: string): Promise<boolean>;
+  deleteText(artifactId: string): Promise<void>;
 }
+
+// Alias to make the wider role explicit in 1B code.
+export type SourceArtifactStorage = PlanFileStorage;
 
 export function planStoragePath(sourceId: string): string {
   return `idb://${PLAN_FILE_STORE}/${sourceId}`;
 }
 
+export function textArtifactPath(artifactId: string): string {
+  return `idb://${TEXT_ARTIFACT_STORE}/${artifactId}`;
+}
+
 export class InMemoryPlanFileStorage implements PlanFileStorage {
   private map = new Map<string, Blob>();
+  private textMap = new Map<string, string>();
   async put(id: string, blob: Blob) {
     this.map.set(id, blob);
   }
@@ -31,11 +46,24 @@ export class InMemoryPlanFileStorage implements PlanFileStorage {
   async delete(id: string) {
     this.map.delete(id);
   }
+  async putText(id: string, text: string) {
+    this.textMap.set(id, text);
+  }
+  async getText(id: string) {
+    return this.textMap.get(id) ?? null;
+  }
+  async hasText(id: string) {
+    return this.textMap.has(id);
+  }
+  async deleteText(id: string) {
+    this.textMap.delete(id);
+  }
 }
 
 const DB_NAME = "himam-pkg1a";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "plan_files";
+const TEXT_STORE = "text_artifacts";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -44,6 +72,9 @@ function openDb(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE);
+      }
+      if (!db.objectStoreNames.contains(TEXT_STORE)) {
+        db.createObjectStore(TEXT_STORE);
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -60,13 +91,14 @@ function idbReq<T>(req: IDBRequest<T>): Promise<T> {
 
 export class IndexedDbPlanFileStorage implements PlanFileStorage {
   private async withStore<T>(
+    storeName: string,
     mode: IDBTransactionMode,
     fn: (store: IDBObjectStore) => IDBRequest<T> | Promise<T>,
   ): Promise<T> {
     const db = await openDb();
     try {
-      const tx = db.transaction(STORE, mode);
-      const store = tx.objectStore(STORE);
+      const tx = db.transaction(storeName, mode);
+      const store = tx.objectStore(storeName);
       const out = fn(store);
       const value = out instanceof Promise ? await out : await idbReq(out);
       await new Promise<void>((resolve, reject) => {
@@ -80,21 +112,48 @@ export class IndexedDbPlanFileStorage implements PlanFileStorage {
     }
   }
   async put(id: string, blob: Blob) {
-    await this.withStore("readwrite", (s) => s.put(blob, id));
+    await this.withStore(STORE, "readwrite", (s) => s.put(blob, id));
   }
   async get(id: string) {
-    const val = await this.withStore("readonly", (s) => s.get(id) as IDBRequest<Blob | undefined>);
+    const val = await this.withStore(
+      STORE,
+      "readonly",
+      (s) => s.get(id) as IDBRequest<Blob | undefined>,
+    );
     return (val ?? null) as Blob | null;
   }
   async has(id: string) {
     const val = await this.withStore(
+      STORE,
       "readonly",
       (s) => s.getKey(id) as IDBRequest<IDBValidKey | undefined>,
     );
     return val !== undefined && val !== null;
   }
   async delete(id: string) {
-    await this.withStore("readwrite", (s) => s.delete(id));
+    await this.withStore(STORE, "readwrite", (s) => s.delete(id));
+  }
+  async putText(id: string, text: string) {
+    await this.withStore(TEXT_STORE, "readwrite", (s) => s.put(text, id));
+  }
+  async getText(id: string) {
+    const val = await this.withStore(
+      TEXT_STORE,
+      "readonly",
+      (s) => s.get(id) as IDBRequest<string | undefined>,
+    );
+    return val ?? null;
+  }
+  async hasText(id: string) {
+    const val = await this.withStore(
+      TEXT_STORE,
+      "readonly",
+      (s) => s.getKey(id) as IDBRequest<IDBValidKey | undefined>,
+    );
+    return val !== undefined && val !== null;
+  }
+  async deleteText(id: string) {
+    await this.withStore(TEXT_STORE, "readwrite", (s) => s.delete(id));
   }
 }
 

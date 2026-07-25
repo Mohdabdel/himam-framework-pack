@@ -152,7 +152,7 @@ function NewCase() {
             className="mt-1 block w-full text-sm"
           />
           <span className="mt-1 block text-xs text-muted-foreground">
-            سيُسجَّل الملف فقط. لا يوجد استخراج أو OCR أو AI في هذه الجولة.
+            سيُسجَّل الملف فقط. لا يوجد استخراج أو image recognition أو AI في هذه الجولة.
           </span>
         </label>
         {error && <p className="text-sm text-destructive">{error}</p>}
