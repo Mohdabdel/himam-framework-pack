@@ -14,9 +14,29 @@ export {
   IndexedDbPlanFileStorage,
   getDefaultPlanFileStorage,
   planStoragePath,
+  textArtifactPath,
   PLAN_FILE_STORE,
+  TEXT_ARTIFACT_STORE,
 } from "./sources/plan-file-storage";
-export type { PlanFileStorage } from "./sources/plan-file-storage";
+export type { PlanFileStorage, SourceArtifactStorage } from "./sources/plan-file-storage";
+export { IngestionService } from "./ingestion/ingestion-service";
+export type { IngestionResult } from "./ingestion/ingestion-service";
+export {
+  DefaultDocumentTextExtractor,
+  guessDocumentKind,
+} from "./ingestion/text-parsers";
+export type {
+  DocumentTextExtractor,
+  ExtractionOutcome,
+  DocumentKind,
+  PdfPageExtractor,
+  DocxTextExtractor,
+} from "./ingestion/text-parsers";
+export { buildChunks } from "./ingestion/text-chunker";
+export type { PageInput } from "./ingestion/text-chunker";
+export { sha256Hex } from "./ingestion/hash";
+export { EvidenceService } from "./evidence/evidence-service";
+export type { AddManualEvidenceInput } from "./evidence/evidence-service";
 export {
   loadCriteriaIndex,
   loadInputActivationMatrix,
