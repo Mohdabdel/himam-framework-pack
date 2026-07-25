@@ -5,6 +5,7 @@ import type { SourceArtifactStorage } from "../sources/plan-file-storage";
 import { textArtifactPath } from "../sources/plan-file-storage";
 import { buildChunks } from "./text-chunker";
 import type { DocumentTextExtractor } from "./text-parsers";
+import { sha256Hex } from "./hash";
 
 function randomId(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
@@ -16,6 +17,15 @@ export interface IngestionResult {
   artifact: TextArtifact | null;
   chunks: TextChunk[];
   source: InputSource;
+  reused: boolean;
+}
+
+async function hashBlob(blob: Blob): Promise<string> {
+  const buf = await blob.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // Orchestrates one source at a time: reads its stored Blob, runs the
@@ -51,10 +61,28 @@ export class IngestionService {
       throw new Error("File missing");
     }
 
+    const blobHash = await hashBlob(blob);
+    // Same blob + already-extracted artifact → reuse everything.
+    const existingArtifact = preStore.textArtifacts.find(
+      (a) => a.sourceId === sourceId && a.sourceHash === blobHash,
+    );
+    if (existingArtifact) {
+      const store = this.repo.load();
+      const s = store.sources.find((x) => x.id === sourceId)!;
+      s.sourceHash = blobHash;
+      if (s.extractionStage !== "text_extracted") s.extractionStage = "text_extracted";
+      this.repo.save(store);
+      const chunks = store.textChunks
+        .filter((c) => c.artifactId === existingArtifact.id)
+        .sort((a, b) => a.order - b.order);
+      return { artifact: existingArtifact, chunks, source: { ...s }, reused: true };
+    }
+
     const outcome = await this.extractor.extract(blob, src.mimeType, src.fileName);
 
-    // A re-ingest replaces, never appends: purge any old artifact Blobs first.
-    for (const a of preStore.textArtifacts.filter((x) => x.sourceId === sourceId)) {
+    // Blob has changed: invalidate old artifact + evidence for this source.
+    const oldArtifacts = preStore.textArtifacts.filter((x) => x.sourceId === sourceId);
+    for (const a of oldArtifacts) {
       try {
         await this.storage.deleteText(a.id);
       } catch {
@@ -66,7 +94,15 @@ export class IngestionService {
       const store = this.repo.load();
       store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
       store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
+      // Invalidate evidence bound to a source whose text is no longer available.
+      for (const ev of store.extractedEvidence) {
+        if (ev.sourceId === sourceId && ev.status !== "invalidated") {
+          ev.status = "invalidated";
+          ev.updatedAt = new Date().toISOString();
+        }
+      }
       const s = store.sources.find((x) => x.id === sourceId)!;
+      s.sourceHash = blobHash;
       s.extractionStage = "text_unavailable";
       store.auditEvents.push(
         newAuditEvent(s.reviewCaseId, "source_ingest_failed", {
@@ -75,17 +111,30 @@ export class IngestionService {
         }),
       );
       this.repo.save(store);
-      return { artifact: null, chunks: [], source: { ...s } };
+      return { artifact: null, chunks: [], source: { ...s }, reused: false };
     }
 
     const artifactId = randomId();
     const fullText = outcome.pages.map((p) => p.text).join("\n\n");
+    const fullTextHash = await sha256Hex(fullText);
     await this.storage.putText(artifactId, fullText);
-    const chunks = await buildChunks(sourceId, artifactId, outcome.pages);
+    const chunks = await buildChunks(sourceId, artifactId, outcome.pages, {
+      sourceHash: blobHash,
+    });
 
     const store = this.repo.load();
     store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
     store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
+    // Any old evidence bound to this source's chunks is now invalid.
+    const nowIso = new Date().toISOString();
+    let invalidatedEvidence = 0;
+    for (const ev of store.extractedEvidence) {
+      if (ev.sourceId === sourceId && ev.status !== "invalidated" && oldArtifacts.length > 0) {
+        ev.status = "invalidated";
+        ev.updatedAt = nowIso;
+        invalidatedEvidence++;
+      }
+    }
     const s = store.sources.find((x) => x.id === sourceId)!;
     const artifact: TextArtifact = {
       id: artifactId,
@@ -96,9 +145,15 @@ export class IngestionService {
       pageCount: outcome.pages.length,
       storagePath: textArtifactPath(artifactId),
       extractedAt: new Date().toISOString(),
+      sourceHash: blobHash,
+      fullTextHash,
+      parserName: "himam-default",
+      parserVersion: "1.0",
+      generatedAt: nowIso,
     };
     store.textArtifacts.push(artifact);
     store.textChunks.push(...chunks);
+    s.sourceHash = blobHash;
     s.extractionStage = "text_extracted";
     store.auditEvents.push(
       newAuditEvent(s.reviewCaseId, "source_ingested", {
@@ -107,8 +162,16 @@ export class IngestionService {
         chunkCount: chunks.length,
       }),
     );
+    if (invalidatedEvidence > 0) {
+      store.auditEvents.push(
+        newAuditEvent(s.reviewCaseId, "evidence_invalidated", {
+          sourceId,
+          invalidatedCount: invalidatedEvidence,
+        }),
+      );
+    }
     this.repo.save(store);
-    return { artifact, chunks, source: { ...s } };
+    return { artifact, chunks, source: { ...s }, reused: false };
   }
 
   chunksFor(sourceId: string): TextChunk[] {
