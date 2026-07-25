@@ -176,7 +176,7 @@ describe("HIMAM Package 1C.3 — Governed Report", () => {
       decision: "request_more_information",
       includeInReport: true,
     });
-    for (const f of findings) {
+    for (const f of h.repo.load().reviewFindings.filter((x) => x.caseId === c.id)) {
       if (f.humanReviewStatus !== "decided")
         h.human.applyDecision({ findingId: f.findingId, decision: "accept" });
     }
@@ -199,7 +199,7 @@ describe("HIMAM Package 1C.3 — Governed Report", () => {
       decision: "request_more_information",
       includeInReport: false,
     });
-    for (const f of findings) {
+    for (const f of h.repo.load().reviewFindings.filter((x) => x.caseId === c.id)) {
       if (f.humanReviewStatus !== "decided")
         h.human.applyDecision({ findingId: f.findingId, decision: "accept" });
     }
