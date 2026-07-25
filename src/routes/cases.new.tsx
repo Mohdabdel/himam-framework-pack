@@ -53,6 +53,11 @@ function NewCase() {
       setError("أدخل العمر أو المرحلة (أحدهما إلزامي).");
       return;
     }
+    const trimmedRef = refCode.trim();
+    if (trimmedRef && trimmedRef.length < 3) {
+      setError("المعرف المرجعي الاختياري يجب ألا يقل عن 3 محارف.");
+      return;
+    }
     setBusy(true);
     try {
       const svc = new CaseService();
@@ -60,7 +65,7 @@ function NewCase() {
         ageYears: ageNum,
         phaseId: (phaseId || null) as ReviewPhaseId | null,
         planType: planType || null,
-        referenceCode: refCode || undefined,
+        referenceCode: trimmedRef || undefined,
       });
       if (planFile) {
         const v = validatePlanFile({
