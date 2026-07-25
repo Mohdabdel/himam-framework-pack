@@ -1,13 +1,6 @@
-import type {
-  EvidenceType,
-  InputSourceType,
-  TextChunk,
-} from "../cases/case-types";
+import type { EvidenceType, InputSourceType, TextChunk } from "../cases/case-types";
 import { isEvidenceTypeAllowed } from "../evidence/evidence-service";
-import type {
-  EvidenceExtractionCandidate,
-  ExtractionProviderResult,
-} from "./extraction-types";
+import type { EvidenceExtractionCandidate, ExtractionProviderResult } from "./extraction-types";
 
 export type ValidationFailure =
   | "malformed_result"

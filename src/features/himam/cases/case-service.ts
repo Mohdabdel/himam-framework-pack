@@ -253,9 +253,7 @@ export class CaseService {
       const [removed] = store.sources.splice(idx, 1);
       store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
       store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
-      store.extractedEvidence = store.extractedEvidence.filter(
-        (e) => e.sourceId !== sourceId,
-      );
+      store.extractedEvidence = store.extractedEvidence.filter((e) => e.sourceId !== sourceId);
       // Extraction runs that only touched this source are cleared.
       store.extractionRuns = store.extractionRuns.filter(
         (r) => !r.sourceIds.every((s) => s === sourceId),

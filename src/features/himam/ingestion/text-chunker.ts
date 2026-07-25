@@ -61,9 +61,7 @@ export async function buildChunks(
       }
       const textHash = (await sha256Hex(trimmed)).slice(0, 16);
       const chunkId = (
-        await sha256Hex(
-          `${sourceId}:${sourceHash}:${order}:${JSON.stringify(locator)}:${trimmed}`,
-        )
+        await sha256Hex(`${sourceId}:${sourceHash}:${order}:${JSON.stringify(locator)}:${trimmed}`)
       ).slice(0, 16);
       chunks.push({
         chunkId,

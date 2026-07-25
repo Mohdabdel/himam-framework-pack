@@ -24,10 +24,7 @@ import {
   HIMAM_EXTRACTION_PROMPT_ID,
   HIMAM_EXTRACTION_PROMPT,
 } from "../extraction";
-import type {
-  EvidenceExtractionCandidate,
-  ExtractionProviderResult,
-} from "../extraction";
+import type { EvidenceExtractionCandidate, ExtractionProviderResult } from "../extraction";
 
 function makeHarness() {
   const repo: ReviewCaseRepository = createInMemoryRepository();
@@ -140,9 +137,7 @@ describe("HIMAM Package 1B — Ingestion, Extraction & Confirmation", () => {
     const res = await h.ingestion.ingestSource(sourceId);
     for (const c of res.chunks) {
       expect(c.locator).toBeDefined();
-      expect(["pdf_page", "docx_paragraph", "text_lines", "manual_text"]).toContain(
-        c.locator.kind,
-      );
+      expect(["pdf_page", "docx_paragraph", "text_lines", "manual_text"]).toContain(c.locator.kind);
     }
   });
 
@@ -470,10 +465,7 @@ describe("HIMAM Package 1B — Ingestion, Extraction & Confirmation", () => {
   });
 
   it("PKG1B-T21: conflicting identity_marker evidence blocks confirmation until acknowledged", async () => {
-    const { caseId, sourceId } = await attachTxtPlan(
-      h,
-      "Name Alpha here.\n\nName Beta elsewhere.",
-    );
+    const { caseId, sourceId } = await attachTxtPlan(h, "Name Alpha here.\n\nName Beta elsewhere.");
     const ing = await h.ingestion.ingestSource(sourceId);
     // Two identity markers with different normalized text.
     const ev1 = h.evidence.createManualEvidence({
@@ -557,10 +549,9 @@ describe("HIMAM Package 1B — Ingestion, Extraction & Confirmation", () => {
     const gate = h.caseExtraction.canCompleteExtractionConfirmation(caseId);
     expect(gate.ok).toBe(false);
     if (!gate.ok) {
-      expect([
-        "unresolved_text_unavailable_source",
-        "plan_text_and_evidence_missing",
-      ]).toContain(gate.reason);
+      expect(["unresolved_text_unavailable_source", "plan_text_and_evidence_missing"]).toContain(
+        gate.reason,
+      );
     }
   });
 

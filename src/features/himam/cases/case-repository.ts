@@ -94,11 +94,7 @@ function migrateEvidence(
     // Skip legacy items that already look modern-shaped (missing quote/etc).
     if (!("quote" in ev)) continue;
     const status: ExtractedEvidence["status"] =
-      ev.status === "proposed"
-        ? "pending"
-        : ev.status === "confirmed"
-          ? "confirmed"
-          : "rejected";
+      ev.status === "proposed" ? "pending" : ev.status === "confirmed" ? "confirmed" : "rejected";
     out.push({
       id: ev.id,
       reviewCaseId: ev.reviewCaseId,
@@ -160,10 +156,7 @@ function localStorageRepo(): ReviewCaseRepository {
           auditEvents: parsed.auditEvents ?? [],
           textArtifacts: migrateArtifacts(parsed.textArtifacts),
           textChunks: migrateChunks(parsed.textChunks),
-          extractedEvidence: migrateEvidence(
-            parsed.evidenceCandidates,
-            parsed.extractedEvidence,
-          ),
+          extractedEvidence: migrateEvidence(parsed.evidenceCandidates, parsed.extractedEvidence),
           extractionRuns: parsed.extractionRuns ?? [],
           identityChecks: parsed.identityChecks ?? [],
         };

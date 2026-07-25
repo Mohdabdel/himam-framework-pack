@@ -1,17 +1,9 @@
 import { newAuditEvent } from "../audit/audit-service";
 import type { ReviewCaseRepository } from "../cases/case-repository";
-import type {
-  ExtractedEvidence,
-  ExtractionRun,
-  InputSource,
-  TextChunk,
-} from "../cases/case-types";
+import type { ExtractedEvidence, ExtractionRun, InputSource, TextChunk } from "../cases/case-types";
 import { EvidenceService } from "../evidence/evidence-service";
 import { HIMAM_EXTRACTION_PROMPT_ID } from "./extraction-prompt";
-import type {
-  EvidenceExtractionProvider,
-  ExtractionProviderResult,
-} from "./extraction-types";
+import type { EvidenceExtractionProvider, ExtractionProviderResult } from "./extraction-types";
 import { validateExtractionResult } from "./extraction-validator";
 import { prepareMinimalExtractionPayload } from "./extraction-payload";
 
@@ -50,8 +42,7 @@ export class ExtractionRunService {
     if (c.status === "closed") throw new Error("Case is closed");
     const chunks: TextChunk[] = store0.textChunks.filter(
       (ch) =>
-        ch.sourceId === input.sourceId &&
-        (!input.chunkIds || input.chunkIds.includes(ch.chunkId)),
+        ch.sourceId === input.sourceId && (!input.chunkIds || input.chunkIds.includes(ch.chunkId)),
     );
     if (chunks.length === 0) throw new Error("No chunks available");
 

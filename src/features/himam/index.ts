@@ -21,10 +21,7 @@ export {
 export type { PlanFileStorage, SourceArtifactStorage } from "./sources/plan-file-storage";
 export { IngestionService } from "./ingestion/ingestion-service";
 export type { IngestionResult } from "./ingestion/ingestion-service";
-export {
-  DefaultDocumentTextExtractor,
-  guessDocumentKind,
-} from "./ingestion/text-parsers";
+export { DefaultDocumentTextExtractor, guessDocumentKind } from "./ingestion/text-parsers";
 export type {
   DocumentTextExtractor,
   ExtractionOutcome,
@@ -36,14 +33,8 @@ export { buildChunks } from "./ingestion/text-chunker";
 export type { PageInput } from "./ingestion/text-chunker";
 export { sha256Hex } from "./ingestion/hash";
 export { EvidenceService } from "./evidence/evidence-service";
-export type {
-  CreateManualEvidenceInput,
-  AiEvidenceDraft,
-} from "./evidence/evidence-service";
-export {
-  ALLOWED_EVIDENCE_TYPES,
-  isEvidenceTypeAllowed,
-} from "./evidence/evidence-service";
+export type { CreateManualEvidenceInput, AiEvidenceDraft } from "./evidence/evidence-service";
+export { ALLOWED_EVIDENCE_TYPES, isEvidenceTypeAllowed } from "./evidence/evidence-service";
 export {
   loadCriteriaIndex,
   loadInputActivationMatrix,

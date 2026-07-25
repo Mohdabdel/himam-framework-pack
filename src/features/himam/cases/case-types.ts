@@ -58,11 +58,7 @@ export type InputSourceStatus =
 // sources. `text_extracted` means an artifact + chunks exist. `text_unavailable`
 // covers scanned/empty documents (no image recognition is attempted). `failed` covers hard
 // errors that are worth surfacing but should not corrupt case state.
-export type ExtractionStage =
-  | "not_started"
-  | "text_extracted"
-  | "text_unavailable"
-  | "failed";
+export type ExtractionStage = "not_started" | "text_extracted" | "text_unavailable" | "failed";
 
 export interface InputSource {
   id: string;
@@ -180,12 +176,7 @@ export type EvidenceType =
   | "identity_marker"
   | "other";
 
-export type EvidenceReviewStatus =
-  | "pending"
-  | "confirmed"
-  | "edited"
-  | "rejected"
-  | "invalidated";
+export type EvidenceReviewStatus = "pending" | "confirmed" | "edited" | "rejected" | "invalidated";
 
 export type EvidenceExtractionMethod = "manual" | "ai";
 
@@ -224,12 +215,7 @@ export interface ExtractedEvidence {
 
 // Package 1B.2 — an ExtractionRun records ONE round of AI extraction over a
 // selected set of chunks. It never stores the raw text.
-export type ExtractionRunStatus =
-  | "queued"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "safe_stopped";
+export type ExtractionRunStatus = "queued" | "processing" | "completed" | "failed" | "safe_stopped";
 
 export interface ExtractionRun {
   id: string;

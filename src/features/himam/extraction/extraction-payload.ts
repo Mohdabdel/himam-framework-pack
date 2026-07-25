@@ -1,9 +1,6 @@
 import type { InputSource, TextChunk } from "../cases/case-types";
 import { ALLOWED_EVIDENCE_TYPES } from "../evidence/evidence-service";
-import type {
-  EvidenceExtractionProviderInput,
-  SourceTextChunk,
-} from "./extraction-types";
+import type { EvidenceExtractionProviderInput, SourceTextChunk } from "./extraction-types";
 import { HIMAM_EXTRACTION_PROMPT_ID } from "./extraction-prompt";
 
 // Data-minimization boundary. Provider sees only source type, chunks

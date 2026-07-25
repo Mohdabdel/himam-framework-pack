@@ -13,10 +13,7 @@ export interface SourceTextChunk {
   locator: TextLocator;
 }
 
-export type ExtractionProviderAvailability =
-  | "configured"
-  | "not_configured"
-  | "unavailable";
+export type ExtractionProviderAvailability = "configured" | "not_configured" | "unavailable";
 
 export interface EvidenceExtractionCandidate {
   sourceChunkId: string;

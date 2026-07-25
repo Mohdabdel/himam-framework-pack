@@ -13,9 +13,7 @@ export type CanCompleteReason =
   | "case_closed"
   | "case_not_found";
 
-export type CanCompleteResult =
-  | { ok: true }
-  | { ok: false; reason: CanCompleteReason };
+export type CanCompleteResult = { ok: true } | { ok: false; reason: CanCompleteReason };
 
 function evaluate(store: HimamStore, caseId: string): CanCompleteResult {
   const c = store.cases.find((x) => x.id === caseId);
@@ -79,19 +77,14 @@ export class CaseExtractionService {
     const c = store.cases.find((x) => x.id === caseId)!;
     c.extractionStage = "extraction_confirmed";
     c.updatedAt = new Date().toISOString();
-    store.auditEvents.push(
-      newAuditEvent(caseId, "extraction_confirmation_completed", {}),
-    );
+    store.auditEvents.push(newAuditEvent(caseId, "extraction_confirmation_completed", {}));
     this.repo.save(store);
     return { ok: true };
   }
 
   resolveUnavailableSource(
     sourceId: string,
-    resolution:
-      | "manual_evidence_added"
-      | "source_replaced"
-      | "source_excluded_with_reason",
+    resolution: "manual_evidence_added" | "source_replaced" | "source_excluded_with_reason",
   ): void {
     const store = this.repo.load();
     const s = store.sources.find((x) => x.id === sourceId);

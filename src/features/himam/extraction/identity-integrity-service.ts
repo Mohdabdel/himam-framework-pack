@@ -73,16 +73,12 @@ export class IdentityIntegrityService {
     check.status = "acknowledged";
     check.acknowledgedBy = actorId;
     check.acknowledgedAt = new Date().toISOString();
-    store.auditEvents.push(
-      newAuditEvent(reviewCaseId, "identity_conflict_acknowledged", {}),
-    );
+    store.auditEvents.push(newAuditEvent(reviewCaseId, "identity_conflict_acknowledged", {}));
     this.repo.save(store);
     return check;
   }
 
   currentFor(reviewCaseId: string): IdentityIntegrityCheck | null {
-    return (
-      this.repo.load().identityChecks.find((c) => c.reviewCaseId === reviewCaseId) ?? null
-    );
+    return this.repo.load().identityChecks.find((c) => c.reviewCaseId === reviewCaseId) ?? null;
   }
 }

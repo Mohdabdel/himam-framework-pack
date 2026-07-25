@@ -271,20 +271,15 @@ export class EvidenceService {
   }
 
   invalidateEvidence(id: string, reason?: string): ExtractedEvidence {
-    return this.mutateEvidence(
-      id,
-      () => "invalidated",
-      "evidence_invalidated",
-      { reason: reason ?? null },
-    );
+    return this.mutateEvidence(id, () => "invalidated", "evidence_invalidated", {
+      reason: reason ?? null,
+    });
   }
 
   listPending(reviewCaseId: string): ExtractedEvidence[] {
     return this.repo
       .load()
-      .extractedEvidence.filter(
-        (e) => e.reviewCaseId === reviewCaseId && e.status === "pending",
-      );
+      .extractedEvidence.filter((e) => e.reviewCaseId === reviewCaseId && e.status === "pending");
   }
 
   listExportableConfirmedEvidence(reviewCaseId: string): ExtractedEvidence[] {
@@ -292,8 +287,7 @@ export class EvidenceService {
       .load()
       .extractedEvidence.filter(
         (e) =>
-          e.reviewCaseId === reviewCaseId &&
-          (e.status === "confirmed" || e.status === "edited"),
+          e.reviewCaseId === reviewCaseId && (e.status === "confirmed" || e.status === "edited"),
       );
   }
 
