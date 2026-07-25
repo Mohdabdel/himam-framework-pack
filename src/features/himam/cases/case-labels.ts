@@ -1,4 +1,13 @@
-import type { ReviewCase, ReviewCaseStatus, ReviewPhaseId } from "./case-types";
+import type {
+  CaseExtractionStage,
+  EvidenceReviewStatus,
+  EvidenceType,
+  ExtractionStage,
+  InputSourceType,
+  ReviewCase,
+  ReviewCaseStatus,
+  ReviewPhaseId,
+} from "./case-types";
 
 export const PHASE_LABELS_AR: Record<ReviewPhaseId, string> = {
   early_intervention: "التدخل المبكر",
@@ -79,3 +88,82 @@ export function detectPhaseAgeInconsistency(
 export function shortCaseId(c: Pick<ReviewCase, "id">): string {
   return c.id.replace(/-/g, "").slice(0, 6).toUpperCase();
 }
+
+// -------------------- Package 1B UI labels --------------------
+
+export const SOURCE_TYPE_LABELS_AR: Record<InputSourceType, string> = {
+  plan: "الخطة الحالية",
+  assessment: "تقارير التقييم",
+  family_priorities: "أولويات الأسرة",
+  student_preferences: "تفضيلات المتعلم",
+  supports: "الدعم والتسهيلات",
+  professional_notes: "الملاحظات المهنية",
+  prior_plan: "الخطة السابقة",
+  prior_progress: "بيانات التقدم السابقة",
+};
+
+export const SOURCE_TYPES_ORDER: InputSourceType[] = [
+  "plan",
+  "assessment",
+  "family_priorities",
+  "student_preferences",
+  "supports",
+  "professional_notes",
+  "prior_plan",
+  "prior_progress",
+];
+
+// Source types that permit a single active source (Plan and Prior Plan).
+export const SINGLE_ACTIVE_SOURCE_TYPES: InputSourceType[] = ["plan", "prior_plan"];
+
+// Source types where reviewers may enter free manual text instead of a file.
+export const MANUAL_TEXT_SOURCE_TYPES: InputSourceType[] = [
+  "family_priorities",
+  "student_preferences",
+  "supports",
+  "professional_notes",
+  "prior_progress",
+];
+
+export const EVIDENCE_TYPE_LABELS_AR: Record<EvidenceType, string> = {
+  plan_goal: "هدف خطة",
+  baseline_statement: "خط أساس",
+  need_statement: "بيان احتياج",
+  assessment_finding: "نتيجة تقييم",
+  family_priority: "أولوية أسرة",
+  student_preference: "تفضيل متعلم",
+  support: "دعم",
+  accommodation: "تكييف/تسهيل",
+  progress_measure: "مقياس تقدم",
+  decision_rule: "قاعدة قرار",
+  professional_observation: "ملاحظة مهنية",
+  prior_goal: "هدف سابق",
+  prior_progress: "تقدم سابق",
+  identity_marker: "علامة هوية",
+  other: "غير ذلك",
+};
+
+export const EVIDENCE_STATUS_LABELS_AR: Record<EvidenceReviewStatus, string> = {
+  pending: "معلق",
+  confirmed: "مؤكد",
+  edited: "معدل",
+  rejected: "مرفوض",
+  invalidated: "ملغى",
+};
+
+export const EXTRACTION_STAGE_LABELS_AR: Record<ExtractionStage, string> = {
+  not_started: "لم يبدأ",
+  text_extracted: "النص جاهز",
+  text_unavailable: "لا يوجد نص قابل للاستخراج",
+  failed: "فشل",
+};
+
+export const CASE_STAGE_LABELS_AR: Record<CaseExtractionStage, string> = {
+  not_started: "لم يبدأ",
+  sources_registered: "المصادر مسجّلة",
+  text_ready: "النصوص جاهزة",
+  extraction_in_progress: "جارٍ استخراج الأدلة",
+  confirmation_required: "بانتظار مراجعة الأدلة",
+  extraction_confirmed: "تأكيد الأدلة مكتمل",
+  blocked: "متوقف",
+};
