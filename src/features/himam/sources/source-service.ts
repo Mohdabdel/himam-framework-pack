@@ -52,5 +52,9 @@ export function makeInputSourceStub(
     status: "ready_for_future_ingestion",
     createdAt: new Date().toISOString(),
     extractionStage: "not_started",
+    sourceHash: null,
+    languageHint: null,
+    unavailableResolution: null,
+    manualTextArtifactId: null,
   };
 }
