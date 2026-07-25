@@ -74,6 +74,18 @@ export function loadCriteriaIndex(): CriteriaIndex {
         .filter(Boolean),
       activationRule: r["activation_rule"] ?? "",
       notApplicableRule: r["not_applicable_rule"] ?? "",
+      notReviewableRule: r["not_reviewable_rule"] ?? "",
+      reviewQuestion: r["review_question"] ?? "",
+      expectedEvidence: r["evidence_expected"] ?? "",
+      comparisonObjects: r["comparison_objects"] ?? "",
+      defaultSeverity: r["default_severity_if_failed"] ?? "",
+      requiresHumanConfirmation:
+        (r["human_confirmation"] ?? "").trim() === "إلزامي" ||
+        (r["human_confirmation"] ?? "").toLowerCase() === "yes",
+      sourceStrength: r["source_strength"] ?? "",
+      reportMessageTemplate: r["report_message_template"] ?? "",
+      recommendationTemplate: r["recommendation_template"] ?? "",
+      limitations: r["limitations"] ?? "",
     };
     criteria.push(rec);
     byId.set(id, rec);
