@@ -147,6 +147,8 @@ export class CaseService {
         createdAt: now,
         updatedAt: now,
         closedAt: null,
+        extractionStage: "not_started",
+        scopeNeedsReconfirmation: false,
       };
       store.cases.push(c);
       store.auditEvents.push(
@@ -188,6 +190,7 @@ export class CaseService {
     return this.mutate((store) => {
       const c = store.cases.find((x) => x.id === input.reviewCaseId);
       if (!c) throw new Error("Case not found");
+      if (c.status === "closed") throw new Error("Case is closed");
       const src: InputSource = {
         id: randomId(),
         reviewCaseId: c.id,
@@ -199,6 +202,10 @@ export class CaseService {
         status: input.status ?? "ready_for_future_ingestion",
         createdAt: new Date().toISOString(),
         extractionStage: "not_started",
+        sourceHash: null,
+        languageHint: null,
+        unavailableResolution: null,
+        manualTextArtifactId: null,
       };
       store.sources.push(src);
       store.auditEvents.push(
@@ -209,6 +216,15 @@ export class CaseService {
         }),
       );
       this.recomputeStatus(store, c);
+      // Package 1B.2 — adding a source may change scope; flag reconfirmation
+      // only if the case has already confirmed a scope earlier.
+      if (c.status === "scope_confirmed") {
+        c.scopeNeedsReconfirmation = true;
+        store.auditEvents.push(
+          newAuditEvent(c.id, "scope_reconfirmation_required", { reason: "source_added" }),
+        );
+      }
+      if (c.extractionStage === "not_started") c.extractionStage = "sources_registered";
       return src;
     });
   }
@@ -237,8 +253,10 @@ export class CaseService {
       const [removed] = store.sources.splice(idx, 1);
       store.textArtifacts = store.textArtifacts.filter((a) => a.sourceId !== sourceId);
       store.textChunks = store.textChunks.filter((c) => c.sourceId !== sourceId);
-      store.evidenceCandidates = store.evidenceCandidates.filter(
-        (e) => e.sourceId !== sourceId,
+      store.extractedEvidence = store.extractedEvidence.filter((e) => e.sourceId !== sourceId);
+      // Extraction runs that only touched this source are cleared.
+      store.extractionRuns = store.extractionRuns.filter(
+        (r) => !r.sourceIds.every((s) => s === sourceId),
       );
       const c = store.cases.find((x) => x.id === removed.reviewCaseId);
       if (c) {
@@ -249,6 +267,19 @@ export class CaseService {
           }),
         );
         this.recomputeStatus(store, c);
+        if (c.status === "scope_confirmed") {
+          c.scopeNeedsReconfirmation = true;
+          store.auditEvents.push(
+            newAuditEvent(c.id, "scope_reconfirmation_required", { reason: "source_removed" }),
+          );
+        }
+        // If the case had already confirmed extraction, drop back to text_ready.
+        if (
+          c.extractionStage === "extraction_confirmed" ||
+          c.extractionStage === "confirmation_required"
+        ) {
+          c.extractionStage = "sources_registered";
+        }
       }
     });
   }

@@ -1,11 +1,15 @@
 import type { AuditEvent } from "../audit/audit-types";
 import type {
-  EvidenceCandidate,
+  ExtractedEvidence,
+  ExtractionRun,
+  IdentityIntegrityCheck,
   InputSource,
+  LegacyEvidenceCandidate,
   ReviewCase,
   ReviewScopeSnapshot,
   TextArtifact,
   TextChunk,
+  TextLocator,
 } from "./case-types";
 
 export interface HimamStore {
@@ -15,7 +19,9 @@ export interface HimamStore {
   auditEvents: AuditEvent[];
   textArtifacts: TextArtifact[];
   textChunks: TextChunk[];
-  evidenceCandidates: EvidenceCandidate[];
+  extractedEvidence: ExtractedEvidence[];
+  extractionRuns: ExtractionRun[];
+  identityChecks: IdentityIntegrityCheck[];
 }
 
 export interface ReviewCaseRepository {
@@ -31,7 +37,9 @@ const EMPTY: HimamStore = {
   auditEvents: [],
   textArtifacts: [],
   textChunks: [],
-  evidenceCandidates: [],
+  extractedEvidence: [],
+  extractionRuns: [],
+  identityChecks: [],
 };
 
 const STORAGE_KEY = "himam.pkg1a.store.v1";
@@ -40,7 +48,83 @@ function migrateSources(list: InputSource[] | undefined): InputSource[] {
   return (list ?? []).map((s) => ({
     ...s,
     extractionStage: s.extractionStage ?? "not_started",
+    sourceHash: (s as InputSource).sourceHash ?? null,
+    languageHint: (s as InputSource).languageHint ?? null,
+    unavailableResolution: (s as InputSource).unavailableResolution ?? null,
+    manualTextArtifactId: (s as InputSource).manualTextArtifactId ?? null,
   }));
+}
+
+function migrateCases(list: ReviewCase[] | undefined): ReviewCase[] {
+  return (list ?? []).map((c) => ({
+    ...c,
+    extractionStage: c.extractionStage ?? "not_started",
+    scopeNeedsReconfirmation: c.scopeNeedsReconfirmation ?? false,
+  }));
+}
+
+function migrateArtifacts(list: TextArtifact[] | undefined): TextArtifact[] {
+  return (list ?? []).map((a) => ({
+    ...a,
+    sourceHash: a.sourceHash ?? "",
+    fullTextHash: a.fullTextHash ?? "",
+    parserName: a.parserName ?? "legacy",
+    parserVersion: a.parserVersion ?? "1",
+    generatedAt: a.generatedAt ?? a.extractedAt,
+  }));
+}
+
+function migrateChunks(list: TextChunk[] | undefined): TextChunk[] {
+  return (list ?? []).map((c) => {
+    const loc: TextLocator =
+      c.locator ??
+      (c.pageNumber !== null
+        ? { kind: "pdf_page", pageNumber: c.pageNumber }
+        : { kind: "text_lines", lineStart: 0, lineEnd: 0 });
+    return { ...c, locator: loc, textHash: c.textHash ?? "" };
+  });
+}
+
+function migrateEvidence(
+  legacy: LegacyEvidenceCandidate[] | undefined,
+  modern: ExtractedEvidence[] | undefined,
+): ExtractedEvidence[] {
+  const out: ExtractedEvidence[] = (modern ?? []).slice();
+  for (const ev of legacy ?? []) {
+    // Skip legacy items that already look modern-shaped (missing quote/etc).
+    if (!("quote" in ev)) continue;
+    const status: ExtractedEvidence["status"] =
+      ev.status === "proposed" ? "pending" : ev.status === "confirmed" ? "confirmed" : "rejected";
+    out.push({
+      id: ev.id,
+      reviewCaseId: ev.reviewCaseId,
+      sourceId: ev.sourceId,
+      sourceChunkId: ev.chunkId,
+      extractionRunId: null,
+      evidenceType: "other",
+      exactQuote: ev.quote,
+      normalizedText: ev.quote,
+      locator: { kind: "manual_text", sectionId: "legacy" },
+      sourceHash: "",
+      extractionMethod: ev.origin,
+      confidence: "not_applicable",
+      status,
+      createdAt: ev.createdAt,
+      updatedAt: ev.decidedAt ?? ev.createdAt,
+      confirmedBy: null,
+      confirmedAt: status === "confirmed" ? ev.decidedAt : null,
+      rejectedReason: null,
+      provenance: {
+        sourceId: ev.sourceId,
+        sourceChunkId: ev.chunkId,
+        modelName: null,
+        promptId: null,
+        temperature: null,
+        timestamp: ev.createdAt,
+      },
+    });
+  }
+  return out;
 }
 
 function inMemoryRepo(): ReviewCaseRepository {
@@ -62,15 +146,19 @@ function localStorageRepo(): ReviewCaseRepository {
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) return structuredClone(EMPTY);
-        const parsed = JSON.parse(raw) as Partial<HimamStore>;
+        const parsed = JSON.parse(raw) as Partial<HimamStore> & {
+          evidenceCandidates?: LegacyEvidenceCandidate[];
+        };
         return {
-          cases: parsed.cases ?? [],
+          cases: migrateCases(parsed.cases),
           sources: migrateSources(parsed.sources),
           scopeSnapshots: parsed.scopeSnapshots ?? [],
           auditEvents: parsed.auditEvents ?? [],
-          textArtifacts: parsed.textArtifacts ?? [],
-          textChunks: parsed.textChunks ?? [],
-          evidenceCandidates: parsed.evidenceCandidates ?? [],
+          textArtifacts: migrateArtifacts(parsed.textArtifacts),
+          textChunks: migrateChunks(parsed.textChunks),
+          extractedEvidence: migrateEvidence(parsed.evidenceCandidates, parsed.extractedEvidence),
+          extractionRuns: parsed.extractionRuns ?? [],
+          identityChecks: parsed.identityChecks ?? [],
         };
       } catch {
         return structuredClone(EMPTY);

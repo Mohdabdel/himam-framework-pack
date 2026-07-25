@@ -13,9 +13,7 @@ export interface DocumentTextExtractor {
   extract(blob: Blob, mimeType: string | null, fileName: string): Promise<ExtractionOutcome>;
 }
 
-export type PdfPageExtractor = (
-  blob: Blob,
-) => Promise<{ pageNumber: number; text: string }[]>;
+export type PdfPageExtractor = (blob: Blob) => Promise<{ pageNumber: number; text: string }[]>;
 export type DocxTextExtractor = (blob: Blob) => Promise<string>;
 
 export function guessDocumentKind(mime: string | null, fileName: string): DocumentKind {
@@ -63,7 +61,10 @@ export class DefaultDocumentTextExtractor implements DocumentTextExtractor {
     }
     if (kind === "pdf") {
       const pages = await this.pdfExtractor(blob);
-      const combined = pages.map((p) => p.text).join("").trim();
+      const combined = pages
+        .map((p) => p.text)
+        .join("")
+        .trim();
       if (!combined) {
         // No text layer at all — treat as a scanned PDF and stop; image recognition is
         // explicitly out of scope for Package 1B.
@@ -86,9 +87,7 @@ async function defaultDocxExtractor(blob: Blob): Promise<string> {
   return res.value;
 }
 
-async function defaultPdfExtractor(
-  blob: Blob,
-): Promise<{ pageNumber: number; text: string }[]> {
+async function defaultPdfExtractor(blob: Blob): Promise<{ pageNumber: number; text: string }[]> {
   // Dynamic import — pdfjs is a browser library and should never load in the
   // vitest node runtime.
   const pdfjs = (await import(
