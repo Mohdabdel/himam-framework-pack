@@ -1,6 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CaseService } from "@/features/himam";
+import {
+  CaseService,
+  STATUS_BADGE_CLASSES,
+  detectPhaseAgeInconsistency,
+  formatArabicDate,
+  phaseLabelAr,
+  shortCaseId,
+  statusLabelAr,
+} from "@/features/himam";
 import type { InputSource, ReviewCase, ReviewScopeSnapshot } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/$caseId")({
@@ -103,9 +111,15 @@ function CaseDetail() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">حالة مراجعة {c.referenceCode}</h1>
-          <p className="text-xs text-muted-foreground">
-            إصدار المعرفة: {c.knowledgePackageVersion} · الحالة: {c.status}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>المعرّف المختصر: {shortCaseId(c)}</span>
+            <span>·</span>
+            <span
+              className={`rounded-full border px-2 py-0.5 ${STATUS_BADGE_CLASSES[c.status]}`}
+            >
+              {statusLabelAr(c.status)}
+            </span>
+          </div>
         </div>
         <Link to="/cases" className="text-sm underline">
           العودة
@@ -114,11 +128,37 @@ function CaseDetail() {
 
       <section className="mb-6 rounded-md border border-border p-4">
         <h2 className="mb-2 text-lg font-semibold">البيانات الأساسية</h2>
-        <ul className="text-sm text-muted-foreground">
-          <li>العمر: {c.ageYears ?? "غير محدد"}</li>
-          <li>المرحلة: {c.phaseId ?? "غير محددة"}</li>
-          <li>نوع الخطة: {c.planType ?? "غير محدد"}</li>
-        </ul>
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+          <div className="flex justify-between gap-3 border-b border-border/60 py-1">
+            <dt className="text-muted-foreground">العمر</dt>
+            <dd>{c.ageYears !== null ? `${c.ageYears} سنة` : "غير محدد"}</dd>
+          </div>
+          <div className="flex justify-between gap-3 border-b border-border/60 py-1">
+            <dt className="text-muted-foreground">المرحلة</dt>
+            <dd>{phaseLabelAr(c.phaseId)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 border-b border-border/60 py-1">
+            <dt className="text-muted-foreground">نوع الخطة</dt>
+            <dd>{c.planType ?? "غير محدد"}</dd>
+          </div>
+          <div className="flex justify-between gap-3 border-b border-border/60 py-1">
+            <dt className="text-muted-foreground">الحالة</dt>
+            <dd>{statusLabelAr(c.status)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 border-b border-border/60 py-1">
+            <dt className="text-muted-foreground">تاريخ الإنشاء</dt>
+            <dd>{formatArabicDate(c.createdAt)}</dd>
+          </div>
+        </dl>
+        {detectPhaseAgeInconsistency(c.ageYears, c.phaseId) && (
+          <div
+            role="note"
+            data-testid="phase-age-warning"
+            className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          >
+            يرجى مراجعة المرحلة المختارة.
+          </div>
+        )}
       </section>
 
       <section className="mb-6 rounded-md border border-border p-4">
