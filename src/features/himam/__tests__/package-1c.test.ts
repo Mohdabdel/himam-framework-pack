@@ -273,6 +273,8 @@ describe("HIMAM Package 1C — Deterministic Review Engine", () => {
     });
     h.evidence.confirmEvidence(e2.id);
     h.identity.recompute(c.id);
+    // Reconfirm scope so the only remaining blocker is the identity conflict.
+    if (h.cases.get(c.id)!.scopeNeedsReconfirmation) h.cases.reconfirmScope(c.id);
     const gate = h.versions.canOpenReview(c.id);
     expect(gate.ok).toBe(false);
     if (!gate.ok) expect(gate.reason).toBe("identity_conflict_unresolved");
