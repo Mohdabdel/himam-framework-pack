@@ -96,6 +96,20 @@ function NewCase() {
       <p className="mt-1 text-sm text-muted-foreground">
         لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة.
       </p>
+      <div
+        role="note"
+        className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+      >
+        الحد الأدنى الإلزامي لبدء الحالة: ملف الخطة الحالية + (العمر أو المرحلة).
+        يكفي إدخال أحدهما. باقي المصادر اختيارية ويمكن إضافتها لاحقًا.
+      </div>
+      <div
+        role="note"
+        className="mt-2 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+      >
+        لا يُشترط إدخال التشخيص لمراجعة الخطة. وإذا ورد ضمن أحد المصادر يُستخدم كسياق وصفي فقط،
+        ولا يستخدمه النظام لاستنتاج القدرة أو إصدار قرار أهلية.
+      </div>
       <form onSubmit={submit} className="mt-6 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block text-sm">

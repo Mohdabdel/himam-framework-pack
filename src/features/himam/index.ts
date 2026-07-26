@@ -10,6 +10,29 @@ export type {
   ReviewScopeContext,
 } from "./scope/scope-service";
 export {
+  INPUT_IMPACTS,
+  describeInputImpact,
+  describeInputAbsenceForReport,
+  PROVISIONAL_SCOPE_DISCLAIMER_AR,
+  computeProvisionalScope,
+  countScopeBuckets,
+  expandableSources,
+  JOURNEY_STEPS,
+  JOURNEY_STATE_LABELS_AR,
+  computeJourneyStatuses,
+} from "./scope/input-impact";
+export type {
+  InputImpact,
+  InputImpactKey,
+  InputRequirement,
+  ScopeBucketCounts,
+  JourneyStepId,
+  JourneyStepState,
+  JourneyStepDef,
+  JourneyContext,
+  JourneyStepStatus,
+} from "./scope/input-impact";
+export {
   InMemoryPlanFileStorage,
   IndexedDbPlanFileStorage,
   getDefaultPlanFileStorage,
