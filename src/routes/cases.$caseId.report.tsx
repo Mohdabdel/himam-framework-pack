@@ -6,11 +6,14 @@ import {
   FINDING_STATUS_LABELS_AR,
   GovernedReportService,
   CaseService,
+  INPUT_IMPACTS,
+  describeInputAbsenceForReport,
   formatArabicDate,
   getDefaultRepository,
   phaseLabelAr,
   shortCaseId,
 } from "@/features/himam";
+import type { InputImpactKey } from "@/features/himam";
 import type {
   GovernedReportVersion,
   ReportFindingItem,
@@ -348,6 +351,54 @@ function ReportScreen() {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="report-inputs-impact"
+          >
+            <h2 className="mb-2 text-lg font-semibold">
+              المدخلات المتاحة وغير المتاحة وأثرها على المراجعة
+            </h2>
+            <ul className="space-y-2 text-sm">
+              {(
+                [
+                  "assessment",
+                  "family_priorities",
+                  "student_preferences",
+                  "supports",
+                  "professional_notes",
+                  "prior_plan",
+                  "prior_progress",
+                ] as InputImpactKey[]
+              ).map((key) => {
+                const impact = INPUT_IMPACTS[key];
+                const present = active.scopeSummary.inputTypes.includes(key);
+                return (
+                  <li
+                    key={key}
+                    className="rounded-md border border-border/60 p-2 print:break-inside-avoid"
+                    data-input-impact={key}
+                  >
+                    <div className="mb-0.5 flex items-center gap-2 text-xs">
+                      <span className="font-medium">{impact.titleAr}</span>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 ${
+                          present
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                            : "border-border bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {present ? "متاح" : "غير متاح"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {present ? impact.whenPresentAr : describeInputAbsenceForReport(key)}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           <section className="mb-6 rounded-md border border-border p-4" data-testid="report-coverage">

@@ -3,6 +3,11 @@ import { useEffect, useState } from "react";
 import {
   CaseService,
   DefaultDocumentTextExtractor,
+  INPUT_IMPACTS,
+  PROVISIONAL_SCOPE_DISCLAIMER_AR,
+  computeProvisionalScope,
+  countScopeBuckets,
+  expandableSources,
   getDefaultPlanFileStorage,
   getDefaultRepository,
   IngestionService,
@@ -13,7 +18,29 @@ import {
   EXTRACTION_STAGE_LABELS_AR,
   validatePlanFile,
 } from "@/features/himam";
-import type { InputSource, InputSourceType, ReviewCase } from "@/features/himam";
+import type { InputImpactKey, InputSource, InputSourceType, ReviewCase, ReviewInputType } from "@/features/himam";
+
+const SOURCE_TYPE_TO_IMPACT_KEY: Record<InputSourceType, InputImpactKey> = {
+  plan: "plan",
+  assessment: "assessment",
+  family_priorities: "family_priorities",
+  student_preferences: "student_preferences",
+  supports: "supports",
+  professional_notes: "professional_notes",
+  prior_plan: "prior_plan",
+  prior_progress: "prior_progress",
+};
+
+const SOURCE_TYPE_TO_REVIEW_INPUT: Record<InputSourceType, ReviewInputType> = {
+  plan: "plan",
+  assessment: "assessment",
+  family_priorities: "family_priorities",
+  student_preferences: "student_preferences",
+  supports: "supports",
+  professional_notes: "professional_notes",
+  prior_plan: "prior_plan",
+  prior_progress: "prior_progress",
+};
 
 export const Route = createFileRoute("/cases/$caseId/sources")({
   head: () => ({
@@ -60,6 +87,17 @@ function SourcesPage() {
   const isManual = MANUAL_TEXT_SOURCE_TYPES.includes(addType);
   const isSingle = SINGLE_ACTIVE_SOURCE_TYPES.includes(addType);
   const hasActiveOfType = sources.some((s) => s.type === addType);
+
+  // Provisional scope — derived live from current sources & phase, without persisting anything.
+  const activeInputs: ReviewInputType[] = [];
+  if (c.ageYears !== null || c.phaseId !== null) activeInputs.push("age_phase");
+  const readySourceTypes = new Set(
+    sources.filter((s) => s.status === "ready_for_future_ingestion").map((s) => s.type),
+  );
+  for (const t of readySourceTypes) activeInputs.push(SOURCE_TYPE_TO_REVIEW_INPUT[t]);
+  const provisionalScope = computeProvisionalScope(activeInputs, c.phaseId);
+  const bucketCounts = countScopeBuckets(provisionalScope);
+  const expandable = expandableSources(activeInputs, c.phaseId);
 
   const onAdd = async (replaceId?: string) => {
     if (readOnly || busy) return;
@@ -138,7 +176,12 @@ function SourcesPage() {
   return (
     <div dir="rtl" className="mx-auto max-w-4xl px-6 py-10 font-sans">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">إدارة المصادر</h1>
+        <div>
+          <h1 className="text-2xl font-bold">مصادر المراجعة وأثرها</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            المرحلة 2 من رحلة الحالة — أضف المصادر الاختيارية لتوسيع نطاق المراجعة الممكن.
+          </p>
+        </div>
         <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
           العودة إلى ملخص الحالة
         </Link>
@@ -155,16 +198,84 @@ function SourcesPage() {
         </div>
       )}
 
+      <section
+        className="mb-6 rounded-md border border-border bg-muted/30 p-4"
+        data-testid="scope-impact-summary"
+      >
+        <h2 className="mb-2 text-lg font-semibold">أثر المدخلات على نطاق المراجعة</h2>
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="rounded-md border border-border bg-background p-3 text-center">
+            <div className="text-2xl font-bold" data-testid="count-available">
+              {bucketCounts.available}
+            </div>
+            <div className="text-xs text-muted-foreground">معايير قابلة للمراجعة</div>
+          </div>
+          <div className="rounded-md border border-border bg-background p-3 text-center">
+            <div className="text-2xl font-bold" data-testid="count-not-reviewable">
+              {bucketCounts.notReviewable}
+            </div>
+            <div className="text-xs text-muted-foreground">معايير غير قابلة للمراجعة</div>
+          </div>
+          <div className="rounded-md border border-border bg-background p-3 text-center">
+            <div className="text-2xl font-bold" data-testid="count-not-applicable">
+              {bucketCounts.notApplicable}
+            </div>
+            <div className="text-xs text-muted-foreground">معايير غير منطبقة</div>
+          </div>
+        </div>
+        {expandable.length > 0 && (
+          <div className="mt-3 text-xs text-muted-foreground" data-testid="expandable-sources">
+            <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
+            {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
+          </div>
+        )}
+        <p className="mt-3 text-xs text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+      </section>
+
       <section className="space-y-4">
         {SOURCE_TYPES_ORDER.map((t) => {
           const items = sources.filter((s) => s.type === t);
+          const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
+          const added = items.length > 0;
           return (
             <div key={t} className="rounded-md border border-border p-4" data-source-type={t}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">{SOURCE_TYPE_LABELS_AR[t]}</h2>
+                <div>
+                  <h2 className="text-lg font-semibold">{impact.titleAr}</h2>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                    <span
+                      className={`rounded-full border px-2 py-0.5 ${
+                        impact.requirement === "required"
+                          ? "border-amber-200 bg-amber-50 text-amber-900"
+                          : "border-border bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {impact.requirementLabelAr}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 ${
+                        added
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                          : "border-border bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {added ? "تمت الإضافة" : "لم تُضف بعد"}
+                    </span>
+                  </div>
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {SINGLE_ACTIVE_SOURCE_TYPES.includes(t) ? "مصدر نشط واحد" : "مصدر أو أكثر"}
                 </span>
+              </div>
+              <div className="mb-3 grid grid-cols-1 gap-2 rounded-md bg-muted/30 p-3 text-xs sm:grid-cols-2">
+                <div>
+                  <div className="mb-0.5 font-medium">عند الإضافة:</div>
+                  <div className="text-muted-foreground">{impact.whenPresentAr}</div>
+                </div>
+                <div>
+                  <div className="mb-0.5 font-medium">عند عدم الإضافة:</div>
+                  <div className="text-muted-foreground">{impact.whenAbsentAr}</div>
+                </div>
               </div>
               {items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">لا يوجد مصدر مسجل.</p>
