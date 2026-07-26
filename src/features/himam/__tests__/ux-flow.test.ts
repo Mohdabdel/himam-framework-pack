@@ -190,12 +190,16 @@ describe("HIMAM Package 1C.3 addendum — UX flow", () => {
 
   it("UX-FLOW-T12: not_reviewable is not in the major-gaps section", () => {
     const src = readRoute("cases.$caseId.report.tsx");
-    const majorGapsStart = src.indexOf("الفجوات الجوهرية على مستوى الخطة");
-    const majorGapsEnd = src.indexOf("</Section>", majorGapsStart);
-    const region = src.slice(majorGapsStart, majorGapsEnd);
+    const gapsIdx = src.indexOf('testId="section-major-gaps"');
+    const nrIdx = src.indexOf('testId="section-not-reviewable"');
+    expect(gapsIdx).toBeGreaterThan(-1);
+    expect(nrIdx).toBeGreaterThan(-1);
+    // The major-gaps <Section /> block feeds from majorPlanGaps, not notReviewableItems.
+    const gapsBlockStart = src.lastIndexOf("<Section", gapsIdx);
+    const gapsBlockEnd = src.indexOf("/>", gapsIdx);
+    const region = src.slice(gapsBlockStart, gapsBlockEnd);
+    expect(region).toContain("majorPlanGaps");
     expect(region).not.toContain("notReviewableItems");
-    // not_reviewable owns its own dedicated section
-    expect(src).toContain("section-not-reviewable");
   });
 
   it("UX-FLOW-T13: journey stepper exposes the 8 addendum stages in order", () => {
