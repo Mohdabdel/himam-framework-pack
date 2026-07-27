@@ -28,7 +28,7 @@ import type {
   ReviewScopeSnapshot,
 } from "@/features/himam";
 
-export const Route = createFileRoute("/cases/$caseId")({
+export const Route = createFileRoute("/cases/$caseId/")({
   head: () => ({
     meta: [
       { title: "حالة مراجعة — HIMAM" },
