@@ -6,6 +6,7 @@ import {
   CASE_STAGE_LABELS_AR,
   JOURNEY_STATE_LABELS_AR,
   computeJourneyStatuses,
+  resolveCaseNextAction,
   STATUS_BADGE_CLASSES,
   detectPhaseAgeInconsistency,
   formatArabicDate,
@@ -15,6 +16,7 @@ import {
   statusLabelAr,
 } from "@/features/himam";
 import type {
+  CaseNextAction,
   InputSource,
   JourneyStepId,
   JourneyStepState,
@@ -89,6 +91,7 @@ function CaseDetail() {
   const [completeStatus, setCompleteStatus] = useState<ReturnType<
     CaseExtractionService["canCompleteExtractionConfirmation"]
   > | null>(null);
+  const [nextAction, setNextAction] = useState<CaseNextAction | null>(null);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -107,6 +110,7 @@ function CaseDetail() {
     });
     const cx = new CaseExtractionService(repo);
     setCompleteStatus(cx.canCompleteExtractionConfirmation(caseId));
+    setNextAction(resolveCaseNextAction(caseId, repo));
   };
   useEffect(() => {
     void refresh();
@@ -225,6 +229,48 @@ function CaseDetail() {
           العودة
         </Link>
       </div>
+
+      {nextAction && (
+        <section
+          className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4"
+          data-testid="case-next-action"
+          data-next-action-kind={nextAction.kind}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">الخطوة التالية</div>
+              <div className="text-base font-semibold">{nextAction.stateSummaryAr}</div>
+              {nextAction.blockedReasonAr && (
+                <div
+                  className="mt-1 text-xs text-amber-800"
+                  data-testid="case-next-action-blocker"
+                >
+                  {nextAction.blockedReasonAr}
+                </div>
+              )}
+            </div>
+            {nextAction.ctaHref && nextAction.ctaEnabled ? (
+              <Link
+                to={nextAction.ctaHref}
+                params={{ caseId }}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                data-testid="case-next-action-cta"
+              >
+                {nextAction.ctaLabelAr}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground opacity-60"
+                data-testid="case-next-action-cta"
+              >
+                {nextAction.ctaLabelAr}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="mb-6 rounded-md border border-border p-4">
         <h2 className="mb-2 text-lg font-semibold">البيانات الأساسية</h2>
