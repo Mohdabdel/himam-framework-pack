@@ -110,10 +110,10 @@ function ReviewWorkspace() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10 font-sans">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
         <Link to="/cases" className="text-sm underline">العودة</Link>
-      </div>
+      </AppShell>
     );
   }
 
@@ -156,18 +156,21 @@ function ReviewWorkspace() {
   });
 
   return (
-    <div dir="rtl" className="mx-auto max-w-6xl px-6 py-8 font-sans">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">مساحة المراجعة — {c.referenceCode}</h1>
-          <p className="text-xs text-muted-foreground">
-            المعرّف المختصر: {shortCaseId(c)} · {readOnly ? "عرض للقراءة فقط" : "نشطة"}
-          </p>
-        </div>
-        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
-          العودة إلى الحالة
-        </Link>
-      </div>
+    <AppShell width="wide">
+      <StageHeader
+        caseCodeAr={c.referenceCode}
+        titleAr="مساحة المراجعة المهنية"
+        stepIndicatorAr="الخطوة 6 من 8"
+        descriptionAr="تشغيل محرك المراجعة الحتمي، ثم إصدار قرارات مهنية على النتائج."
+        requiredNowAr={readOnly ? "عرض للقراءة فقط." : "شغّل المحرك، ثم راجع كل ملاحظة قبل ختم المراجعة."}
+        statusLabelAr={readOnly ? "للقراءة فقط" : "نشطة"}
+        statusVariant={readOnly ? "locked" : "info"}
+        trailing={
+          <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
+            العودة إلى الحالة
+          </Link>
+        }
+      />
 
       {gate && !gate.ok && (
         <section
@@ -356,7 +359,7 @@ function ReviewWorkspace() {
           />
         ))}
       </ul>
-    </div>
+    </AppShell>
   );
 }
 
