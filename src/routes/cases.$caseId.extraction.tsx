@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  AppShell,
   CaseExtractionService,
   EVIDENCE_STATUS_LABELS_AR,
   EVIDENCE_TYPE_LABELS_AR,
   EvidenceService,
   IdentityIntegrityService,
   ServerEvidenceExtractionProvider,
+  StageFooter,
+  StageHeader,
   SOURCE_TYPE_LABELS_AR,
   ALLOWED_EVIDENCE_TYPES,
   getDefaultRepository,
@@ -119,9 +122,9 @@ function ExtractionPage() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
-      </div>
+      </AppShell>
     );
   }
 
@@ -204,13 +207,19 @@ function ExtractionPage() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-5xl px-6 py-10 font-sans">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">استخراج الأدلة</h1>
-        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
-          العودة إلى ملخص الحالة
-        </Link>
-      </header>
+    <AppShell width="wide">
+      <StageHeader
+        caseCodeAr={c.referenceCode}
+        titleAr="استخراج الأدلة وتأكيدها"
+        stepIndicatorAr="الخطوة 4 من 8"
+        descriptionAr="مراجعة الأدلة المستخرجة أو المضافة يدويًا، وتأكيدها قبل إغلاق الاستخراج."
+        requiredNowAr="راجع كل دليل معلق، ثم أكمل تأكيد الاستخراج."
+        trailing={
+          <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
+            العودة إلى ملخص الحالة
+          </Link>
+        }
+      />
 
       <div
         role="note"

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  AppShell,
   CaseService,
   DefaultDocumentTextExtractor,
   INPUT_IMPACTS,
@@ -16,6 +17,8 @@ import {
   SOURCE_TYPE_LABELS_AR,
   SOURCE_TYPES_ORDER,
   EXTRACTION_STAGE_LABELS_AR,
+  StageFooter,
+  StageHeader,
   validatePlanFile,
 } from "@/features/himam";
 import type { InputImpactKey, InputSource, InputSourceType, ReviewCase, ReviewInputType } from "@/features/himam";
@@ -83,9 +86,9 @@ function SourcesPage() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
-      </div>
+      </AppShell>
     );
   }
 
@@ -249,18 +252,19 @@ function SourcesPage() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-4xl px-6 py-10 font-sans">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">مصادر المراجعة وأثرها</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            المرحلة 2 من رحلة الحالة — أضف المصادر الاختيارية لتوسيع نطاق المراجعة الممكن.
-          </p>
-        </div>
-        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
-          العودة إلى ملخص الحالة
-        </Link>
-      </header>
+    <AppShell width="regular">
+      <StageHeader
+        caseCodeAr={c.referenceCode}
+        titleAr="مصادر المراجعة وأثرها"
+        stepIndicatorAr="الخطوة 2 من 8"
+        descriptionAr="أضف الخطة الحالية والمصادر الاختيارية لتوسيع نطاق المراجعة الممكن."
+        requiredNowAr={planUsable ? "أضف أو راجع المصادر الاختيارية ثم تابع إلى تجهيز النصوص." : "أرفق ملف الخطة الحالية أولًا."}
+        trailing={
+          <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
+            العودة إلى ملخص الحالة
+          </Link>
+        }
+      />
 
       {c.scopeNeedsReconfirmation && (
         <div

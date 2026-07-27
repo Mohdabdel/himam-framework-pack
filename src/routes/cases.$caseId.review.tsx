@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AppShell,
   DOMAIN_LABELS_AR,
   FINDING_SEVERITY_LABELS_AR,
   FINDING_STATUS_LABELS_AR,
@@ -9,6 +10,7 @@ import {
   REVIEW_GATE_LABELS_AR,
   ReviewCoverageService,
   ReviewVersionService,
+  StageHeader,
   formatArabicDate,
   getDefaultRepository,
   getKnowledgeRegistry,
