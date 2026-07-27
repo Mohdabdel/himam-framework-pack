@@ -17,3 +17,5 @@ SRC-INT-03,"سياسة إدراج صوت الأسرة والمتعلم",internal
 SRC-INT-04,"سياسة المواءمة العمرية والمآلات (اشتقاق من إطار المراحل)",internal_governance_rule,age_alignment,internal,internal,"العمر لا يولّد هدفًا."
 SRC-INT-05,"سياسة حوكمة اقتراحات AI (Provenance)",internal_governance_rule,ai_governance,internal,internal,"كل اقتراح يتطلب مصدرًا داخل الحالة."
 SRC-REG-XX,"مرجع ولاية تنظيمي (مشروط — غير مفعّل)",regulatory_reference,conditional,not_activated,not_activated,"يُفعّل فقط عند تهيئة سياسة ولاية محددة."
+SRC-GORI-01,"إطار R-GORI للتدرج والعلاقات بين الأهداف (Goal Relationships & Progression)",user_provided_secondary_synthesis,goal_relationship_reference,secondary_synthesis,verified_as_secondary_synthesis,"يشرح ترابط الأهداف (builds_on, prepares_for, generalizes_to) دون فرض تسلسل خطي."
+SRC-STOB-01,"معيار الاستقرار الزمني لعتبات الإتقان (Stability-Over-Sessions)",user_provided_secondary_synthesis,mastery_threshold_reference,secondary_synthesis,verified_as_secondary_synthesis,"يوثق شرط تكرار الإتقان عبر جلسات/سياقات دون تحديد عدد بعينه."
