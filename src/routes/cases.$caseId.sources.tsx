@@ -326,6 +326,9 @@ function SourcesPage() {
         data-testid="scope-impact-summary"
       >
         <h2 className="mb-2 text-lg font-semibold">أثر المدخلات على نطاق المراجعة</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          هذه مؤشرات لنطاق المراجعة الممكن، وليست درجة لجودة الخطة.
+        </p>
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="rounded-md border border-border bg-background p-3 text-center">
             <div className="text-2xl font-bold" data-testid="count-available">
@@ -347,12 +350,48 @@ function SourcesPage() {
           </div>
         </div>
         {expandable.length > 0 && (
-          <div className="mt-3 text-xs text-muted-foreground" data-testid="expandable-sources">
-            <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
-            {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
-          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            يمكن توسيع نطاق المراجعة بإضافة معلومات موثقة إضافية.
+          </p>
         )}
-        <p className="mt-3 text-xs text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+        <details
+          className="mt-3"
+          data-testid="impact-details"
+          open={impactDetailsOpen}
+          onToggle={(e) => setImpactDetailsOpen((e.target as HTMLDetailsElement).open)}
+        >
+          <summary className="cursor-pointer text-sm font-medium text-primary">
+            عرض تفاصيل الأثر
+          </summary>
+          <div className="mt-3 space-y-2 text-xs">
+            {expandable.length > 0 && (
+              <div className="text-muted-foreground" data-testid="expandable-sources">
+                <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
+                {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
+              </div>
+            )}
+            <ul className="space-y-2">
+              {OPTIONAL_TYPES.map((t) => {
+                const key = SOURCE_TYPE_TO_IMPACT_KEY[t];
+                const impact = INPUT_IMPACTS[key];
+                const has = sources.some((s) => s.type === t);
+                return (
+                  <li key={t} className="rounded-md border border-border bg-background p-2">
+                    <div className="font-medium">
+                      {impact.titleAr}{" "}
+                      <span className="text-muted-foreground">
+                        — {has ? "متاح" : "غير متاح"}
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground">عند الإضافة: {impact.whenPresentAr}</div>
+                    <div className="text-muted-foreground">عند الغياب: {impact.whenAbsentAr}</div>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+          </div>
+        </details>
       </section>
 
       <section className="space-y-4">
