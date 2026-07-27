@@ -13,6 +13,7 @@ import { Route as CasesRouteImport } from './routes/cases'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as CasesNewRouteImport } from './routes/cases.new'
+import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
 import { Route as CasesCaseIdIndexRouteImport } from './routes/cases.$caseId.index'
 import { Route as CasesCaseIdSourcesRouteImport } from './routes/cases.$caseId.sources'
 import { Route as CasesCaseIdScopeRouteImport } from './routes/cases.$caseId.scope'
@@ -42,40 +43,45 @@ const CasesNewRoute = CasesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => CasesRoute,
 } as any)
-const CasesCaseIdIndexRoute = CasesCaseIdIndexRouteImport.update({
-  id: '/$caseId/',
-  path: '/$caseId/',
+const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
+  id: '/$caseId',
+  path: '/$caseId',
   getParentRoute: () => CasesRoute,
+} as any)
+const CasesCaseIdIndexRoute = CasesCaseIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdSourcesRoute = CasesCaseIdSourcesRouteImport.update({
-  id: '/$caseId/sources',
-  path: '/$caseId/sources',
-  getParentRoute: () => CasesRoute,
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdScopeRoute = CasesCaseIdScopeRouteImport.update({
-  id: '/$caseId/scope',
-  path: '/$caseId/scope',
-  getParentRoute: () => CasesRoute,
+  id: '/scope',
+  path: '/scope',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdReviewRoute = CasesCaseIdReviewRouteImport.update({
-  id: '/$caseId/review',
-  path: '/$caseId/review',
-  getParentRoute: () => CasesRoute,
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdReportRoute = CasesCaseIdReportRouteImport.update({
-  id: '/$caseId/report',
-  path: '/$caseId/report',
-  getParentRoute: () => CasesRoute,
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdIngestionRoute = CasesCaseIdIngestionRouteImport.update({
-  id: '/$caseId/ingestion',
-  path: '/$caseId/ingestion',
-  getParentRoute: () => CasesRoute,
+  id: '/ingestion',
+  path: '/ingestion',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdExtractionRoute = CasesCaseIdExtractionRouteImport.update({
-  id: '/$caseId/extraction',
-  path: '/$caseId/extraction',
-  getParentRoute: () => CasesRoute,
+  id: '/extraction',
+  path: '/extraction',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
   id: '/api/himam/extract-evidence',
@@ -86,6 +92,7 @@ const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cases': typeof CasesRouteWithChildren
+  '/cases/$caseId': typeof CasesCaseIdRouteWithChildren
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
@@ -114,6 +121,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cases': typeof CasesRouteWithChildren
+  '/cases/$caseId': typeof CasesCaseIdRouteWithChildren
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
@@ -130,6 +138,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cases'
+    | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
     | '/api/himam/extract-evidence'
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cases'
+    | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
     | '/api/himam/extract-evidence'
@@ -205,54 +215,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasesNewRouteImport
       parentRoute: typeof CasesRoute
     }
+    '/cases/$caseId': {
+      id: '/cases/$caseId'
+      path: '/$caseId'
+      fullPath: '/cases/$caseId'
+      preLoaderRoute: typeof CasesCaseIdRouteImport
+      parentRoute: typeof CasesRoute
+    }
     '/cases/$caseId/': {
       id: '/cases/$caseId/'
-      path: '/$caseId'
+      path: '/'
       fullPath: '/cases/$caseId/'
       preLoaderRoute: typeof CasesCaseIdIndexRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/sources': {
       id: '/cases/$caseId/sources'
-      path: '/$caseId/sources'
+      path: '/sources'
       fullPath: '/cases/$caseId/sources'
       preLoaderRoute: typeof CasesCaseIdSourcesRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/scope': {
       id: '/cases/$caseId/scope'
-      path: '/$caseId/scope'
+      path: '/scope'
       fullPath: '/cases/$caseId/scope'
       preLoaderRoute: typeof CasesCaseIdScopeRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/review': {
       id: '/cases/$caseId/review'
-      path: '/$caseId/review'
+      path: '/review'
       fullPath: '/cases/$caseId/review'
       preLoaderRoute: typeof CasesCaseIdReviewRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/report': {
       id: '/cases/$caseId/report'
-      path: '/$caseId/report'
+      path: '/report'
       fullPath: '/cases/$caseId/report'
       preLoaderRoute: typeof CasesCaseIdReportRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/ingestion': {
       id: '/cases/$caseId/ingestion'
-      path: '/$caseId/ingestion'
+      path: '/ingestion'
       fullPath: '/cases/$caseId/ingestion'
       preLoaderRoute: typeof CasesCaseIdIngestionRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/extraction': {
       id: '/cases/$caseId/extraction'
-      path: '/$caseId/extraction'
+      path: '/extraction'
       fullPath: '/cases/$caseId/extraction'
       preLoaderRoute: typeof CasesCaseIdExtractionRouteImport
-      parentRoute: typeof CasesRoute
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/api/himam/extract-evidence': {
       id: '/api/himam/extract-evidence'
@@ -264,9 +281,7 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface CasesRouteChildren {
-  CasesNewRoute: typeof CasesNewRoute
-  CasesIndexRoute: typeof CasesIndexRoute
+interface CasesCaseIdRouteChildren {
   CasesCaseIdExtractionRoute: typeof CasesCaseIdExtractionRoute
   CasesCaseIdIngestionRoute: typeof CasesCaseIdIngestionRoute
   CasesCaseIdReportRoute: typeof CasesCaseIdReportRoute
@@ -276,9 +291,7 @@ interface CasesRouteChildren {
   CasesCaseIdIndexRoute: typeof CasesCaseIdIndexRoute
 }
 
-const CasesRouteChildren: CasesRouteChildren = {
-  CasesNewRoute: CasesNewRoute,
-  CasesIndexRoute: CasesIndexRoute,
+const CasesCaseIdRouteChildren: CasesCaseIdRouteChildren = {
   CasesCaseIdExtractionRoute: CasesCaseIdExtractionRoute,
   CasesCaseIdIngestionRoute: CasesCaseIdIngestionRoute,
   CasesCaseIdReportRoute: CasesCaseIdReportRoute,
@@ -286,6 +299,22 @@ const CasesRouteChildren: CasesRouteChildren = {
   CasesCaseIdScopeRoute: CasesCaseIdScopeRoute,
   CasesCaseIdSourcesRoute: CasesCaseIdSourcesRoute,
   CasesCaseIdIndexRoute: CasesCaseIdIndexRoute,
+}
+
+const CasesCaseIdRouteWithChildren = CasesCaseIdRoute._addFileChildren(
+  CasesCaseIdRouteChildren,
+)
+
+interface CasesRouteChildren {
+  CasesCaseIdRoute: typeof CasesCaseIdRouteWithChildren
+  CasesNewRoute: typeof CasesNewRoute
+  CasesIndexRoute: typeof CasesIndexRoute
+}
+
+const CasesRouteChildren: CasesRouteChildren = {
+  CasesCaseIdRoute: CasesCaseIdRouteWithChildren,
+  CasesNewRoute: CasesNewRoute,
+  CasesIndexRoute: CasesIndexRoute,
 }
 
 const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
@@ -298,3 +327,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
