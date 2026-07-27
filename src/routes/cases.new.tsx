@@ -121,6 +121,9 @@ function NewCase() {
         >
           تُحفظ ملفاتك محليًا داخل المتصفح ولا تُرسل لأي خدمة خارجية.
         </div>
+        <p className="text-[11px] text-muted-foreground" data-testid="diagnosis-note">
+          لا يُشترط إدخال التشخيص لمراجعة الخطة، ولا يستخدمه النظام لاستنتاج القدرة.
+        </p>
 
         <fieldset
           className="rounded-md border border-border p-3"
