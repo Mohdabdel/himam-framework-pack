@@ -120,7 +120,7 @@ function CaseDetail() {
     const rvs = store.reviewVersions.filter((v) => v.caseId === caseId);
     const rvLive = rvs.filter((v) => !v.isStale).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
     setReviewState({
-      finalized: !!rvLive?.finalizedAt,
+      finalized: !!rvLive?.completedAt,
       stale: rvs.length > 0 && !rvLive,
     });
     const reps = store.reportVersions.filter((r) => r.caseId === caseId);
@@ -212,7 +212,7 @@ function CaseDetail() {
       labelAr: nextAction.ctaLabelAr,
       variant: "primary",
       disabled: true,
-      disabledReasonAr: nextAction.blockedReasonAr,
+      disabledReasonAr: nextAction.blockedReasonAr ?? undefined,
     });
   }
 
