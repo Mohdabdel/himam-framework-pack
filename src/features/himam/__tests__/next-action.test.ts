@@ -42,8 +42,7 @@ describe("resolveCaseNextAction", () => {
   });
 
   it("prepare_text after plan is attached", async () => {
-    const blob = new Blob(["hi"], { type: "text/plain" });
-    const file = Object.assign(blob, { name: "p.txt", size: blob.size, type: "text/plain" });
+    const file = new File(["hi"], "p.txt", { type: "text/plain" });
     const c = await ctx.svc.createCaseWithPlan({
       ageYears: 8,
       phaseId: "elementary",
