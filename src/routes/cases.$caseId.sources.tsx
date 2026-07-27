@@ -61,15 +61,21 @@ function SourcesPage() {
   const [sources, setSources] = useState<InputSource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [addType, setAddType] = useState<InputSourceType>("plan");
+  const [addType, setAddType] = useState<InputSourceType>("assessment");
   const [addFile, setAddFile] = useState<File | null>(null);
   const [addManualText, setAddManualText] = useState<string>("");
+  const [planFile, setPlanFile] = useState<File | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [planUsable, setPlanUsable] = useState<boolean>(false);
 
   const refresh = async () => {
     const svc = new CaseService();
     await svc.reconcile();
     setC(svc.get(caseId));
     setSources(svc.sourcesFor(caseId));
+    setPlanUsable(await svc.hasUsablePlanSource(caseId));
   };
   useEffect(() => {
     void refresh();
@@ -84,9 +90,81 @@ function SourcesPage() {
   }
 
   const readOnly = c.status === "closed";
+  const NON_PLAN_TYPES = SOURCE_TYPES_ORDER.filter((t) => t !== "plan");
+  if (!NON_PLAN_TYPES.includes(addType)) {
+    // Guard: addType was reset in state; keep default consistent.
+  }
   const isManual = MANUAL_TEXT_SOURCE_TYPES.includes(addType);
   const isSingle = SINGLE_ACTIVE_SOURCE_TYPES.includes(addType);
   const hasActiveOfType = sources.some((s) => s.type === addType);
+
+  const planSources = sources.filter((s) => s.type === "plan");
+  const activePlan = planSources.find((s) => s.status === "ready_for_future_ingestion") ?? null;
+  const planImpact = INPUT_IMPACTS.plan;
+  const formatBytes = (n: number): string => {
+    if (n < 1024) return `${n} بايت`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} كيلوبايت`;
+    return `${(n / (1024 * 1024)).toFixed(2)} ميغابايت`;
+  };
+
+  const onUploadPlan = async () => {
+    if (readOnly || busy || !planFile) return;
+    setPlanError(null);
+    setBusy(true);
+    try {
+      const v = validatePlanFile({
+        name: planFile.name,
+        size: planFile.size,
+        type: planFile.type,
+      });
+      if (!v.ok) {
+        setPlanError(v.reason);
+        return;
+      }
+      const svc = new CaseService();
+      const src = svc.registerSource({
+        reviewCaseId: caseId,
+        type: "plan",
+        fileName: planFile.name,
+        mimeType: planFile.type || null,
+        status: "registered",
+      });
+      await svc.attachPlanFile(src.id, planFile);
+      setPlanFile(null);
+      await refresh();
+    } catch (e) {
+      setPlanError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onReplacePlan = async () => {
+    if (readOnly || busy || !replaceFile) return;
+    setPlanError(null);
+    setBusy(true);
+    try {
+      await new CaseService().replacePlanFile(caseId, replaceFile);
+      setReplaceFile(null);
+      await refresh();
+    } catch (e) {
+      setPlanError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onRemovePlan = async () => {
+    if (readOnly || busy || !activePlan) return;
+    setBusy(true);
+    try {
+      await new CaseService().removeSource(activePlan.id);
+      setConfirmRemove(false);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Provisional scope — derived live from current sources & phase, without persisting anything.
   const activeInputs: ReviewInputType[] = [];
@@ -100,6 +178,7 @@ function SourcesPage() {
   const expandable = expandableSources(activeInputs, c.phaseId);
 
   const onAdd = async (replaceId?: string) => {
+    if (addType === "plan") return; // plan is handled by the dedicated card
     if (readOnly || busy) return;
     setError(null);
     setBusy(true);
@@ -233,7 +312,146 @@ function SourcesPage() {
       </section>
 
       <section className="space-y-4">
-        {SOURCE_TYPES_ORDER.map((t) => {
+        <div
+          data-testid="plan-card"
+          className="rounded-md border-2 border-primary/30 bg-primary/5 p-4"
+          data-source-type="plan"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">{planImpact.titleAr}</h2>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-900">
+                  {planImpact.requirementLabelAr}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 ${
+                    planUsable
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                      : "border-destructive/40 bg-destructive/10 text-destructive"
+                  }`}
+                >
+                  {planUsable ? "خطة نشطة محفوظة" : "لا توجد خطة نشطة"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            الخطة الحالية مدخل إلزامي لاستكمال تجهيز النصوص والمراجعة.
+          </p>
+
+          {!activePlan ? (
+            <div data-testid="plan-upload-area" className="rounded-md border border-dashed border-primary/40 bg-background p-4">
+              <label className="block text-sm">
+                رفع ملف الخطة (PDF / DOCX / TXT)
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  data-testid="plan-upload-input"
+                  onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
+                  disabled={readOnly || busy}
+                  className="mt-1 block w-full text-sm"
+                />
+              </label>
+              {planFile && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {planFile.name} · {formatBytes(planFile.size)}
+                </div>
+              )}
+              {planError && <p className="mt-2 text-sm text-destructive">{planError}</p>}
+              <button
+                type="button"
+                data-testid="plan-upload-submit"
+                disabled={readOnly || busy || !planFile}
+                onClick={() => void onUploadPlan()}
+                className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                رفع الخطة الحالية
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-md border border-border bg-background p-3 text-sm">
+                <div className="font-medium">{activePlan.fileName}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  حالة التخزين:{" "}
+                  {activePlan.status === "ready_for_future_ingestion"
+                    ? planUsable
+                      ? "محفوظ محليًا"
+                      : "ملف الخطة مفقود — أعد رفعه."
+                    : activePlan.status === "file_missing"
+                      ? "ملف الخطة مفقود — أعد رفعه."
+                      : activePlan.status}{" "}
+                  · تجهيز النص: {EXTRACTION_STAGE_LABELS_AR[activePlan.extractionStage]}
+                </div>
+              </div>
+              {!readOnly && (
+                <div className="rounded-md border border-border p-3">
+                  <label className="block text-sm">
+                    استبدال الملف (PDF / DOCX / TXT)
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      data-testid="plan-replace-input"
+                      onChange={(e) => setReplaceFile(e.target.files?.[0] ?? null)}
+                      disabled={busy}
+                      className="mt-1 block w-full text-sm"
+                    />
+                  </label>
+                  {replaceFile && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {replaceFile.name} · {formatBytes(replaceFile.size)}
+                    </div>
+                  )}
+                  {planError && <p className="mt-2 text-sm text-destructive">{planError}</p>}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      data-testid="plan-replace-submit"
+                      disabled={busy || !replaceFile}
+                      onClick={() => void onReplacePlan()}
+                      className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
+                    >
+                      استبدال الخطة
+                    </button>
+                    {!confirmRemove ? (
+                      <button
+                        type="button"
+                        data-testid="plan-remove-request"
+                        disabled={busy}
+                        onClick={() => setConfirmRemove(true)}
+                        className="rounded-md border border-destructive/40 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        إزالة الخطة
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs text-destructive">
+                        <span>سيتم إبطال الأدلة والنطاق والمراجعة والتقرير المتأثر. متابعة؟</span>
+                        <button
+                          type="button"
+                          data-testid="plan-remove-confirm"
+                          onClick={() => void onRemovePlan()}
+                          className="rounded-md bg-destructive px-2 py-1 text-xs text-destructive-foreground hover:opacity-90"
+                        >
+                          نعم، إزالة
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemove(false)}
+                          className="rounded-md border border-input px-2 py-1 text-xs"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {SOURCE_TYPES_ORDER.filter((t) => t !== "plan").map((t) => {
           const items = sources.filter((s) => s.type === t);
           const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
           const added = items.length > 0;
@@ -327,12 +545,13 @@ function SourcesPage() {
           <label className="block text-sm">
             النوع
             <select
+              data-testid="generic-add-type"
               value={addType}
               onChange={(e) => setAddType(e.target.value as InputSourceType)}
               disabled={readOnly || busy}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              {SOURCE_TYPES_ORDER.map((t) => (
+              {SOURCE_TYPES_ORDER.filter((t) => t !== "plan").map((t) => (
                 <option key={t} value={t}>
                   {SOURCE_TYPE_LABELS_AR[t]}
                 </option>
@@ -378,13 +597,28 @@ function SourcesPage() {
       </section>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link
-          to="/cases/$caseId/ingestion"
-          params={{ caseId }}
-          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-        >
-          الانتقال إلى تجهيز النصوص
-        </Link>
+        {planUsable ? (
+          <Link
+            to="/cases/$caseId/ingestion"
+            params={{ caseId }}
+            data-testid="ingestion-link"
+            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+          >
+            الانتقال إلى تجهيز النصوص
+          </Link>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              disabled
+              data-testid="ingestion-link-disabled"
+              className="cursor-not-allowed rounded-md border border-input px-3 py-1.5 text-sm opacity-50"
+            >
+              الانتقال إلى تجهيز النصوص
+            </button>
+            <span className="text-xs text-destructive">أرفق الخطة الحالية واحفظها أولًا.</span>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => void navigate({ to: "/cases/$caseId", params: { caseId } })}
