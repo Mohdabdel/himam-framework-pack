@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   CaseService,
   DefaultDocumentTextExtractor,
@@ -129,5 +131,14 @@ describe("Plan file persistence regression fix", () => {
     ).rejects.toThrow();
     expect(svc.list()).toHaveLength(0);
     expect(repo.load().sources).toHaveLength(0);
+  });
+
+  it("NEW-FIELD-T01: /cases/new renders planType and referenceCode outside <details>", () => {
+    const src = readFileSync(resolve("src/routes/cases.new.tsx"), "utf8");
+    // No <details> wrapper anywhere in the form.
+    expect(/<details/.test(src)).toBe(false);
+    // Both fields exist with dedicated data-testids.
+    expect(src).toContain('data-testid="field-plan-type"');
+    expect(src).toContain('data-testid="field-ref-code"');
   });
 });
