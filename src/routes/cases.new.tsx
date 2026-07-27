@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CaseService, REVIEW_PHASES, validatePlanFile } from "@/features/himam";
 import type { ReviewPhaseId } from "@/features/himam";
 
@@ -41,6 +41,22 @@ function NewCase() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const fileValidation = useMemo(() => {
+    if (!planFile) return null;
+    return validatePlanFile({
+      name: planFile.name,
+      size: planFile.size,
+      type: planFile.type,
+    });
+  }, [planFile]);
+  const fileReady = fileValidation !== null && fileValidation.ok === true;
+
+  const formatBytes = (n: number): string => {
+    if (n < 1024) return `${n} بايت`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} كيلوبايت`;
+    return `${(n / (1024 * 1024)).toFixed(2)} ميغابايت`;
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -58,33 +74,31 @@ function NewCase() {
       setError("المعرف المرجعي الاختياري يجب ألا يقل عن 3 محارف.");
       return;
     }
+    if (!planFile) {
+      setError("أرفق ملف الخطة الحالية لإكمال إنشاء الحالة.");
+      return;
+    }
+    if (!fileValidation || fileValidation.ok !== true) {
+      setError(
+        fileValidation && !fileValidation.ok
+          ? fileValidation.reason
+          : "ملف الخطة غير صالح.",
+      );
+      return;
+    }
     setBusy(true);
     try {
       const svc = new CaseService();
-      const c = svc.createCase({
+      const c = await svc.createCaseWithPlan({
         ageYears: ageNum,
         phaseId: (phaseId || null) as ReviewPhaseId | null,
         planType: planType || null,
         referenceCode: trimmedRef || undefined,
+        file: planFile,
       });
-      if (planFile) {
-        const v = validatePlanFile({
-          name: planFile.name,
-          size: planFile.size,
-          type: planFile.type,
-        });
-        const src = svc.registerSource({
-          reviewCaseId: c.id,
-          type: "plan",
-          fileName: planFile.name,
-          mimeType: planFile.type || null,
-          status: v.ok ? "registered" : v.status,
-        });
-        if (v.ok) {
-          await svc.attachPlanFile(src.id, planFile);
-        }
-      }
       navigate({ to: "/cases/$caseId", params: { caseId: c.id } });
+    } catch (e) {
+      setError((e as Error).message || "تعذّر إنشاء الحالة.");
     } finally {
       setBusy(false);
     }
@@ -158,20 +172,42 @@ function NewCase() {
           />
         </label>
         <label className="block text-sm">
-          ملف الخطة (PDF / DOCX / TXT)
+          ملف الخطة الحالية (PDF / DOCX / TXT) — إلزامي
           <input
             type="file"
+            required
+            data-testid="plan-file-input"
             accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
             className="mt-1 block w-full text-sm"
           />
           <span className="mt-1 block text-xs text-muted-foreground">
-            سيُسجَّل الملف فقط. لا يوجد استخراج أو image recognition أو AI في هذه الجولة.
+            سيُحفظ الملف محليًا بصورة خاصة داخل المتصفح، ثم يُستخدم لاحقًا في تجهيز النصوص.
           </span>
+          {planFile && (
+            <div
+              data-testid="plan-file-preview"
+              className={`mt-2 rounded-md border px-3 py-2 text-xs ${
+                fileReady
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border-destructive/40 bg-destructive/10 text-destructive"
+              }`}
+            >
+              <div className="font-medium">{planFile.name}</div>
+              <div>{formatBytes(planFile.size)}</div>
+              <div className="mt-1">
+                {fileReady
+                  ? "جاهز للرفع"
+                  : fileValidation && !fileValidation.ok
+                    ? fileValidation.reason
+                    : "الملف غير صالح."}
+              </div>
+            </div>
+          )}
         </label>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <button
-          disabled={busy}
+          disabled={busy || !fileReady}
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           إنشاء الحالة
