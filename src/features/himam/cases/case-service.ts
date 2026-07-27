@@ -11,6 +11,7 @@ import {
 import type { HimamStore, ReviewCaseRepository } from "./case-repository";
 import { getDefaultRepository } from "./case-repository";
 import { applyTransition, canTransition } from "./case-state-machine";
+import { validatePlanFile } from "../sources/source-service";
 import type {
   InputSource,
   ReviewCase,
@@ -84,17 +85,35 @@ export class CaseService {
   private recomputeStatus(store: HimamStore, c: ReviewCase): void {
     const hasAgeOrPhase = c.ageYears !== null || c.phaseId !== null;
     const hasPlan = hasReadyPlan(store, c.id);
-    if (c.status === "closed" || c.status === "scope_confirmed") return;
+    if (c.status === "closed") return;
     if (c.status === "draft" && hasAgeOrPhase && hasPlan) {
       c.status = applyTransition(c.status, "complete_minimum_inputs");
       c.updatedAt = new Date().toISOString();
-    } else if (c.status === "minimum_inputs_complete" && !(hasAgeOrPhase && hasPlan)) {
+    } else if (
+      (c.status === "minimum_inputs_complete" || c.status === "scope_confirmed") &&
+      !(hasAgeOrPhase && hasPlan)
+    ) {
       c.status = "draft";
       c.updatedAt = new Date().toISOString();
-      // Any unconfirmed scope depending on this state is voided.
-      store.scopeSnapshots = store.scopeSnapshots.filter(
-        (sn) => sn.reviewCaseId !== c.id || sn.confirmedAt !== null,
-      );
+      // Plan disappeared → invalidate downstream artifacts for this case.
+      store.scopeSnapshots = store.scopeSnapshots.filter((sn) => sn.reviewCaseId !== c.id);
+      const nowIso = new Date().toISOString();
+      for (const ev of store.extractedEvidence) {
+        if (ev.reviewCaseId === c.id && ev.status !== "invalidated") {
+          ev.status = "invalidated";
+          ev.updatedAt = nowIso;
+        }
+      }
+      for (const rv of store.reviewVersions) {
+        if (rv.caseId === c.id) rv.isStale = true;
+      }
+      for (const rp of store.reportVersions) {
+        if (rp.caseId === c.id && rp.status === "finalized" && !rp.staleReason) {
+          rp.staleReason = "plan_removed";
+        }
+      }
+      c.scopeNeedsReconfirmation = false;
+      c.extractionStage = "not_started";
     }
   }
 
