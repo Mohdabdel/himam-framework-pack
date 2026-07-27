@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
   CaseService,
@@ -45,6 +45,35 @@ const SOURCE_TYPE_TO_REVIEW_INPUT: Record<InputSourceType, ReviewInputType> = {
   prior_progress: "prior_progress",
 };
 
+// Short compact-card blurb (one line) for each optional source.
+const OPTIONAL_SHORT_AR: Record<InputSourceType, string> = {
+  plan: "",
+  assessment: "يدعم مراجعة ارتباط الاحتياجات وخطوط الأساس والأهداف بنتائج التقييم.",
+  family_priorities: "يدعم مراجعة حضور أولويات الأسرة واتساقها مع الخطة.",
+  student_preferences: "يدعم مراجعة تمثيل صوت المتعلم وتفضيلاته.",
+  supports: "يدعم مراجعة اتساق الدعم والتسهيلات مع الاحتياجات والأهداف.",
+  professional_notes: "تضيف معلومات سياقية موثقة من المختصين.",
+  prior_plan: "تدعم مراجعة الاستمرارية والتغير بين الخطط.",
+  prior_progress: "تدعم مراجعة التقدم الموثق واستمرار الأهداف أو تعديلها.",
+};
+
+const GOVERNANCE_NOTE_AR =
+  "عدم إضافة المصدر الاختياري لا يعني أن الخطة غير متحققة. ستظهر فقط المعايير التي تعتمد عليه بوصفها غير قابلة للمراجعة وفق المعلومات المتاحة.";
+const OPTIONAL_INTRO_AR =
+  "إضافة هذه المعلومات اختيارية. كلما أضفت معلومات موثقة وذات صلة، استطاع النظام مراجعة جوانب أكثر من الخطة وتقديم تقرير أكثر اكتمالًا ودقة. عدم إضافة هذه المعلومات لا يعني أن الخطة غير متحققة أو فاشلة.";
+const OPTIONAL_HINT_AR =
+  "يمكنك إضافة تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم، أو مصادر سابقة عند توفرها.";
+
+const OPTIONAL_TYPES: InputSourceType[] = [
+  "assessment",
+  "family_priorities",
+  "student_preferences",
+  "supports",
+  "professional_notes",
+  "prior_plan",
+  "prior_progress",
+];
+
 export const Route = createFileRoute("/cases/$caseId/sources")({
   head: () => ({
     meta: [
@@ -72,6 +101,13 @@ function SourcesPage() {
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [planUsable, setPlanUsable] = useState<boolean>(false);
+  // Progressive disclosure state
+  const [optionalOpen, setOptionalOpen] = useState<boolean>(false);
+  const [openSourceType, setOpenSourceType] = useState<InputSourceType | null>(null);
+  const [impactDetailsOpen, setImpactDetailsOpen] = useState<boolean>(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const toggleId = "optional-inputs-toggle";
+  const panelId = "optional-inputs-panel";
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -83,6 +119,14 @@ function SourcesPage() {
   useEffect(() => {
     void refresh();
   }, [caseId]);
+
+  // Auto-enable the optional-inputs section whenever the case already has
+  // any optional source (added in a previous session). Never auto-disable.
+  useEffect(() => {
+    const hasOptional = sources.some((s) => s.type !== "plan");
+    if (hasOptional && !optionalOpen) setOptionalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sources.length]);
 
   if (!c) {
     return (
@@ -282,6 +326,9 @@ function SourcesPage() {
         data-testid="scope-impact-summary"
       >
         <h2 className="mb-2 text-lg font-semibold">أثر المدخلات على نطاق المراجعة</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          هذه مؤشرات لنطاق المراجعة الممكن، وليست درجة لجودة الخطة.
+        </p>
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="rounded-md border border-border bg-background p-3 text-center">
             <div className="text-2xl font-bold" data-testid="count-available">
@@ -303,12 +350,48 @@ function SourcesPage() {
           </div>
         </div>
         {expandable.length > 0 && (
-          <div className="mt-3 text-xs text-muted-foreground" data-testid="expandable-sources">
-            <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
-            {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
-          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            يمكن توسيع نطاق المراجعة بإضافة معلومات موثقة إضافية.
+          </p>
         )}
-        <p className="mt-3 text-xs text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+        <details
+          className="mt-3"
+          data-testid="impact-details"
+          open={impactDetailsOpen}
+          onToggle={(e) => setImpactDetailsOpen((e.target as HTMLDetailsElement).open)}
+        >
+          <summary className="cursor-pointer text-sm font-medium text-primary">
+            عرض تفاصيل الأثر
+          </summary>
+          <div className="mt-3 space-y-2 text-xs">
+            {expandable.length > 0 && (
+              <div className="text-muted-foreground" data-testid="expandable-sources">
+                <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
+                {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
+              </div>
+            )}
+            <ul className="space-y-2">
+              {OPTIONAL_TYPES.map((t) => {
+                const key = SOURCE_TYPE_TO_IMPACT_KEY[t];
+                const impact = INPUT_IMPACTS[key];
+                const has = sources.some((s) => s.type === t);
+                return (
+                  <li key={t} className="rounded-md border border-border bg-background p-2">
+                    <div className="font-medium">
+                      {impact.titleAr}{" "}
+                      <span className="text-muted-foreground">
+                        — {has ? "متاح" : "غير متاح"}
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground">عند الإضافة: {impact.whenPresentAr}</div>
+                    <div className="text-muted-foreground">عند الغياب: {impact.whenAbsentAr}</div>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+          </div>
+        </details>
       </section>
 
       <section className="space-y-4">
@@ -451,149 +534,276 @@ function SourcesPage() {
           )}
         </div>
 
-        {SOURCE_TYPES_ORDER.filter((t) => t !== "plan").map((t) => {
-          const items = sources.filter((s) => s.type === t);
-          const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
-          const added = items.length > 0;
-          return (
-            <div key={t} className="rounded-md border border-border p-4" data-source-type={t}>
-              <div className="mb-2 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">{impact.titleAr}</h2>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-                    <span
-                      className={`rounded-full border px-2 py-0.5 ${
-                        impact.requirement === "required"
-                          ? "border-amber-200 bg-amber-50 text-amber-900"
-                          : "border-border bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {impact.requirementLabelAr}
-                    </span>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 ${
-                        added
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                          : "border-border bg-background text-muted-foreground"
-                      }`}
-                    >
-                      {added ? "تمت الإضافة" : "لم تُضف بعد"}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {SINGLE_ACTIVE_SOURCE_TYPES.includes(t) ? "مصدر نشط واحد" : "مصدر أو أكثر"}
+        {/* Progressive-disclosure toggle for optional inputs. */}
+        <section
+          className="rounded-md border border-border bg-background p-4"
+          data-testid="optional-inputs-toggle-section"
+        >
+          <div className="flex items-start gap-3">
+            <input
+              id={toggleId}
+              type="checkbox"
+              data-testid="optional-inputs-toggle"
+              className="mt-1 h-4 w-4"
+              checked={optionalOpen}
+              aria-expanded={optionalOpen}
+              aria-controls={panelId}
+              onChange={(e) => setOptionalOpen(e.target.checked)}
+              disabled={readOnly}
+            />
+            <div className="min-w-0 flex-1">
+              <label htmlFor={toggleId} className="block cursor-pointer text-sm font-medium">
+                أرغب في إضافة وثائق أو معلومات إضافية
+                <span className="mr-2 text-xs font-normal text-muted-foreground">
+                  — توسيع نطاق المراجعة
                 </span>
-              </div>
-              <div className="mb-3 grid grid-cols-1 gap-2 rounded-md bg-muted/30 p-3 text-xs sm:grid-cols-2">
-                <div>
-                  <div className="mb-0.5 font-medium">عند الإضافة:</div>
-                  <div className="text-muted-foreground">{impact.whenPresentAr}</div>
-                </div>
-                <div>
-                  <div className="mb-0.5 font-medium">عند عدم الإضافة:</div>
-                  <div className="text-muted-foreground">{impact.whenAbsentAr}</div>
-                </div>
-              </div>
-              {items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">لا يوجد مصدر مسجل.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {items.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{s.fileName}</div>
-                        <div className="mt-0.5 text-xs text-muted-foreground">
-                          حالة التخزين:{" "}
-                          {s.manualTextArtifactId
-                            ? "نص يدوي محفوظ محليًا"
-                            : s.status === "ready_for_future_ingestion"
-                              ? "محفوظ محليًا"
-                              : s.status === "file_missing"
-                                ? "الملف مفقود"
-                                : s.status === "unreadable"
-                                  ? "غير قابل للقراءة"
-                                  : "مسجّل"}{" "}
-                          · تجهيز النص: {EXTRACTION_STAGE_LABELS_AR[s.extractionStage]}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          disabled={readOnly || busy}
-                          onClick={() => void onRemove(s.id)}
-                          className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
-                        >
-                          إزالة
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">{OPTIONAL_INTRO_AR}</p>
+              {!optionalOpen && (
+                <>
+                  <p className="mt-2 text-xs text-muted-foreground" data-testid="optional-hint">
+                    {OPTIONAL_HINT_AR}
+                  </p>
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-xs text-primary">
+                      ما المعلومات التي يمكن إضافتها؟
+                    </summary>
+                    <ul className="mt-2 space-y-1 pr-4 text-xs text-muted-foreground">
+                      {OPTIONAL_TYPES.map((t) => (
+                        <li key={t}>
+                          {SOURCE_TYPE_LABELS_AR[t]} — {OPTIONAL_SHORT_AR[t]}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </>
+              )}
+              {optionalOpen && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {sources.filter((s) => s.type !== "plan").length > 0
+                    ? `عدد المصادر الاختيارية المضافة: ${sources.filter((s) => s.type !== "plan").length}`
+                    : "لم تتم إضافة أي مصدر اختياري بعد."}
+                </p>
               )}
             </div>
-          );
-        })}
-      </section>
+          </div>
+        </section>
 
-      <section className="mt-6 rounded-md border border-border p-4">
-        <h2 className="mb-3 text-lg font-semibold">إضافة مصدر</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
-            النوع
-            <select
-              data-testid="generic-add-type"
-              value={addType}
-              onChange={(e) => setAddType(e.target.value as InputSourceType)}
-              disabled={readOnly || busy}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              {SOURCE_TYPES_ORDER.filter((t) => t !== "plan").map((t) => (
-                <option key={t} value={t}>
-                  {SOURCE_TYPE_LABELS_AR[t]}
-                </option>
-              ))}
-            </select>
-          </label>
-          {isManual ? (
-            <label className="block text-sm sm:col-span-2">
-              نص يدوي
-              <textarea
-                value={addManualText}
-                onChange={(e) => setAddManualText(e.target.value)}
-                disabled={readOnly || busy}
-                rows={4}
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-            </label>
-          ) : (
-            <label className="block text-sm">
-              ملف (PDF / DOCX / TXT)
-              <input
-                type="file"
-                accept=".pdf,.docx,.txt"
-                onChange={(e) => setAddFile(e.target.files?.[0] ?? null)}
-                disabled={readOnly || busy}
-                className="mt-1 block w-full text-sm"
-              />
-            </label>
-          )}
-        </div>
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-        <p className="mt-2 text-xs text-muted-foreground">
-          يُحفظ الملف/النص محليًا داخل المتصفح ولا يُرفع لأي خدمة خارجية ولا يتاح كرابط عام.
-        </p>
-        <button
-          type="button"
-          disabled={readOnly || busy}
-          onClick={() => void onAdd()}
-          className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          إضافة المصدر
-        </button>
+        {optionalOpen && (
+          <div id={panelId} className="space-y-6" data-testid="optional-inputs-panel">
+            {sources.some((s) => s.type !== "plan") && (
+              <section data-testid="added-optional-section">
+                <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                  المصادر المضافة
+                </h3>
+                <ul className="space-y-2">
+                  {sources
+                    .filter((s) => s.type !== "plan")
+                    .map((s) => (
+                      <li
+                        key={s.id}
+                        className="rounded-md border border-border bg-background p-3 text-sm"
+                        data-testid={`added-source-${s.type}`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">
+                              {SOURCE_TYPE_LABELS_AR[s.type]} —{" "}
+                              {s.manualTextArtifactId ? "نص مدخل يدويًا" : s.fileName}
+                            </div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              تجهيز النص: {EXTRACTION_STAGE_LABELS_AR[s.extractionStage]}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenSourceType(openSourceType === s.type ? null : s.type)
+                              }
+                              className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+                            >
+                              عرض وإدارة
+                            </button>
+                            <button
+                              type="button"
+                              disabled={readOnly || busy}
+                              onClick={() => void onRemove(s.id)}
+                              className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            >
+                              إزالة
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )}
+
+            <section data-testid="optional-source-cards">
+              <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                مصادر يمكن إضافتها
+              </h3>
+              <p className="mb-3 text-xs text-muted-foreground">{GOVERNANCE_NOTE_AR}</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {OPTIONAL_TYPES.map((t) => {
+                  const items = sources.filter((s) => s.type === t);
+                  const added = items.length > 0;
+                  const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
+                  const isOpen = openSourceType === t;
+                  const isTypeManual = MANUAL_TEXT_SOURCE_TYPES.includes(t);
+                  return (
+                    <div
+                      key={t}
+                      className="rounded-md border border-border bg-background p-3"
+                      data-source-type={t}
+                      data-testid={`compact-card-${t}`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">{impact.titleAr}</div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px]">
+                            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
+                              اختياري
+                            </span>
+                            {added && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-900">
+                                {items.length === 1 ? "مصدر واحد" : `${items.length} مصادر`}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {OPTIONAL_SHORT_AR[t]}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          data-testid={`open-manage-${t}`}
+                          onClick={() => {
+                            const target = isOpen ? null : t;
+                            setOpenSourceType(target);
+                            if (target) setAddType(target);
+                            setError(null);
+                            setAddFile(null);
+                            setAddManualText("");
+                          }}
+                          disabled={readOnly}
+                          className="shrink-0 rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent disabled:opacity-50"
+                        >
+                          {added ? "عرض وإدارة" : "إضافة"}
+                        </button>
+                      </div>
+
+                      {isOpen && (
+                        <div
+                          className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3"
+                          data-testid={`manage-drawer-${t}`}
+                          role="region"
+                          aria-label={`إدارة ${impact.titleAr}`}
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="text-sm font-semibold">
+                              إدارة: {impact.titleAr}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setOpenSourceType(null)}
+                              className="rounded-md border border-input px-2 py-0.5 text-xs hover:bg-accent"
+                              aria-label="إغلاق"
+                            >
+                              إغلاق
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground">
+                            <div>
+                              <span className="font-medium">عند الإضافة: </span>
+                              {impact.whenPresentAr}
+                            </div>
+                            <div>
+                              <span className="font-medium">عند الغياب: </span>
+                              {impact.whenAbsentAr}
+                            </div>
+                          </div>
+
+                          {items.length > 0 && (
+                            <ul className="mt-2 space-y-1 text-xs">
+                              {items.map((s) => (
+                                <li
+                                  key={s.id}
+                                  className="flex items-center justify-between rounded-md border border-border bg-background px-2 py-1"
+                                >
+                                  <span className="truncate">
+                                    {s.manualTextArtifactId ? "نص يدوي" : s.fileName} · تجهيز:{" "}
+                                    {EXTRACTION_STAGE_LABELS_AR[s.extractionStage]}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={readOnly || busy}
+                                    onClick={() => void onRemove(s.id)}
+                                    className="rounded-md border border-destructive/40 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                                  >
+                                    إزالة
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <div className="mt-3 space-y-2">
+                            {isTypeManual ? (
+                              <label className="block text-xs">
+                                نص يدوي
+                                <textarea
+                                  value={addManualText}
+                                  onChange={(e) => setAddManualText(e.target.value)}
+                                  disabled={readOnly || busy}
+                                  rows={3}
+                                  className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+                                />
+                              </label>
+                            ) : (
+                              <label className="block text-xs">
+                                ملف (PDF / DOCX / TXT)
+                                <input
+                                  type="file"
+                                  accept=".pdf,.docx,.txt"
+                                  onChange={(e) => setAddFile(e.target.files?.[0] ?? null)}
+                                  disabled={readOnly || busy}
+                                  className="mt-1 block w-full text-xs"
+                                />
+                              </label>
+                            )}
+                            {error && (
+                              <p className="text-xs text-destructive" role="alert">
+                                {error}
+                              </p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground">
+                              يُحفظ الملف/النص محليًا داخل المتصفح ولا يُرفع لأي خدمة خارجية.
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                disabled={readOnly || busy}
+                                onClick={async () => {
+                                  await onAdd();
+                                }}
+                                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                              >
+                                حفظ
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        )}
       </section>
 
       <div className="mt-6 flex flex-wrap gap-2">
