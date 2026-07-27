@@ -101,6 +101,13 @@ function SourcesPage() {
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [planUsable, setPlanUsable] = useState<boolean>(false);
+  // Progressive disclosure state
+  const [optionalOpen, setOptionalOpen] = useState<boolean>(false);
+  const [openSourceType, setOpenSourceType] = useState<InputSourceType | null>(null);
+  const [impactDetailsOpen, setImpactDetailsOpen] = useState<boolean>(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const toggleId = "optional-inputs-toggle";
+  const panelId = "optional-inputs-panel";
 
   const refresh = async () => {
     const svc = new CaseService();
