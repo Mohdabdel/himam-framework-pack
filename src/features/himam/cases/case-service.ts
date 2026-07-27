@@ -11,6 +11,7 @@ import {
 import type { HimamStore, ReviewCaseRepository } from "./case-repository";
 import { getDefaultRepository } from "./case-repository";
 import { applyTransition, canTransition } from "./case-state-machine";
+import { validatePlanFile } from "../sources/source-service";
 import type {
   InputSource,
   ReviewCase,
@@ -84,17 +85,35 @@ export class CaseService {
   private recomputeStatus(store: HimamStore, c: ReviewCase): void {
     const hasAgeOrPhase = c.ageYears !== null || c.phaseId !== null;
     const hasPlan = hasReadyPlan(store, c.id);
-    if (c.status === "closed" || c.status === "scope_confirmed") return;
+    if (c.status === "closed") return;
     if (c.status === "draft" && hasAgeOrPhase && hasPlan) {
       c.status = applyTransition(c.status, "complete_minimum_inputs");
       c.updatedAt = new Date().toISOString();
-    } else if (c.status === "minimum_inputs_complete" && !(hasAgeOrPhase && hasPlan)) {
+    } else if (
+      (c.status === "minimum_inputs_complete" || c.status === "scope_confirmed") &&
+      !(hasAgeOrPhase && hasPlan)
+    ) {
       c.status = "draft";
       c.updatedAt = new Date().toISOString();
-      // Any unconfirmed scope depending on this state is voided.
-      store.scopeSnapshots = store.scopeSnapshots.filter(
-        (sn) => sn.reviewCaseId !== c.id || sn.confirmedAt !== null,
-      );
+      // Plan disappeared → invalidate downstream artifacts for this case.
+      store.scopeSnapshots = store.scopeSnapshots.filter((sn) => sn.reviewCaseId !== c.id);
+      const nowIso = new Date().toISOString();
+      for (const ev of store.extractedEvidence) {
+        if (ev.reviewCaseId === c.id && ev.status !== "invalidated") {
+          ev.status = "invalidated";
+          ev.updatedAt = nowIso;
+        }
+      }
+      for (const rv of store.reviewVersions) {
+        if (rv.caseId === c.id) rv.isStale = true;
+      }
+      for (const rp of store.reportVersions) {
+        if (rp.caseId === c.id && rp.status === "finalized" && !rp.staleReason) {
+          rp.staleReason = "plan_removed";
+        }
+      }
+      c.scopeNeedsReconfirmation = false;
+      c.extractionStage = "not_started";
     }
   }
 
@@ -286,6 +305,11 @@ export class CaseService {
 
   async attachPlanFile(sourceId: string, blob: Blob): Promise<InputSource> {
     await this.storage.put(sourceId, blob);
+    // Verify the blob actually landed before flipping the source to ready.
+    const stored = await this.storage.has(sourceId);
+    if (!stored) {
+      throw new Error("تعذّر حفظ ملف الخطة داخل التخزين المحلي. أعد المحاولة.");
+    }
     return this.mutate((store) => {
       const s = store.sources.find((x) => x.id === sourceId);
       if (!s) throw new Error("Source not found");
@@ -295,6 +319,111 @@ export class CaseService {
       if (c) this.recomputeStatus(store, c);
       return s;
     });
+  }
+
+  // Central gate: is there a single active plan source, ready for
+  // ingestion, with an actual Blob in storage? Metadata alone does not count.
+  async hasUsablePlanSource(caseId: string): Promise<boolean> {
+    const store = this.repo.load();
+    const plans = store.sources.filter(
+      (s) => s.reviewCaseId === caseId && s.type === "plan",
+    );
+    if (plans.length !== 1) return false;
+    const p = plans[0];
+    if (p.status !== "ready_for_future_ingestion") return false;
+    if (!p.storagePath) return false;
+    try {
+      return await this.storage.has(p.id);
+    } catch {
+      return false;
+    }
+  }
+
+  // Atomic: validate → create case → register plan source → store Blob →
+  // verify Blob. On any failure, no ReviewCase remains.
+  async createCaseWithPlan(input: {
+    ageYears: number | null;
+    phaseId: ReviewPhaseId | null;
+    planType: string | null;
+    referenceCode?: string;
+    file: { name: string; size: number; type: string } & Blob;
+  }): Promise<ReviewCase> {
+    const v = validatePlanFile({
+      name: input.file.name,
+      size: input.file.size,
+      type: input.file.type,
+    });
+    if (!v.ok) throw new Error(v.reason);
+    const c = this.createCase({
+      ageYears: input.ageYears,
+      phaseId: input.phaseId,
+      planType: input.planType,
+      referenceCode: input.referenceCode,
+    });
+    try {
+      const src = this.registerSource({
+        reviewCaseId: c.id,
+        type: "plan",
+        fileName: input.file.name,
+        mimeType: input.file.type || null,
+        status: "registered",
+      });
+      await this.attachPlanFile(src.id, input.file);
+      const ok = await this.hasUsablePlanSource(c.id);
+      if (!ok) throw new Error("تعذّر التحقق من حفظ ملف الخطة.");
+      return this.get(c.id)!;
+    } catch (e) {
+      // Roll back the case + any registered plan sources + blobs.
+      const store = this.repo.load();
+      const plans = store.sources.filter(
+        (s) => s.reviewCaseId === c.id && s.type === "plan",
+      );
+      for (const p of plans) {
+        try {
+          await this.storage.delete(p.id);
+        } catch {
+          /* best-effort */
+        }
+      }
+      store.sources = store.sources.filter((s) => s.reviewCaseId !== c.id);
+      store.cases = store.cases.filter((x) => x.id !== c.id);
+      store.auditEvents = store.auditEvents.filter((e2) => e2.reviewCaseId !== c.id);
+      this.repo.save(store);
+      throw e;
+    }
+  }
+
+  // Save the new plan file BEFORE deleting the old one, then invalidate
+  // downstream artifacts bound to the previous plan.
+  async replacePlanFile(
+    caseId: string,
+    file: { name: string; size: number; type: string } & Blob,
+  ): Promise<InputSource> {
+    const v = validatePlanFile({ name: file.name, size: file.size, type: file.type });
+    if (!v.ok) throw new Error(v.reason);
+    const c = this.get(caseId);
+    if (!c) throw new Error("Case not found");
+    if (c.status === "closed") throw new Error("Case is closed");
+    // Register + attach the NEW plan first.
+    const newSrc = this.registerSource({
+      reviewCaseId: caseId,
+      type: "plan",
+      fileName: file.name,
+      mimeType: file.type || null,
+      status: "registered",
+    });
+    await this.attachPlanFile(newSrc.id, file);
+    const stored = await this.storage.has(newSrc.id);
+    if (!stored) throw new Error("تعذّر حفظ الملف الجديد. لم يُحذف الملف السابق.");
+    // Now remove any previous plan sources (blobs + metadata + downstream).
+    const store0 = this.repo.load();
+    const oldPlans = store0.sources.filter(
+      (s) => s.reviewCaseId === caseId && s.type === "plan" && s.id !== newSrc.id,
+    );
+    for (const p of oldPlans) {
+      await this.removeSource(p.id);
+    }
+    return this.get(caseId) ? newSrc : newSrc;
   }
 
   async reconcile(): Promise<void> {
