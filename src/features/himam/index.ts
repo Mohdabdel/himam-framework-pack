@@ -2,6 +2,12 @@ export { CaseService } from "./cases/case-service";
 export { createInMemoryRepository, getDefaultRepository } from "./cases/case-repository";
 export type { ReviewCaseRepository } from "./cases/case-repository";
 export * from "./cases/case-types";
+export {
+  resolveCaseNextAction,
+  caseGateReasonAr,
+  CASE_GATE_REASONS_AR,
+} from "./cases/case-next-action";
+export type { CaseNextAction, CaseNextActionKind } from "./cases/case-next-action";
 export { getReviewScope } from "./scope/scope-service";
 export type {
   ScopeResult,
