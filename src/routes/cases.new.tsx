@@ -163,31 +163,37 @@ function NewCase() {
           </div>
         </fieldset>
 
-        <details className="rounded-md border border-border p-3">
-          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
-            حقول إضافية اختيارية (نوع الخطة، معرف مرجعي داخلي)
-          </summary>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block text-sm">
+        <fieldset
+          className="rounded-md border border-border p-3"
+          data-testid="optional-basics-fieldset"
+        >
+          <legend className="px-1 text-xs font-medium text-muted-foreground">
+            حقول اختيارية
+          </legend>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm" data-testid="field-plan-type-label">
               نوع الخطة
               <input
                 type="text"
+                data-testid="field-plan-type"
                 value={planType}
                 onChange={(e) => setPlanType(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </label>
-            <label className="block text-sm">
-              معرف مرجعي داخلي (غير كاشف للهوية)
+            <label className="block text-sm" data-testid="field-ref-code-label">
+              معرف مرجعي داخلي (اختياري، غير كاشف للهوية)
               <input
                 type="text"
+                data-testid="field-ref-code"
                 value={refCode}
                 onChange={(e) => setRefCode(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="مثال: ST-2026-014"
               />
             </label>
           </div>
-        </details>
+        </fieldset>
 
         <section
           className="rounded-md border-2 border-primary/30 bg-primary/5 p-4"
