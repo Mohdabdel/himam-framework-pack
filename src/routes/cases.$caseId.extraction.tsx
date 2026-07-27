@@ -504,6 +504,6 @@ function ExtractionPage() {
           تبقى مراجعة جودة الخطة والتقرير مقفلة في هذا الإصدار.
         </p>
       </section>
-    </div>
+    </AppShell>
   );
 }

@@ -627,6 +627,6 @@ function SourcesPage() {
           العودة
         </button>
       </div>
-    </div>
+    </AppShell>
   );
 }
