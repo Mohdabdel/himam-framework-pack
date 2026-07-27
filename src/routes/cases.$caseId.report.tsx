@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AppShell,
   DOMAIN_LABELS_AR,
   FINDING_SEVERITY_LABELS_AR,
   FINDING_STATUS_LABELS_AR,
@@ -11,6 +12,7 @@ import {
   formatArabicDate,
   getDefaultRepository,
   phaseLabelAr,
+  StageHeader,
   shortCaseId,
 } from "@/features/himam";
 import type { InputImpactKey } from "@/features/himam";
@@ -181,19 +183,27 @@ function ReportScreen() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div dir="rtl" className="himam-report mx-auto max-w-4xl px-6 py-8 font-sans">
-      <div className="no-print mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">التقرير المحكوم للحالة {c.referenceCode}</h1>
-        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
-          العودة للحالة
-        </Link>
+    <AppShell width="regular" className="himam-report">
+      <div className="no-print">
+        <StageHeader
+          caseCodeAr={c.referenceCode}
+          titleAr="التقرير المحكوم"
+          stepIndicatorAr="الخطوة 7 من 8"
+          descriptionAr="توليد ومراجعة نسخ التقرير المحكوم قبل الإغلاق النهائي."
+          requiredNowAr="ولّد مسودة جديدة، ثم اعتمدها لإغلاق الحالة."
+          trailing={
+            <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
+              العودة للحالة
+            </Link>
+          }
+        />
       </div>
 
       <div
@@ -482,6 +492,6 @@ function ReportScreen() {
           </section>
         </>
       )}
-    </div>
+    </AppShell>
   );
 }

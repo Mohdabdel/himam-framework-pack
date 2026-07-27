@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  AppShell,
   CaseExtractionService,
   CaseService,
   CASE_STAGE_LABELS_AR,
-  JOURNEY_STATE_LABELS_AR,
   computeJourneyStatuses,
   resolveCaseNextAction,
+  JourneyStepper,
+  NextActionCard,
+  StageHeader,
   STATUS_BADGE_CLASSES,
   detectPhaseAgeInconsistency,
   formatArabicDate,
@@ -19,7 +22,6 @@ import type {
   CaseNextAction,
   InputSource,
   JourneyStepId,
-  JourneyStepState,
   ReviewCase,
   ReviewScopeSnapshot,
 } from "@/features/himam";
@@ -118,12 +120,12 @@ function CaseDetail() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
         <Link to="/cases" className="text-sm underline">
           العودة إلى اللوحة
         </Link>
-      </div>
+      </AppShell>
     );
   }
 
@@ -151,18 +153,10 @@ function CaseDetail() {
     sources: "/cases/$caseId/sources",
     text: "/cases/$caseId/ingestion",
     evidence: "/cases/$caseId/extraction",
-    scope: "/cases/$caseId/extraction",
+    scope: "/cases/$caseId/scope",
     review: "/cases/$caseId/review",
     report: "/cases/$caseId/report",
     closure: "/cases/$caseId/report",
-  };
-  const stateBadge: Record<JourneyStepState, string> = {
-    not_started: "bg-muted text-muted-foreground border-border",
-    in_progress: "bg-sky-50 text-sky-900 border-sky-200",
-    complete: "bg-emerald-50 text-emerald-900 border-emerald-200",
-    needs_action: "bg-amber-50 text-amber-900 border-amber-200",
-    needs_update: "bg-orange-50 text-orange-900 border-orange-200",
-    read_only: "bg-slate-100 text-slate-700 border-slate-200",
   };
 
   const doReconfirmScope = () => {
@@ -213,63 +207,23 @@ function CaseDetail() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-4xl px-6 py-10 font-sans">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">حالة مراجعة {c.referenceCode}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>المعرّف المختصر: {shortCaseId(c)}</span>
-            <span>·</span>
-            <span className={`rounded-full border px-2 py-0.5 ${STATUS_BADGE_CLASSES[c.status]}`}>
-              {statusLabelAr(c.status)}
-            </span>
-          </div>
-        </div>
-        <Link to="/cases" className="text-sm underline">
-          العودة
-        </Link>
-      </div>
+    <AppShell width="regular">
+      <StageHeader
+        caseCodeAr={`حالة مراجعة ${c.referenceCode}`}
+        titleAr={`المعرّف المختصر: ${shortCaseId(c)}`}
+        statusLabelAr={statusLabelAr(c.status)}
+        statusVariant="info"
+        trailing={
+          <Link to="/cases" className="text-sm underline">
+            العودة
+          </Link>
+        }
+      />
 
       {nextAction && (
-        <section
-          className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4"
-          data-testid="case-next-action"
-          data-next-action-kind={nextAction.kind}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-xs text-muted-foreground">الخطوة التالية</div>
-              <div className="text-base font-semibold">{nextAction.stateSummaryAr}</div>
-              {nextAction.blockedReasonAr && (
-                <div
-                  className="mt-1 text-xs text-amber-800"
-                  data-testid="case-next-action-blocker"
-                >
-                  {nextAction.blockedReasonAr}
-                </div>
-              )}
-            </div>
-            {nextAction.ctaHref && nextAction.ctaEnabled ? (
-              <Link
-                to={nextAction.ctaHref}
-                params={{ caseId }}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                data-testid="case-next-action-cta"
-              >
-                {nextAction.ctaLabelAr}
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="rounded-md border border-input px-4 py-2 text-sm text-muted-foreground opacity-60"
-                data-testid="case-next-action-cta"
-              >
-                {nextAction.ctaLabelAr}
-              </button>
-            )}
-          </div>
-        </section>
+        <div className="mb-6">
+          <NextActionCard action={nextAction} caseId={caseId} />
+        </div>
       )}
 
       <section className="mb-6 rounded-md border border-border p-4">
@@ -311,54 +265,7 @@ function CaseDetail() {
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold">رحلة الحالة</h2>
         </div>
-        <ol className="space-y-2 text-sm" data-testid="case-journey-stepper">
-          {journeyStatuses.map((s, i) => {
-            const href = stepHref[s.step.id];
-            const openable = s.state !== "not_started" && !!href;
-            return (
-              <li
-                key={s.step.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 p-2"
-                data-step-id={s.step.id}
-                data-step-state={s.state}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{i + 1}.</span>
-                    <span className="font-medium">{s.step.labelAr}</span>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] ${stateBadge[s.state]}`}
-                    >
-                      {JOURNEY_STATE_LABELS_AR[s.state]}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    {s.step.descriptionAr}
-                  </div>
-                  {s.blockedReasonAr && (
-                    <div className="mt-0.5 text-xs text-amber-800" data-testid={`step-blocker-${s.step.id}`}>
-                      {s.blockedReasonAr}
-                    </div>
-                  )}
-                </div>
-                {href ? (
-                  openable ? (
-                    <Link
-                      to={href}
-                      params={{ caseId }}
-                      className="text-xs underline"
-                      data-testid={`open-step-${s.step.id}`}
-                    >
-                      فتح
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">مقفل</span>
-                  )
-                ) : null}
-              </li>
-            );
-          })}
-        </ol>
+        <JourneyStepper caseId={caseId} statuses={journeyStatuses} stepHref={stepHref} />
         <p className="mt-3 text-xs text-muted-foreground">
           مرحلة المعالجة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}
         </p>
@@ -508,6 +415,6 @@ function CaseDetail() {
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
       </section>
 
-    </div>
+    </AppShell>
   );
 }
