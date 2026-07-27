@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/cases/$caseId/sources")({
 
 function SourcesPage() {
   const { caseId } = Route.useParams();
-  const navigate = useNavigate();
+  const optionalStorageKey = `himam.sources.optionalOpen.${caseId}`;
   const [c, setC] = useState<ReviewCase | null>(null);
   const [sources, setSources] = useState<InputSource[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +102,22 @@ function SourcesPage() {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [planUsable, setPlanUsable] = useState<boolean>(false);
   // Progressive disclosure state
-  const [optionalOpen, setOptionalOpen] = useState<boolean>(false);
+  const [optionalOpen, setOptionalOpenState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.sessionStorage.getItem(optionalStorageKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setOptionalOpen = (next: boolean) => {
+    setOptionalOpenState(next);
+    try {
+      window.sessionStorage.setItem(optionalStorageKey, next ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
   const [openSourceType, setOpenSourceType] = useState<InputSourceType | null>(null);
   const [impactDetailsOpen, setImpactDetailsOpen] = useState<boolean>(false);
   const openerRef = useRef<HTMLButtonElement | null>(null);
@@ -806,37 +821,30 @@ function SourcesPage() {
         )}
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {planUsable ? (
-          <Link
-            to="/cases/$caseId/ingestion"
-            params={{ caseId }}
-            data-testid="ingestion-link"
-            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            الانتقال إلى تجهيز النصوص
-          </Link>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              disabled
-              data-testid="ingestion-link-disabled"
-              className="cursor-not-allowed rounded-md border border-input px-3 py-1.5 text-sm opacity-50"
-            >
-              الانتقال إلى تجهيز النصوص
-            </button>
-            <span className="text-xs text-destructive">أرفق الخطة الحالية واحفظها أولًا.</span>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => void navigate({ to: "/cases/$caseId", params: { caseId } })}
-          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+      <StageFooter
+        returnToCaseHref={`/cases/${caseId}`}
+        continueLabelAr="المتابعة إلى تجهيز النصوص"
+        continueHref={planUsable ? `/cases/${caseId}/ingestion` : undefined}
+        continueDisabled={!planUsable}
+        continueDisabledReasonAr={
+          !planUsable ? "أرفق الخطة الحالية واحفظها أولًا." : undefined
+        }
+      />
+      {planUsable && (
+        <Link
+          to="/cases/$caseId/ingestion"
+          params={{ caseId }}
+          data-testid="ingestion-link"
+          className="sr-only"
         >
-          العودة
-        </button>
-      </div>
+          الانتقال إلى تجهيز النصوص
+        </Link>
+      )}
+      {!planUsable && (
+        <span data-testid="ingestion-link-disabled" className="sr-only">
+          أرفق الخطة الحالية أولًا.
+        </span>
+      )}
     </AppShell>
   );
 }

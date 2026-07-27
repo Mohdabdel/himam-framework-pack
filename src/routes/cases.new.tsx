@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppShell, CaseService, REVIEW_PHASES, StageHeader, validatePlanFile } from "@/features/himam";
 import type { ReviewPhaseId } from "@/features/himam";
 
@@ -40,6 +40,7 @@ function NewCase() {
   const [planFile, setPlanFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const fileValidation = useMemo(() => {
     if (!planFile) return null;
@@ -96,7 +97,7 @@ function NewCase() {
         referenceCode: trimmedRef || undefined,
         file: planFile,
       });
-      navigate({ to: "/cases/$caseId", params: { caseId: c.id } });
+      navigate({ to: "/cases/$caseId/sources", params: { caseId: c.id } });
     } catch (e) {
       setError((e as Error).message || "تعذّر إنشاء الحالة.");
     } finally {
@@ -109,27 +110,31 @@ function NewCase() {
       <StageHeader
         titleAr="إنشاء حالة مراجعة"
         stepIndicatorAr="الخطوة 1 من 8 — البيانات الأساسية"
-        descriptionAr="لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة."
-        requiredNowAr="أرفق ملف الخطة الحالية، وأدخل العمر أو المرحلة."
+        descriptionAr="لا يلزم إدخال اسم المتعلم؛ استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة."
+        requiredNowAr="المطلوب الآن: ملف الخطة الحالية + العمر أو المرحلة (يكفي أحدهما)."
       />
-      <div
-        role="note"
-        className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
-      >
-        الحد الأدنى الإلزامي لبدء الحالة: ملف الخطة الحالية + (العمر أو المرحلة).
-        يكفي إدخال أحدهما. باقي المصادر اختيارية ويمكن إضافتها لاحقًا.
-      </div>
-      <div
-        role="note"
-        className="mt-2 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
-      >
-        لا يُشترط إدخال التشخيص لمراجعة الخطة. وإذا ورد ضمن أحد المصادر يُستخدم كسياق وصفي فقط،
-        ولا يستخدمه النظام لاستنتاج القدرة أو إصدار قرار أهلية.
-      </div>
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            العمر (سنوات)
+      <form onSubmit={submit} className="mt-4 space-y-4" data-testid="new-case-form">
+        <div
+          role="note"
+          className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+          data-testid="privacy-line"
+        >
+          تُحفظ ملفاتك محليًا داخل المتصفح ولا تُرسل لأي خدمة خارجية.
+        </div>
+        <p className="text-[11px] text-muted-foreground" data-testid="diagnosis-note">
+          لا يُشترط إدخال التشخيص لمراجعة الخطة، ولا يستخدمه النظام لاستنتاج القدرة.
+        </p>
+
+        <fieldset
+          className="rounded-md border border-border p-3"
+          data-testid="basics-fieldset"
+        >
+          <legend className="px-1 text-xs font-medium text-muted-foreground">
+            العمر أو المرحلة — يكفي إدخال أحدهما
+          </legend>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              العمر (سنوات)
             <input
               type="number"
               min={0}
@@ -137,10 +142,11 @@ function NewCase() {
               value={age}
               onChange={(e) => setAge(e.target.value)}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              inputMode="numeric"
             />
-          </label>
-          <label className="block text-sm">
-            المرحلة
+            </label>
+            <label className="block text-sm">
+              المرحلة التعليمية
             <select
               value={phaseId}
               onChange={(e) => setPhaseId(e.target.value as ReviewPhaseId | "")}
@@ -153,66 +159,120 @@ function NewCase() {
                 </option>
               ))}
             </select>
-          </label>
-        </div>
-        <label className="block text-sm">
-          نوع الخطة
+            </label>
+          </div>
+        </fieldset>
+
+        <details className="rounded-md border border-border p-3">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            حقول إضافية اختيارية (نوع الخطة، معرف مرجعي داخلي)
+          </summary>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              نوع الخطة
+              <input
+                type="text"
+                value={planType}
+                onChange={(e) => setPlanType(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              معرف مرجعي داخلي (غير كاشف للهوية)
+              <input
+                type="text"
+                value={refCode}
+                onChange={(e) => setRefCode(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        </details>
+
+        <section
+          className="rounded-md border-2 border-primary/30 bg-primary/5 p-4"
+          data-testid="plan-upload-card"
+        >
+          <div className="mb-1 text-sm font-semibold">ملف الخطة الحالية</div>
+          <div className="mb-3 text-xs text-muted-foreground">
+            الصيغ المقبولة: PDF أو DOCX أو TXT. يُحفظ الملف محليًا داخل المتصفح.
+          </div>
           <input
-            type="text"
-            value={planType}
-            onChange={(e) => setPlanType(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          معرف مرجعي داخلي (اختياري، غير كاشف للهوية)
-          <input
-            type="text"
-            value={refCode}
-            onChange={(e) => setRefCode(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          ملف الخطة الحالية (PDF / DOCX / TXT) — إلزامي
-          <input
+            ref={fileInputRef}
             type="file"
-            required
+            className="sr-only"
             data-testid="plan-file-input"
+            aria-hidden="true"
+            tabIndex={-1}
             accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
-            className="mt-1 block w-full text-sm"
           />
-          <span className="mt-1 block text-xs text-muted-foreground">
-            سيُحفظ الملف محليًا بصورة خاصة داخل المتصفح، ثم يُستخدم لاحقًا في تجهيز النصوص.
-          </span>
-          {planFile && (
+          {!planFile ? (
+            <button
+              type="button"
+              data-testid="plan-file-picker"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+            >
+              اختيار ملف الخطة
+            </button>
+          ) : (
             <div
               data-testid="plan-file-preview"
-              className={`mt-2 rounded-md border px-3 py-2 text-xs ${
+              className={`rounded-md border px-3 py-2 text-xs ${
                 fileReady
                   ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                   : "border-destructive/40 bg-destructive/10 text-destructive"
               }`}
             >
-              <div className="font-medium">{planFile.name}</div>
-              <div>{formatBytes(planFile.size)}</div>
-              <div className="mt-1">
-                {fileReady
-                  ? "جاهز للرفع"
-                  : fileValidation && !fileValidation.ok
-                    ? fileValidation.reason
-                    : "الملف غير صالح."}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{planFile.name}</div>
+                  <div className="mt-0.5 text-[11px]">
+                    {planFile.type || "نوع غير محدد"} · {formatBytes(planFile.size)} ·{" "}
+                    {fileReady
+                      ? "جاهز للحفظ"
+                      : fileValidation && !fileValidation.ok
+                        ? fileValidation.reason
+                        : "الملف غير صالح."}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid="plan-file-clear"
+                  onClick={() => {
+                    setPlanFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="rounded-md border border-input px-2 py-1 text-[11px] hover:bg-accent"
+                >
+                  إزالة الاختيار
+                </button>
               </div>
             </div>
           )}
-        </label>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          {planFile && fileReady && (
+            <p
+              className="mt-2 text-[11px] text-muted-foreground"
+              data-testid="next-step-hint"
+            >
+              ستتمكن في الخطوة التالية من إضافة التقييم وأولويات الأسرة والمعلومات الأخرى عند
+              توفرها.
+            </p>
+          )}
+        </section>
+
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
         <button
           disabled={busy || !fileReady}
+          data-testid="submit-create-case"
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
-          إنشاء الحالة
+          إنشاء الحالة وحفظ الخطة
         </button>
       </form>
     </AppShell>

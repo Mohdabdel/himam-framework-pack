@@ -9,8 +9,9 @@ import {
   resolveCaseNextAction,
   JourneyStepper,
   NextActionCard,
+  PrimaryActionsBar,
+  SOURCE_TYPE_LABELS_AR,
   StageHeader,
-  STATUS_BADGE_CLASSES,
   detectPhaseAgeInconsistency,
   formatArabicDate,
   getDefaultRepository,
@@ -22,6 +23,7 @@ import type {
   CaseNextAction,
   InputSource,
   JourneyStepId,
+  PrimaryActionSpec,
   ReviewCase,
   ReviewScopeSnapshot,
 } from "@/features/himam";
@@ -39,15 +41,15 @@ export const Route = createFileRoute("/cases/$caseId")({
 });
 
 const DOMAIN_LABEL: Record<string, string> = {
-  D0: "D0 — قابلية المراجعة",
-  D1: "D1 — بنية الهدف",
-  D2: "D2 — التخصيص وقاعدة الأدلة",
-  D3: "D3 — القيمة التعليمية/الوظيفية",
-  D4: "D4 — الدعم والتنفيذ",
-  D5: "D5 — الأسرة والمتعلم والسياق",
-  D6: "D6 — المواءمة العمرية والمآلات",
-  D7: "D7 — ترابط الأهداف",
-  D8: "D8 — جاهزية الرصد",
+  D0: "قابلية المراجعة",
+  D1: "بنية الهدف",
+  D2: "التخصيص وقاعدة الأدلة",
+  D3: "القيمة التعليمية والوظيفية",
+  D4: "الدعم والتنفيذ",
+  D5: "الأسرة والمتعلم والسياق",
+  D6: "المواءمة العمرية والمآلات",
+  D7: "ترابط الأهداف",
+  D8: "جاهزية الرصد",
 };
 
 function ScopeDiff({
@@ -94,6 +96,8 @@ function CaseDetail() {
     CaseExtractionService["canCompleteExtractionConfirmation"]
   > | null>(null);
   const [nextAction, setNextAction] = useState<CaseNextAction | null>(null);
+  const [reviewState, setReviewState] = useState({ finalized: false, stale: false });
+  const [reportState, setReportState] = useState({ finalized: false, stale: false });
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -113,6 +117,18 @@ function CaseDetail() {
     const cx = new CaseExtractionService(repo);
     setCompleteStatus(cx.canCompleteExtractionConfirmation(caseId));
     setNextAction(resolveCaseNextAction(caseId, repo));
+    const rvs = store.reviewVersions.filter((v) => v.caseId === caseId);
+    const rvLive = rvs.filter((v) => !v.isStale).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    setReviewState({
+      finalized: !!rvLive?.completedAt,
+      stale: rvs.length > 0 && !rvLive,
+    });
+    const reps = store.reportVersions.filter((r) => r.caseId === caseId);
+    const repLive = reps.find((r) => r.status === "finalized") ?? null;
+    setReportState({
+      finalized: !!repLive,
+      stale: reps.some((r) => r.status === "stale") && !repLive,
+    });
   };
   useEffect(() => {
     void refresh();
@@ -130,9 +146,7 @@ function CaseDetail() {
   }
 
   const svc = new CaseService();
-  const canGenerate = c.status === "minimum_inputs_complete" || c.status === "scope_confirmed";
-  const canConfirm = c.status === "minimum_inputs_complete" && !!scope;
-  const canClose = c.status === "scope_confirmed";
+  const readOnly = c.status === "closed";
 
   const journeyStatuses = computeJourneyStatuses({
     reviewCase: c,
@@ -143,10 +157,10 @@ function CaseDetail() {
     textReadyCount: sources.filter((s) => s.extractionStage === "text_extracted").length,
     pendingEvidenceCount: evidenceCount.pending,
     confirmedEvidenceCount: evidenceCount.confirmed,
-    reviewFinalized: false,
-    reviewStale: false,
-    reportFinalized: false,
-    reportStale: false,
+    reviewFinalized: reviewState.finalized,
+    reviewStale: reviewState.stale,
+    reportFinalized: reportState.finalized,
+    reportStale: reportState.stale,
   });
   const stepHref: Partial<Record<JourneyStepId, string>> = {
     basics: undefined,
@@ -169,48 +183,44 @@ function CaseDetail() {
     }
   };
 
-  const doGenerate = () => {
-    setError(null);
-    try {
-      svc.generateScope(caseId);
-      void refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-  const doConfirm = () => {
-    setError(null);
-    try {
-      svc.confirmScope(caseId);
-      void refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-  const doClose = () => {
-    setError(null);
-    try {
-      svc.closeCase(caseId);
-      void refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-  const doRemove = async (sourceId: string) => {
-    setError(null);
-    try {
-      await svc.removeSource(sourceId);
-      await refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+  // Grouped source summary (count per type, in Arabic).
+  const sourceGroups = (() => {
+    const g = new Map<string, number>();
+    for (const s of sources) g.set(s.type, (g.get(s.type) ?? 0) + 1);
+    return [...g.entries()];
+  })();
+
+  const bottomActions: PrimaryActionSpec[] = [
+    {
+      id: "back-to-list",
+      labelAr: "العودة إلى قائمة الحالات",
+      variant: "ghost",
+      href: "/cases",
+    },
+  ];
+  if (nextAction?.ctaEnabled && nextAction.ctaHref) {
+    const href = nextAction.ctaHref.replace("$caseId", caseId);
+    bottomActions.push({
+      id: "next-action",
+      labelAr: nextAction.ctaLabelAr,
+      variant: "primary",
+      href,
+    });
+  } else if (nextAction) {
+    bottomActions.push({
+      id: "next-action",
+      labelAr: nextAction.ctaLabelAr,
+      variant: "primary",
+      disabled: true,
+      disabledReasonAr: nextAction.blockedReasonAr ?? undefined,
+    });
+  }
 
   return (
     <AppShell width="regular">
       <StageHeader
         caseCodeAr={`حالة مراجعة ${c.referenceCode}`}
-        titleAr={`المعرّف المختصر: ${shortCaseId(c)}`}
+        titleAr={c.planType ? `${c.planType} — ${phaseLabelAr(c.phaseId)}` : `مراجعة ${phaseLabelAr(c.phaseId)}`}
         statusLabelAr={statusLabelAr(c.status)}
         statusVariant="info"
         trailing={
@@ -226,7 +236,7 @@ function CaseDetail() {
         </div>
       )}
 
-      <section className="mb-6 rounded-md border border-border p-4">
+      <section className="mb-6 rounded-md border border-border p-4" data-testid="basics-summary">
         <h2 className="mb-2 text-lg font-semibold">البيانات الأساسية</h2>
         <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
           <div className="flex justify-between gap-3 border-b border-border/60 py-1">
@@ -267,11 +277,11 @@ function CaseDetail() {
         </div>
         <JourneyStepper caseId={caseId} statuses={journeyStatuses} stepHref={stepHref} />
         <p className="mt-3 text-xs text-muted-foreground">
-          مرحلة المعالجة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}
+          المرحلة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}
         </p>
         {completeStatus && !completeStatus.ok && c.extractionStage !== "extraction_confirmed" && (
           <p className="mt-2 text-xs text-amber-700" data-testid="journey-blocker">
-            متعذر إكمال تأكيد الاستخراج: {completeStatus.reason}
+            تعذّر إكمال تأكيد الأدلة بعد.
           </p>
         )}
       </section>
@@ -288,6 +298,7 @@ function CaseDetail() {
           <ScopeDiff previous={lastConfirmedScope} draft={scope} />
           <button
             type="button"
+            data-testid="reconfirm-scope-btn"
             onClick={doReconfirmScope}
             className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
           >
@@ -296,125 +307,46 @@ function CaseDetail() {
         </section>
       )}
 
-      <section className="mb-6 rounded-md border border-border p-4">
-        <h2 className="mb-2 text-lg font-semibold">مصادر المراجعة</h2>
-        {sources.length === 0 ? (
+      <section className="mb-6 rounded-md border border-border p-4" data-testid="sources-summary">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">ملخص المصادر</h2>
+          <Link
+            to="/cases/$caseId/sources"
+            params={{ caseId }}
+            className="text-xs underline"
+            data-testid="open-sources-link"
+          >
+            إدارة المصادر
+          </Link>
+        </div>
+        {sourceGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            لم يُسجَّل أي مصدر. الخطة إلزامية للانتقال إلى المدخلات الدنيا.
+            لم تُسجَّل أي مصادر بعد. ابدأ بإرفاق الخطة الحالية.
           </p>
         ) : (
-          <ul className="text-sm">
-            {sources.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-3 py-1">
-                <span className="min-w-0 truncate">
-                  {s.type} — {s.fileName}
-                </span>
-                <span className="flex items-center gap-2">
-                  <span
-                    className={
-                      s.status === "file_missing"
-                        ? "text-destructive"
-                        : s.status === "unreadable"
-                          ? "text-amber-600"
-                          : "text-muted-foreground"
-                    }
-                  >
-                    {s.status === "ready_for_future_ingestion"
-                      ? "محفوظ محليًا"
-                      : s.status === "file_missing"
-                        ? "الملف مفقود"
-                        : s.status === "unreadable"
-                          ? "غير قابل للقراءة"
-                          : "مسجَّل بدون ملف"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => void doRemove(s.id)}
-                    className="rounded-md border border-input px-2 py-0.5 text-xs hover:bg-accent"
-                  >
-                    إزالة
-                  </button>
+          <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            {sourceGroups.map(([type, count]) => (
+              <li
+                key={type}
+                className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-1.5"
+              >
+                <span>{SOURCE_TYPE_LABELS_AR[type as keyof typeof SOURCE_TYPE_LABELS_AR] ?? type}</span>
+                <span className="text-xs text-muted-foreground">
+                  {count === 1 ? "مصدر واحد" : `${count} مصادر`}
                 </span>
               </li>
             ))}
           </ul>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          الملف يُحفظ محليًا داخل المتصفح (IndexedDB) ولا يُرفع لأي خدمة خارجية ولا يتاح كرابط عام.
-        </p>
-        <p className="mt-3 text-xs text-muted-foreground">
-          المصادر الأخرى (تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم، ملاحظات مهنية، خطة سابقة،
-          تقدم سابق) مقفلة للحزم التالية.
-        </p>
       </section>
 
-      <section className="mb-6 rounded-md border border-border p-4">
-        <h2 className="mb-2 text-lg font-semibold">نطاق المراجعة المبدئي</h2>
-        <p className="mb-3 text-xs text-muted-foreground">
-          هذه ليست نتائج مراجعة. إنها حدود المراجعة التي ستصبح ممكنة بعد تنفيذ الحزم التالية.
+      {error && (
+        <p className="mb-4 text-sm text-destructive" role="alert">
+          {error}
         </p>
-        {scope ? (
-          <div className="space-y-3 text-sm">
-            <div>
-              <div className="font-medium">المدخلات المتاحة:</div>
-              <div className="text-muted-foreground">{scope.inputTypes.join("، ") || "—"}</div>
-            </div>
-            <div>
-              <div className="font-medium">المجالات المتاحة:</div>
-              <ul className="list-inside list-disc text-muted-foreground">
-                {scope.availableDomains.map((d) => (
-                  <li key={d}>{DOMAIN_LABEL[d] ?? d}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="font-medium">
-                المجالات غير القابلة للمراجعة (بسبب غياب مدخل اختياري):
-              </div>
-              <ul className="list-inside list-disc text-muted-foreground">
-                {scope.notReviewableDomains.map((d) => (
-                  <li key={d}>{DOMAIN_LABEL[d] ?? d}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              تاريخ الإنشاء: {new Date(scope.createdAt).toLocaleString("ar")} ·
-              {scope.confirmedAt
-                ? ` مؤكد في ${new Date(scope.confirmedAt).toLocaleString("ar")}`
-                : " غير مؤكد"}
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            لم يُولَّد نطاق بعد. أكمل المدخلات الدنيا ثم اضغط "توليد النطاق".
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            onClick={doGenerate}
-            disabled={!canGenerate}
-            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
-          >
-            توليد النطاق
-          </button>
-          <button
-            onClick={doConfirm}
-            disabled={!canConfirm}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            تأكيد نطاق المراجعة
-          </button>
-          <button
-            onClick={doClose}
-            disabled={!canClose}
-            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
-          >
-            إغلاق الحالة
-          </button>
-        </div>
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      </section>
+      )}
 
+      <PrimaryActionsBar actions={bottomActions} align="between" />
     </AppShell>
   );
 }
