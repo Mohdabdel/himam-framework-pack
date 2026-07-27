@@ -492,6 +492,6 @@ function ReportScreen() {
           </section>
         </>
       )}
-    </div>
+    </AppShell>
   );
 }
