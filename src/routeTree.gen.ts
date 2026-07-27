@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
 import { Route as CasesNewRouteImport } from './routes/cases.new'
 import { Route as CasesCaseIdRouteImport } from './routes/cases.$caseId'
+import { Route as CasesCaseIdIndexRouteImport } from './routes/cases.$caseId.index'
 import { Route as CasesCaseIdSourcesRouteImport } from './routes/cases.$caseId.sources'
 import { Route as CasesCaseIdScopeRouteImport } from './routes/cases.$caseId.scope'
 import { Route as CasesCaseIdReviewRouteImport } from './routes/cases.$caseId.review'
@@ -46,6 +47,11 @@ const CasesCaseIdRoute = CasesCaseIdRouteImport.update({
   id: '/$caseId',
   path: '/$caseId',
   getParentRoute: () => CasesRoute,
+} as any)
+const CasesCaseIdIndexRoute = CasesCaseIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CasesCaseIdRoute,
 } as any)
 const CasesCaseIdSourcesRoute = CasesCaseIdSourcesRouteImport.update({
   id: '/sources',
@@ -96,10 +102,10 @@ export interface FileRoutesByFullPath {
   '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/scope': typeof CasesCaseIdScopeRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId/': typeof CasesCaseIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/cases/$caseId': typeof CasesCaseIdRouteWithChildren
   '/cases/new': typeof CasesNewRoute
   '/cases': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
@@ -109,6 +115,7 @@ export interface FileRoutesByTo {
   '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/scope': typeof CasesCaseIdScopeRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId': typeof CasesCaseIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +131,7 @@ export interface FileRoutesById {
   '/cases/$caseId/review': typeof CasesCaseIdReviewRoute
   '/cases/$caseId/scope': typeof CasesCaseIdScopeRoute
   '/cases/$caseId/sources': typeof CasesCaseIdSourcesRoute
+  '/cases/$caseId/': typeof CasesCaseIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,10 +148,10 @@ export interface FileRouteTypes {
     | '/cases/$caseId/review'
     | '/cases/$caseId/scope'
     | '/cases/$caseId/sources'
+    | '/cases/$caseId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/cases/$caseId'
     | '/cases/new'
     | '/cases'
     | '/api/himam/extract-evidence'
@@ -153,6 +161,7 @@ export interface FileRouteTypes {
     | '/cases/$caseId/review'
     | '/cases/$caseId/scope'
     | '/cases/$caseId/sources'
+    | '/cases/$caseId'
   id:
     | '__root__'
     | '/'
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/cases/$caseId/review'
     | '/cases/$caseId/scope'
     | '/cases/$caseId/sources'
+    | '/cases/$caseId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -211,6 +221,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cases/$caseId'
       preLoaderRoute: typeof CasesCaseIdRouteImport
       parentRoute: typeof CasesRoute
+    }
+    '/cases/$caseId/': {
+      id: '/cases/$caseId/'
+      path: '/'
+      fullPath: '/cases/$caseId/'
+      preLoaderRoute: typeof CasesCaseIdIndexRouteImport
+      parentRoute: typeof CasesCaseIdRoute
     }
     '/cases/$caseId/sources': {
       id: '/cases/$caseId/sources'
@@ -271,6 +288,7 @@ interface CasesCaseIdRouteChildren {
   CasesCaseIdReviewRoute: typeof CasesCaseIdReviewRoute
   CasesCaseIdScopeRoute: typeof CasesCaseIdScopeRoute
   CasesCaseIdSourcesRoute: typeof CasesCaseIdSourcesRoute
+  CasesCaseIdIndexRoute: typeof CasesCaseIdIndexRoute
 }
 
 const CasesCaseIdRouteChildren: CasesCaseIdRouteChildren = {
@@ -280,6 +298,7 @@ const CasesCaseIdRouteChildren: CasesCaseIdRouteChildren = {
   CasesCaseIdReviewRoute: CasesCaseIdReviewRoute,
   CasesCaseIdScopeRoute: CasesCaseIdScopeRoute,
   CasesCaseIdSourcesRoute: CasesCaseIdSourcesRoute,
+  CasesCaseIdIndexRoute: CasesCaseIdIndexRoute,
 }
 
 const CasesCaseIdRouteWithChildren = CasesCaseIdRoute._addFileChildren(

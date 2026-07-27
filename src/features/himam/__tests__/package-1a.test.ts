@@ -285,7 +285,7 @@ describe("HIMAM Package 1A", () => {
       "utf8",
     );
     const detail = fs.readFileSync(
-      path.join(process.cwd(), "src/routes/cases.$caseId.tsx"),
+      path.join(process.cwd(), "src/routes/cases.$caseId.index.tsx"),
       "utf8",
     );
     const RAW = [
@@ -347,7 +347,7 @@ describe("HIMAM Package 1A", () => {
     expect(s.get(c.id)!.status).toBe("minimum_inputs_complete");
     // Detail route renders the warning element for inconsistent cases.
     const detail = fs.readFileSync(
-      path.join(process.cwd(), "src/routes/cases.$caseId.tsx"),
+      path.join(process.cwd(), "src/routes/cases.$caseId.index.tsx"),
       "utf8",
     );
     expect(detail).toContain("يرجى مراجعة المرحلة المختارة.");

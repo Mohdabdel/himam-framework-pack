@@ -50,9 +50,11 @@ function IngestionPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openPreview, setOpenPreview] = useState<string | null>(null);
+  const [planBlobMissing, setPlanBlobMissing] = useState<boolean>(false);
 
-  const refresh = () => {
+  const refresh = async () => {
     const svc = new CaseService();
+    await svc.reconcile();
     setC(svc.get(caseId));
     const list = svc.sourcesFor(caseId);
     setSources(list);
@@ -65,9 +67,28 @@ function IngestionPage() {
         .sort((a, b) => a.order - b.order);
     }
     setChunksBySource(map);
+    // Explicit Blob probe: read (not just has) so the diagnostic reflects
+    // reality even if metadata says ready.
+    const storage = getDefaultPlanFileStorage();
+    const plans = list.filter((s) => s.type === "plan");
+    let missing = false;
+    for (const p of plans) {
+      if (!p.storagePath) continue;
+      try {
+        const blob = await storage.get(p.id);
+        if (!blob || blob.size === 0) {
+          missing = true;
+          break;
+        }
+      } catch {
+        missing = true;
+        break;
+      }
+    }
+    setPlanBlobMissing(plans.length > 0 && missing);
   };
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [caseId]);
 
   if (!c) {
@@ -90,7 +111,7 @@ function IngestionPage() {
       const extractor = new DefaultDocumentTextExtractor();
       const ingestion = new IngestionService(repo, storage, extractor);
       await ingestion.ingestSource(s.id);
-      refresh();
+      await refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -109,7 +130,7 @@ function IngestionPage() {
     if (!row) return;
     row.unavailableResolution = resolution;
     repo.save(store);
-    refresh();
+    void refresh();
   };
 
   return (
@@ -134,9 +155,27 @@ function IngestionPage() {
             إضافة مصادر
           </Link>
         </div>
+      ) : planBlobMissing ? (
+        <div
+          role="alert"
+          data-testid="plan-blob-missing"
+          className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+        >
+          <p className="font-medium">سجل الخطة موجود، لكن ملفها المحلي غير قابل للقراءة.</p>
+          <p className="mt-1 text-xs">استبدل ملف الخطة من صفحة المصادر لإعادة تفعيل تجهيز النص.</p>
+          <Link
+            to="/cases/$caseId/sources"
+            params={{ caseId }}
+            className="mt-2 inline-flex rounded-md border border-input bg-background px-3 py-1.5 text-xs hover:bg-accent"
+          >
+            الذهاب إلى المصادر لاستبدال ملف الخطة
+          </Link>
+        </div>
       ) : (
         <ul className="space-y-3">
-          {sources.map((s) => {
+          {[...sources]
+            .sort((a, b) => (a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0))
+            .map((s) => {
             const chunks = chunksBySource[s.id] ?? [];
             const stageLabel = EXTRACTION_STAGE_LABELS_AR[s.extractionStage];
             return (

@@ -11,7 +11,7 @@ function read(p: string): string {
 
 describe("HIMAM — UX Correction Gate", () => {
   const createSrc = read("src/routes/cases.new.tsx");
-  const casesDash = read("src/routes/cases.$caseId.tsx");
+  const casesDash = read("src/routes/cases.$caseId.index.tsx");
   const sourcesSrc = read("src/routes/cases.$caseId.sources.tsx");
 
   it("FLOW-CORR-T01: create screen has a custom plan-upload zone and a hidden native input", () => {
