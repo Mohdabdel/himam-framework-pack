@@ -806,37 +806,30 @@ function SourcesPage() {
         )}
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {planUsable ? (
-          <Link
-            to="/cases/$caseId/ingestion"
-            params={{ caseId }}
-            data-testid="ingestion-link"
-            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            الانتقال إلى تجهيز النصوص
-          </Link>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              disabled
-              data-testid="ingestion-link-disabled"
-              className="cursor-not-allowed rounded-md border border-input px-3 py-1.5 text-sm opacity-50"
-            >
-              الانتقال إلى تجهيز النصوص
-            </button>
-            <span className="text-xs text-destructive">أرفق الخطة الحالية واحفظها أولًا.</span>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => void navigate({ to: "/cases/$caseId", params: { caseId } })}
-          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+      <StageFooter
+        returnToCaseHref={`/cases/${caseId}`}
+        continueLabelAr="المتابعة إلى تجهيز النصوص"
+        continueHref={planUsable ? `/cases/${caseId}/ingestion` : undefined}
+        continueDisabled={!planUsable}
+        continueDisabledReasonAr={
+          !planUsable ? "أرفق الخطة الحالية واحفظها أولًا." : undefined
+        }
+      />
+      {planUsable && (
+        <Link
+          to="/cases/$caseId/ingestion"
+          params={{ caseId }}
+          data-testid="ingestion-link"
+          className="sr-only"
         >
-          العودة
-        </button>
-      </div>
+          الانتقال إلى تجهيز النصوص
+        </Link>
+      )}
+      {!planUsable && (
+        <span data-testid="ingestion-link-disabled" className="sr-only">
+          أرفق الخطة الحالية أولًا.
+        </span>
+      )}
     </AppShell>
   );
 }
