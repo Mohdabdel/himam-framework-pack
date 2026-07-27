@@ -120,6 +120,14 @@ function SourcesPage() {
     void refresh();
   }, [caseId]);
 
+  // Auto-enable the optional-inputs section whenever the case already has
+  // any optional source (added in a previous session). Never auto-disable.
+  useEffect(() => {
+    const hasOptional = sources.some((s) => s.type !== "plan");
+    if (hasOptional && !optionalOpen) setOptionalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sources.length]);
+
   if (!c) {
     return (
       <AppShell width="regular">
