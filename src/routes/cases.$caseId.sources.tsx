@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
   CaseService,
@@ -44,6 +44,35 @@ const SOURCE_TYPE_TO_REVIEW_INPUT: Record<InputSourceType, ReviewInputType> = {
   prior_plan: "prior_plan",
   prior_progress: "prior_progress",
 };
+
+// Short compact-card blurb (one line) for each optional source.
+const OPTIONAL_SHORT_AR: Record<InputSourceType, string> = {
+  plan: "",
+  assessment: "يدعم مراجعة ارتباط الاحتياجات وخطوط الأساس والأهداف بنتائج التقييم.",
+  family_priorities: "يدعم مراجعة حضور أولويات الأسرة واتساقها مع الخطة.",
+  student_preferences: "يدعم مراجعة تمثيل صوت المتعلم وتفضيلاته.",
+  supports: "يدعم مراجعة اتساق الدعم والتسهيلات مع الاحتياجات والأهداف.",
+  professional_notes: "تضيف معلومات سياقية موثقة من المختصين.",
+  prior_plan: "تدعم مراجعة الاستمرارية والتغير بين الخطط.",
+  prior_progress: "تدعم مراجعة التقدم الموثق واستمرار الأهداف أو تعديلها.",
+};
+
+const GOVERNANCE_NOTE_AR =
+  "عدم إضافة المصدر الاختياري لا يعني أن الخطة غير متحققة. ستظهر فقط المعايير التي تعتمد عليه بوصفها غير قابلة للمراجعة وفق المعلومات المتاحة.";
+const OPTIONAL_INTRO_AR =
+  "إضافة هذه المعلومات اختيارية. كلما أضفت معلومات موثقة وذات صلة، استطاع النظام مراجعة جوانب أكثر من الخطة وتقديم تقرير أكثر اكتمالًا ودقة. عدم إضافة هذه المعلومات لا يعني أن الخطة غير متحققة أو فاشلة.";
+const OPTIONAL_HINT_AR =
+  "يمكنك إضافة تقييم، أولويات الأسرة، تفضيلات المتعلم، الدعم، أو مصادر سابقة عند توفرها.";
+
+const OPTIONAL_TYPES: InputSourceType[] = [
+  "assessment",
+  "family_priorities",
+  "student_preferences",
+  "supports",
+  "professional_notes",
+  "prior_plan",
+  "prior_progress",
+];
 
 export const Route = createFileRoute("/cases/$caseId/sources")({
   head: () => ({
