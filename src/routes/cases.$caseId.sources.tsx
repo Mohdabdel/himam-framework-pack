@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/cases/$caseId/sources")({
 
 function SourcesPage() {
   const { caseId } = Route.useParams();
-  const navigate = useNavigate();
+  const optionalStorageKey = `himam.sources.optionalOpen.${caseId}`;
   const [c, setC] = useState<ReviewCase | null>(null);
   const [sources, setSources] = useState<InputSource[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +102,22 @@ function SourcesPage() {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [planUsable, setPlanUsable] = useState<boolean>(false);
   // Progressive disclosure state
-  const [optionalOpen, setOptionalOpen] = useState<boolean>(false);
+  const [optionalOpen, setOptionalOpenState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.sessionStorage.getItem(optionalStorageKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setOptionalOpen = (next: boolean) => {
+    setOptionalOpenState(next);
+    try {
+      window.sessionStorage.setItem(optionalStorageKey, next ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
   const [openSourceType, setOpenSourceType] = useState<InputSourceType | null>(null);
   const [impactDetailsOpen, setImpactDetailsOpen] = useState<boolean>(false);
   const openerRef = useRef<HTMLButtonElement | null>(null);
