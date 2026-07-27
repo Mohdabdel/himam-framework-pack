@@ -59,6 +59,22 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* HIMAM operational status tokens — shared by UI library */
+  --color-himam-success: var(--himam-success);
+  --color-himam-success-foreground: var(--himam-success-foreground);
+  --color-himam-success-soft: var(--himam-success-soft);
+  --color-himam-warning: var(--himam-warning);
+  --color-himam-warning-foreground: var(--himam-warning-foreground);
+  --color-himam-warning-soft: var(--himam-warning-soft);
+  --color-himam-info: var(--himam-info);
+  --color-himam-info-foreground: var(--himam-info-foreground);
+  --color-himam-info-soft: var(--himam-info-soft);
+  --color-himam-locked: var(--himam-locked);
+  --color-himam-locked-foreground: var(--himam-locked-foreground);
+  --color-himam-locked-soft: var(--himam-locked-soft);
+  --color-himam-attention: var(--himam-attention);
+  --color-himam-attention-foreground: var(--himam-attention-foreground);
+  --color-himam-attention-soft: var(--himam-attention-soft);
 }
 
 :root {
@@ -95,6 +111,22 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* HIMAM status palette — light */
+  --himam-success: oklch(0.62 0.13 155);
+  --himam-success-foreground: oklch(0.99 0.01 155);
+  --himam-success-soft: oklch(0.96 0.04 155);
+  --himam-warning: oklch(0.72 0.15 75);
+  --himam-warning-foreground: oklch(0.25 0.05 75);
+  --himam-warning-soft: oklch(0.97 0.04 85);
+  --himam-info: oklch(0.62 0.14 235);
+  --himam-info-foreground: oklch(0.99 0.01 235);
+  --himam-info-soft: oklch(0.96 0.03 235);
+  --himam-locked: oklch(0.62 0.02 255);
+  --himam-locked-foreground: oklch(0.99 0 0);
+  --himam-locked-soft: oklch(0.95 0.005 255);
+  --himam-attention: oklch(0.62 0.19 40);
+  --himam-attention-foreground: oklch(0.99 0.01 40);
+  --himam-attention-soft: oklch(0.96 0.04 40);
 }
 
 .dark {
@@ -130,6 +162,22 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* HIMAM status palette — dark */
+  --himam-success: oklch(0.72 0.14 155);
+  --himam-success-foreground: oklch(0.15 0.04 155);
+  --himam-success-soft: oklch(0.28 0.06 155);
+  --himam-warning: oklch(0.8 0.16 80);
+  --himam-warning-foreground: oklch(0.18 0.04 80);
+  --himam-warning-soft: oklch(0.3 0.08 80);
+  --himam-info: oklch(0.72 0.14 235);
+  --himam-info-foreground: oklch(0.15 0.04 235);
+  --himam-info-soft: oklch(0.28 0.06 235);
+  --himam-locked: oklch(0.7 0.02 255);
+  --himam-locked-foreground: oklch(0.15 0.02 255);
+  --himam-locked-soft: oklch(0.28 0.01 255);
+  --himam-attention: oklch(0.75 0.18 40);
+  --himam-attention-foreground: oklch(0.18 0.05 40);
+  --himam-attention-soft: oklch(0.3 0.08 40);
 }
 
 @layer base {
