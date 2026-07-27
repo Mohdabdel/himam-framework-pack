@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  AppShell,
   CaseService,
   DefaultDocumentTextExtractor,
   EXTRACTION_STAGE_LABELS_AR,
   IngestionService,
+  StageFooter,
+  StageHeader,
   SOURCE_TYPE_LABELS_AR,
   getDefaultPlanFileStorage,
   getDefaultRepository,
@@ -69,9 +72,9 @@ function IngestionPage() {
 
   if (!c) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl px-6 py-10">
+      <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
-      </div>
+      </AppShell>
     );
   }
 
@@ -110,17 +113,19 @@ function IngestionPage() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-4xl px-6 py-10 font-sans">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">تجهيز النصوص</h1>
-        <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
-          العودة إلى ملخص الحالة
-        </Link>
-      </header>
-      <p className="mb-4 text-xs text-muted-foreground">
-        لا يوجد image recognition. المصادر غير القابلة للاستخراج تحتاج قرارًا صريحًا: استبدال أو
-        دليل يدوي أو استبعاد مع سبب.
-      </p>
+    <AppShell width="regular">
+      <StageHeader
+        caseCodeAr={c.referenceCode}
+        titleAr="تجهيز النصوص"
+        stepIndicatorAr="الخطوة 3 من 8"
+        descriptionAr="تحويل ملفات المصادر إلى نص قابل للاستخدام في استخراج الأدلة."
+        requiredNowAr="جهّز نص كل مصدر أو اتخذ قرارًا صريحًا للمصادر غير القابلة للاستخراج."
+        trailing={
+          <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
+            العودة إلى ملخص الحالة
+          </Link>
+        }
+      />
 
       {sources.length === 0 ? (
         <div className="rounded-md border border-dashed border-border p-6 text-sm text-muted-foreground">
@@ -234,15 +239,13 @@ function IngestionPage() {
 
       {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Link
-          to="/cases/$caseId/extraction"
-          params={{ caseId }}
-          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-        >
-          الانتقال إلى استخراج الأدلة
-        </Link>
-      </div>
-    </div>
+      <StageFooter
+        backHref={`/cases/${caseId}/sources`}
+        backLabelAr="السابق: المصادر"
+        returnToCaseHref={`/cases/${caseId}`}
+        continueLabelAr="الانتقال إلى استخراج الأدلة"
+        continueHref={`/cases/${caseId}/extraction`}
+      />
+    </AppShell>
   );
 }
