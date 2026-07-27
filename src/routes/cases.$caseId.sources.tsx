@@ -90,10 +90,6 @@ function SourcesPage() {
   }
 
   const readOnly = c.status === "closed";
-  const NON_PLAN_TYPES = SOURCE_TYPES_ORDER.filter((t) => t !== "plan");
-  if (!NON_PLAN_TYPES.includes(addType)) {
-    // Guard: addType was reset in state; keep default consistent.
-  }
   const isManual = MANUAL_TEXT_SOURCE_TYPES.includes(addType);
   const isSingle = SINGLE_ACTIVE_SOURCE_TYPES.includes(addType);
   const hasActiveOfType = sources.some((s) => s.type === addType);
