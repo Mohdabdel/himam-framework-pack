@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CaseService, REVIEW_PHASES, validatePlanFile } from "@/features/himam";
+import { AppShell, CaseService, REVIEW_PHASES, StageHeader, validatePlanFile } from "@/features/himam";
 import type { ReviewPhaseId } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/new")({
@@ -105,11 +105,13 @@ function NewCase() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-2xl px-6 py-10 font-sans">
-      <h1 className="text-2xl font-bold">إنشاء حالة مراجعة</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة.
-      </p>
+    <AppShell width="narrow">
+      <StageHeader
+        titleAr="إنشاء حالة مراجعة"
+        stepIndicatorAr="الخطوة 1 من 8 — البيانات الأساسية"
+        descriptionAr="لا يلزم إدخال اسم المتعلم. استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة."
+        requiredNowAr="أرفق ملف الخطة الحالية، وأدخل العمر أو المرحلة."
+      />
       <div
         role="note"
         className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
@@ -213,6 +215,6 @@ function NewCase() {
           إنشاء الحالة
         </button>
       </form>
-    </div>
+    </AppShell>
   );
 }
