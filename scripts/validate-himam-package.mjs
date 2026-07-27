@@ -117,8 +117,6 @@ for (const c of criteria) {
   for (const s of used)
     if (!registered.has(s)) err(`criterion ${c.id} references unregistered source ${s}`);
   if (used.length === 0) err(`criterion ${c.id} has no source_id`);
-  else if (!registered.has(c.sources))
-    err(`criterion ${c.id} references unregistered source ${c.sources}`);
 }
 
 // 4. Input activation matrix: absent input must NOT produce fail

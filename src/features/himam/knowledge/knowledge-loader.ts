@@ -69,7 +69,7 @@ export function loadCriteriaIndex(): CriteriaIndex {
         .map((s) => s.trim())
         .filter(Boolean),
       sourceIds: (r["source_ids"] ?? "")
-        .split(/[,;\s]+/)
+        .split(/[,;|\s]+/)
         .map((s) => s.trim())
         .filter(Boolean),
       activationRule: r["activation_rule"] ?? "",
