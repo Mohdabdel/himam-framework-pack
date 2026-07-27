@@ -44,6 +44,9 @@ export class IngestionService {
     const src = preStore.sources.find((s) => s.id === sourceId);
     if (!src) throw new Error("Source not found");
     if (!src.storagePath) {
+      if (src.type === "plan") {
+        throw new Error("أرفق الخطة الحالية واحفظها أولًا.");
+      }
       throw new Error("Source has no attached file");
     }
     const blob = await this.storage.get(sourceId);
@@ -51,14 +54,35 @@ export class IngestionService {
       const store = this.repo.load();
       const s = store.sources.find((x) => x.id === sourceId)!;
       s.extractionStage = "failed";
+      if (s.type === "plan") s.status = "file_missing";
       store.auditEvents.push(
         newAuditEvent(s.reviewCaseId, "source_ingest_failed", {
           sourceId,
           reason: "file_missing",
         }),
       );
+      // Cascade status recomputation: a plan without its Blob must knock the
+      // case back to draft.
+      if (s.type === "plan") {
+        const c = store.cases.find((x) => x.id === s.reviewCaseId);
+        if (c && c.status !== "closed") {
+          const hasAgeOrPhase = c.ageYears !== null || c.phaseId !== null;
+          const hasPlan = store.sources.some(
+            (x) =>
+              x.reviewCaseId === c.id &&
+              x.type === "plan" &&
+              x.status === "ready_for_future_ingestion",
+          );
+          if (!(hasAgeOrPhase && hasPlan) && c.status !== "draft") {
+            c.status = "draft";
+            c.updatedAt = new Date().toISOString();
+          }
+        }
+      }
       this.repo.save(store);
-      throw new Error("File missing");
+      throw new Error(
+        src.type === "plan" ? "ملف الخطة مفقود — أعد رفعه." : "File missing",
+      );
     }
 
     const blobHash = await hashBlob(blob);
