@@ -267,11 +267,20 @@ function CaseDetail() {
         className="mb-6 flex flex-wrap gap-2 rounded-md border border-border bg-muted/30 p-3"
         data-testid="case-top-actions"
       >
+        {nextAction && nextAction.ctaEnabled && nextAction.ctaHref && (
+          <a
+            href={nextAction.ctaHref.replace("/cases/$caseId", `/cases/${caseId}`)}
+            data-testid="action-continue-review"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            متابعة المراجعة
+          </a>
+        )}
         <Link
           to="/cases/$caseId/sources"
           params={{ caseId }}
           data-testid="action-manage-sources"
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
         >
           إدارة المصادر
         </Link>
