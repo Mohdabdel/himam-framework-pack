@@ -74,6 +74,39 @@ function useServices() {
   }, []);
 }
 
+// Engine errors are technical strings; the reviewer only ever sees Arabic.
+const REVIEW_ERROR_AR: Array<[string, string]> = [
+  [
+    "critical findings still pending",
+    "لا يمكن ختم المراجعة: توجد ملاحظات مطلوبة بلا قرار.",
+  ],
+  ["scope needs reconfirmation", "لا يمكن ختم المراجعة: النطاق يحتاج إلى إعادة تأكيد."],
+  ["No active review version", "لم يُشغَّل محرك المراجعة بعد."],
+  ["Case is closed", "الحالة مغلقة — العرض للقراءة فقط."],
+  ["stale finding", "هذه الملاحظة قديمة — أعد تشغيل المحرك."],
+  ["Cannot complete review", "تعذّر ختم المراجعة — أعد تشغيل المحرك ثم حاول مجددًا."],
+];
+
+function reviewErrorAr(message: string): string {
+  for (const [needle, ar] of REVIEW_ERROR_AR) {
+    if (message.includes(needle)) return ar;
+  }
+  return "تعذّر إتمام الإجراء. راجع الخطوات السابقة ثم حاول مجددًا.";
+}
+
+function unusedServices() {
+  return useMemo(() => {
+    const repo = getDefaultRepository();
+    return {
+      repo,
+      versions: new ReviewVersionService(repo),
+      human: new HumanReviewService(repo),
+      coverage: new ReviewCoverageService(repo),
+      registry: getKnowledgeRegistry(),
+    };
+  }, []);
+}
+
 function ReviewWorkspace() {
   const { caseId } = Route.useParams();
   const services = useServices();
