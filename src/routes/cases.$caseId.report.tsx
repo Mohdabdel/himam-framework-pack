@@ -203,7 +203,7 @@ function ReportScreen() {
   };
   const onPrint = () => {
     // G3 — لا نفتح مربع حوار الطباعة قبل تجهيز محتوى التقرير على الشاشة.
-    if (!active) return;
+    if (!active || active.status !== "finalized") return;
     if (typeof window !== "undefined") window.print();
   };
 
@@ -257,7 +257,7 @@ function ReportScreen() {
         <button
           type="button"
           onClick={onPrint}
-          disabled={!active}
+          disabled={!active || active.status !== "finalized"}
           className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
           data-testid="print-report-btn"
         >
