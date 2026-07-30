@@ -55,6 +55,8 @@ function IngestionPage() {
   const [planBlobMissing, setPlanBlobMissing] = useState<boolean>(false);
   const previewOpenerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const activeOpenerRef = useRef<HTMLElement | null>(null);
+  const autoRanRef = useRef(false);
+  const [autoRunning, setAutoRunning] = useState(false);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -94,6 +96,34 @@ function IngestionPage() {
   useEffect(() => {
     void refresh();
   }, [caseId]);
+
+  // The user should not have to know what "تجهيز النص" means: as soon as the
+  // screen opens we read every pending source automatically. Manual buttons
+  // stay available for retries and re-reads.
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    if (!c || c.status === "closed") return;
+    const pending = sources.filter(
+      (s) => s.extractionStage === "not_started" && !!s.storagePath && !s.manualTextArtifactId,
+    );
+    if (pending.length === 0) return;
+    autoRanRef.current = true;
+    void (async () => {
+      setAutoRunning(true);
+      const repo = getDefaultRepository();
+      const storage = getDefaultPlanFileStorage();
+      const ingestion = new IngestionService(repo, storage, new DefaultDocumentTextExtractor());
+      for (const s of pending) {
+        try {
+          await ingestion.ingestSource(s.id);
+        } catch {
+          // Per-source failure is surfaced by that source's own stage badge.
+        }
+      }
+      await refresh();
+      setAutoRunning(false);
+    })();
+  }, [c, sources]);
 
   if (!c) {
     return (
@@ -255,10 +285,16 @@ function IngestionPage() {
     <AppShell width="regular">
       <StageHeader
         caseCodeAr={c.referenceCode}
-        titleAr="تجهيز النصوص"
+        titleAr="قراءة محتوى الخطة"
         stepIndicatorAr="الخطوة 3 من 8"
-        descriptionAr="تحويل ملفات المصادر إلى نص قابل للاستخدام في استخراج الأدلة."
-        requiredNowAr="جهّز نص كل مصدر أو اتخذ قرارًا صريحًا للمصادر غير القابلة للاستخراج."
+        descriptionAr="يقرأ النظام محتوى الملفات تلقائيًا ليتمكن من عرض بنود الخطة عليك."
+        requiredNowAr={
+          autoRunning
+            ? "جارٍ قراءة محتوى الملفات…"
+            : counts.ready > 0
+              ? "تمت قراءة المحتوى. تابع إلى مراجعة بنود الخطة."
+              : "اضغط قراءة المحتوى، أو عالج الملفات غير القابلة للقراءة."
+        }
         trailing={
           <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">
             العودة إلى ملخص الحالة
@@ -296,11 +332,11 @@ function IngestionPage() {
             data-testid="ingestion-counters"
           >
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
-              <div className="text-xs text-muted-foreground">مصادر جاهزة النص</div>
+              <div className="text-xs text-muted-foreground">ملفات تمت قراءتها</div>
               <div className="mt-1 text-lg font-semibold">{counts.ready}</div>
             </div>
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
-              <div className="text-xs text-muted-foreground">بانتظار التجهيز</div>
+              <div className="text-xs text-muted-foreground">بانتظار القراءة</div>
               <div className="mt-1 text-lg font-semibold">{counts.pending}</div>
             </div>
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
@@ -359,9 +395,9 @@ function IngestionPage() {
 
       <StageFooter
         backHref={`/cases/${caseId}/sources`}
-        backLabelAr="السابق: المصادر"
+        backLabelAr="السابق: الخطة"
         returnToCaseHref={`/cases/${caseId}`}
-        continueLabelAr="الانتقال إلى استخراج الأدلة"
+        continueLabelAr="مراجعة بنود الخطة"
         continueHref={`/cases/${caseId}/extraction`}
       />
     </AppShell>
