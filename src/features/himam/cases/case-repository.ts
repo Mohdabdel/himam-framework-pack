@@ -11,11 +11,7 @@ import type {
   TextChunk,
   TextLocator,
 } from "./case-types";
-import type {
-  GovernedReportVersion,
-  ReviewFinding,
-  ReviewVersion,
-} from "../review/review-types";
+import type { GovernedReportVersion, ReviewFinding, ReviewVersion } from "../review/review-types";
 
 export interface HimamStore {
   cases: ReviewCase[];

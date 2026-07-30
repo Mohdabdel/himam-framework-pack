@@ -131,7 +131,9 @@ function CaseDetail() {
     setCompleteStatus(cx.canCompleteExtractionConfirmation(caseId));
     setNextAction(resolveCaseNextAction(caseId, repo));
     const rvs = store.reviewVersions.filter((v) => v.caseId === caseId);
-    const rvLive = rvs.filter((v) => !v.isStale).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const rvLive = rvs
+      .filter((v) => !v.isStale)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
     setReviewState({
       finalized: !!rvLive?.completedAt,
       stale: rvs.length > 0 && !rvLive,
@@ -246,7 +248,11 @@ function CaseDetail() {
     <AppShell width="regular">
       <StageHeader
         caseCodeAr={`حالة مراجعة ${c.referenceCode}`}
-        titleAr={c.planType ? `${c.planType} — ${phaseLabelAr(c.phaseId)}` : `مراجعة ${phaseLabelAr(c.phaseId)}`}
+        titleAr={
+          c.planType
+            ? `${c.planType} — ${phaseLabelAr(c.phaseId)}`
+            : `مراجعة ${phaseLabelAr(c.phaseId)}`
+        }
         statusLabelAr={statusLabelAr(c.status)}
         statusVariant="info"
         trailing={
@@ -303,9 +309,7 @@ function CaseDetail() {
             >
               بدء المراجعة المهنية
             </button>
-            <span className="mt-1 text-[11px] text-muted-foreground">
-              {reviewGate.reasonAr}
-            </span>
+            <span className="mt-1 text-[11px] text-muted-foreground">{reviewGate.reasonAr}</span>
           </span>
         )}
         {reportGate.ok ? (
@@ -327,9 +331,7 @@ function CaseDetail() {
             >
               إنشاء التقرير
             </button>
-            <span className="mt-1 text-[11px] text-muted-foreground">
-              {reportGate.reasonAr}
-            </span>
+            <span className="mt-1 text-[11px] text-muted-foreground">{reportGate.reasonAr}</span>
           </span>
         )}
       </section>
@@ -432,7 +434,9 @@ function CaseDetail() {
                 key={type}
                 className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-1.5"
               >
-                <span>{SOURCE_TYPE_LABELS_AR[type as keyof typeof SOURCE_TYPE_LABELS_AR] ?? type}</span>
+                <span>
+                  {SOURCE_TYPE_LABELS_AR[type as keyof typeof SOURCE_TYPE_LABELS_AR] ?? type}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {count === 1 ? "مصدر واحد" : `${count} مصادر`}
                 </span>

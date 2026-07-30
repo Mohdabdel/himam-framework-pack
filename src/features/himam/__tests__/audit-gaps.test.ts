@@ -3,10 +3,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import {
-  REPORT_VERSION_STATUS_LABELS_AR,
-  UNCERTAINTY_LABELS_AR,
-} from "../review/review-labels";
+import { REPORT_VERSION_STATUS_LABELS_AR, UNCERTAINTY_LABELS_AR } from "../review/review-labels";
 
 function read(p: string): string {
   return fs.readFileSync(path.resolve(process.cwd(), p), "utf8");

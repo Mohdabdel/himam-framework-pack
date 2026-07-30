@@ -97,7 +97,10 @@ function ItemCard({ item }: { item: ReportFindingItem }) {
         {UNCERTAINTY_LABELS_AR[item.uncertainty]}
       </p>
       {item.provenance.length > 0 ? (
-        <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2" data-testid="report-item-provenance">
+        <div
+          className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2"
+          data-testid="report-item-provenance"
+        >
           <div className="mb-1 text-[11px] font-medium">المصدر داخل الخطة</div>
           <ul className="space-y-1">
             {item.provenance.map((p) => (
@@ -163,9 +166,7 @@ function ActionWithReason({
     <span className="inline-flex flex-col">
       {children}
       {reasonAr && (
-        <span className="mt-1 max-w-[16rem] text-[11px] text-muted-foreground">
-          {reasonAr}
-        </span>
+        <span className="mt-1 max-w-[16rem] text-[11px] text-muted-foreground">{reasonAr}</span>
       )}
     </span>
   );
@@ -255,10 +256,7 @@ function ReportScreenInner() {
         />
       </div>
 
-      <div
-        className="no-print mb-6 flex flex-wrap items-start gap-2"
-        data-testid="report-actions"
-      >
+      <div className="no-print mb-6 flex flex-wrap items-start gap-2" data-testid="report-actions">
         <ActionWithReason
           reasonAr={
             gate?.ok
@@ -464,13 +462,15 @@ function ReportScreenInner() {
               </div>
             </dl>
             {active.staleReason && (
-              <p className="mt-2 text-xs text-amber-800">
-                هذه النسخة قديمة: {active.staleReason}
-              </p>
+              <p className="mt-2 text-xs text-amber-800">هذه النسخة قديمة: {active.staleReason}</p>
             )}
           </section>
 
-          <section id="report-scope" className="mb-6 rounded-md border border-border p-4" data-testid="report-scope">
+          <section
+            id="report-scope"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="report-scope"
+          >
             <h2 className="mb-2 text-lg font-semibold">نطاق المراجعة</h2>
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
@@ -643,7 +643,11 @@ function ReportScreenInner() {
             testId="section-not-reviewable"
           />
 
-          <section id="section-governance" className="mb-6 rounded-md border border-border p-4" data-testid="section-governance">
+          <section
+            id="section-governance"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="section-governance"
+          >
             <h2 className="mb-2 text-lg font-semibold">حوكمة التقرير</h2>
             <p className="text-sm text-muted-foreground">{active.sections.governanceStatement}</p>
             {active.sections.limitations.length > 0 && (
