@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as FrameworkPackageRouteImport } from './routes/framework-package'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CasesIndexRouteImport } from './routes/cases.index'
@@ -23,6 +24,11 @@ import { Route as CasesCaseIdIngestionRouteImport } from './routes/cases.$caseId
 import { Route as CasesCaseIdExtractionRouteImport } from './routes/cases.$caseId.extraction'
 import { Route as ApiHimamExtractEvidenceRouteImport } from './routes/api.himam.extract-evidence'
 
+const FrameworkPackageRoute = FrameworkPackageRouteImport.update({
+  id: '/framework-package',
+  path: '/framework-package',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CasesRoute = CasesRouteImport.update({
   id: '/cases',
   path: '/cases',
@@ -92,6 +98,7 @@ const ApiHimamExtractEvidenceRoute = ApiHimamExtractEvidenceRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cases': typeof CasesRouteWithChildren
+  '/framework-package': typeof FrameworkPackageRoute
   '/cases/$caseId': typeof CasesCaseIdRouteWithChildren
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/framework-package': typeof FrameworkPackageRoute
   '/cases/new': typeof CasesNewRoute
   '/cases': typeof CasesIndexRoute
   '/api/himam/extract-evidence': typeof ApiHimamExtractEvidenceRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cases': typeof CasesRouteWithChildren
+  '/framework-package': typeof FrameworkPackageRoute
   '/cases/$caseId': typeof CasesCaseIdRouteWithChildren
   '/cases/new': typeof CasesNewRoute
   '/cases/': typeof CasesIndexRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cases'
+    | '/framework-package'
     | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/framework-package'
     | '/cases/new'
     | '/cases'
     | '/api/himam/extract-evidence'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cases'
+    | '/framework-package'
     | '/cases/$caseId'
     | '/cases/new'
     | '/cases/'
@@ -182,11 +194,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CasesRoute: typeof CasesRouteWithChildren
+  FrameworkPackageRoute: typeof FrameworkPackageRoute
   ApiHimamExtractEvidenceRoute: typeof ApiHimamExtractEvidenceRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/framework-package': {
+      id: '/framework-package'
+      path: '/framework-package'
+      fullPath: '/framework-package'
+      preLoaderRoute: typeof FrameworkPackageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cases': {
       id: '/cases'
       path: '/cases'
@@ -322,8 +342,19 @@ const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CasesRoute: CasesRouteWithChildren,
+  FrameworkPackageRoute: FrameworkPackageRoute,
   ApiHimamExtractEvidenceRoute: ApiHimamExtractEvidenceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -18,10 +18,10 @@ export const Route = createFileRoute("/framework-package")({
       },
     ],
   }),
-  component: Index,
+  component: FrameworkPackagePage,
 });
 
-function Index() {
+function FrameworkPackagePage() {
   const [busy, setBusy] = useState(false);
 
   const fileContent = (f: (typeof PACKAGE_FILES)[number]) =>
@@ -76,8 +76,9 @@ function Index() {
             <Link
               to="/cases"
               className="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+              data-testid="back-to-cases"
             >
-              فتح لوحة حالات المراجعة (HIMAM Package 1A)
+              العودة إلى لوحة حالات المراجعة
             </Link>
           </div>
         </header>
