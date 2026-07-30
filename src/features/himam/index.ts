@@ -1,5 +1,9 @@
 export { CaseService } from "./cases/case-service";
-export { createInMemoryRepository, getDefaultRepository } from "./cases/case-repository";
+export {
+  createInMemoryRepository,
+  createLocalStorageRepository,
+  getDefaultRepository,
+} from "./cases/case-repository";
 export type { ReviewCaseRepository } from "./cases/case-repository";
 export * from "./cases/case-types";
 export {
