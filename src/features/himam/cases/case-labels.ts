@@ -7,7 +7,22 @@ import type {
   ReviewCase,
   ReviewCaseStatus,
   ReviewPhaseId,
+  TextLocator,
 } from "./case-types";
+
+// Arabic, user-facing description of where a quote sits inside its source.
+export function locatorLabelAr(l: TextLocator): string {
+  switch (l.kind) {
+    case "pdf_page":
+      return `صفحة ${l.pageNumber}`;
+    case "docx_paragraph":
+      return `فقرة ${l.paragraphIndex + 1}`;
+    case "text_lines":
+      return `الأسطر ${l.lineStart + 1}–${l.lineEnd + 1}`;
+    case "manual_text":
+      return "نص مُدخَل يدويًا";
+  }
+}
 
 export const PHASE_LABELS_AR: Record<ReviewPhaseId, string> = {
   early_intervention: "التدخل المبكر",

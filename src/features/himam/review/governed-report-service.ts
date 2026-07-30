@@ -5,7 +5,12 @@
 // coverage are frozen — new information forces a new report version.
 
 import { newAuditEvent } from "../audit/audit-service";
-import type { ReviewCaseRepository } from "../cases/case-repository";
+import type { HimamStore, ReviewCaseRepository } from "../cases/case-repository";
+import {
+  EVIDENCE_TYPE_LABELS_AR,
+  SOURCE_TYPE_LABELS_AR,
+  locatorLabelAr,
+} from "../cases/case-labels";
 import type { CriterionRecord } from "../knowledge/knowledge-types";
 import { computeEvidenceDigest } from "./deterministic-review-engine";
 import { getKnowledgeRegistry } from "./knowledge-registry";
@@ -22,6 +27,8 @@ import {
   type GovernedReportSections,
   type GovernedReportVersion,
   type HumanDecision,
+  type ReportEvidenceRef,
+  type ReportExecutiveSummary,
   type ReportFindingItem,
   type ReportGateReason,
   type ReportGateResult,
@@ -62,7 +69,35 @@ function pickFinal(f: ReviewFinding): {
   };
 }
 
-function toItem(f: ReviewFinding, criterion: CriterionRecord | null): ReportFindingItem {
+// Resolve stored evidence ids into human-readable provenance rows
+// (source type + name + locator + literal quote). Nothing is invented: an
+// evidence id that no longer resolves is simply dropped, which in turn can
+// make a finding provenance-less and therefore excluded from the report.
+function buildProvenance(store: HimamStore, f: ReviewFinding): ReportEvidenceRef[] {
+  const out: ReportEvidenceRef[] = [];
+  for (const evId of f.evidenceIds) {
+    const ev = store.extractedEvidence.find((e) => e.id === evId);
+    if (!ev) continue;
+    if (ev.status !== "confirmed" && ev.status !== "edited") continue;
+    const src = store.sources.find((s) => s.id === ev.sourceId);
+    out.push({
+      evidenceId: ev.id,
+      sourceId: ev.sourceId,
+      sourceTypeLabelAr: src ? SOURCE_TYPE_LABELS_AR[src.type] : "مصدر غير معروف",
+      sourceNameAr: src ? (src.manualTextArtifactId ? "نص مُدخَل يدويًا" : src.fileName) : "—",
+      locatorLabelAr: locatorLabelAr(ev.locator),
+      evidenceTypeLabelAr: EVIDENCE_TYPE_LABELS_AR[ev.evidenceType],
+      quote: ev.exactQuote,
+    });
+  }
+  return out;
+}
+
+function toItem(
+  f: ReviewFinding,
+  criterion: CriterionRecord | null,
+  provenance: ReportEvidenceRef[],
+): ReportFindingItem {
   const final = pickFinal(f)!;
   return {
     findingId: f.findingId,
@@ -78,9 +113,27 @@ function toItem(f: ReviewFinding, criterion: CriterionRecord | null): ReportFind
     limitations: criterion?.limitations ?? f.limitations,
     evidenceIds: [...f.evidenceIds],
     sourceIds: [...f.sourceIds],
+    provenance,
     activationReason: f.activationReason,
     humanDecision: final.decision,
     uncertainty: f.uncertainty,
+  };
+}
+
+// Deterministic executive summary built ONLY from already-approved items.
+function buildExecutiveSummary(sections: GovernedReportSections): ReportExecutiveSummary {
+  const head = (items: ReportFindingItem[]) =>
+    items.slice(0, 5).map((i) => `${i.criterionId} — ${i.finalRationale}`);
+  return {
+    actionRequiredCount: sections.actionRequired.length,
+    majorGapCount: sections.majorPlanGaps.length,
+    qualityOpportunityCount: sections.qualityImprovements.length,
+    needsClarificationCount: sections.needsClarificationItems.length,
+    notReviewableCount: sections.notReviewableItems.length,
+    actionRequiredHeadlinesAr: head(sections.actionRequired),
+    majorGapHeadlinesAr: head(sections.majorPlanGaps),
+    qualityOpportunityHeadlinesAr: head(sections.qualityImprovements),
+    limitsAr: [...sections.limitations].slice(0, 8),
   };
 }
 
@@ -165,6 +218,17 @@ export class GovernedReportService {
     }
 
     const sections: GovernedReportSections = {
+      executiveSummary: {
+        actionRequiredCount: 0,
+        majorGapCount: 0,
+        qualityOpportunityCount: 0,
+        needsClarificationCount: 0,
+        notReviewableCount: 0,
+        actionRequiredHeadlinesAr: [],
+        majorGapHeadlinesAr: [],
+        qualityOpportunityHeadlinesAr: [],
+        limitsAr: [],
+      },
       actionRequired: [],
       majorPlanGaps: [],
       qualityImprovements: [],
@@ -204,11 +268,11 @@ export class GovernedReportService {
       }
       if (f.humanDecision === "request_more_information") {
         if (f.humanIncludeInReport === false) continue;
-        sections.needsClarificationItems.push(toItem(f, crit));
+        sections.needsClarificationItems.push(toItem(f, crit, buildProvenance(store, f)));
         continue;
       }
       // accept or modify
-      const item = toItem(f, crit);
+      const item = toItem(f, crit, buildProvenance(store, f));
       if (item.finalStatus === "not_applicable") {
         sections.excludedFindings.push({
           findingId: f.findingId,
@@ -223,6 +287,16 @@ export class GovernedReportService {
       }
       if (item.finalStatus === "needs_clarification") {
         sections.needsClarificationItems.push(item);
+        continue;
+      }
+      // Report contract §4 — a judgment with no traceable provenance is
+      // never printed. It is logged in the governance record instead.
+      if (item.provenance.length === 0) {
+        sections.excludedFindings.push({
+          findingId: f.findingId,
+          criterionId: f.criterionId,
+          reason: "no_provenance",
+        });
         continue;
       }
       // Judgment sections by severity.
@@ -243,6 +317,8 @@ export class GovernedReportService {
           break;
       }
     }
+
+    sections.executiveSummary = buildExecutiveSummary(sections);
 
     // Coverage snapshot.
     const decided = findings.filter((f) => f.humanReviewStatus === "decided");

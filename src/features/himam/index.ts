@@ -93,6 +93,7 @@ export {
   EVIDENCE_STATUS_LABELS_AR,
   EXTRACTION_STAGE_LABELS_AR,
   CASE_STAGE_LABELS_AR,
+  locatorLabelAr,
 } from "./cases/case-labels";
 export * from "./extraction";
 export * from "./review";

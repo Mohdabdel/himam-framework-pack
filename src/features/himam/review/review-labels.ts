@@ -89,6 +89,7 @@ export const GATE_REASON_TARGET_STEP_AR: Record<string, { hrefSuffix: string; la
   critical_findings_pending: { hrefSuffix: "/review", labelAr: "استكمال قرارات المراجع" },
   evidence_drift_detected: { hrefSuffix: "/review", labelAr: "إعادة تشغيل المحرك في المراجعة" },
   scope_needs_reconfirmation: { hrefSuffix: "/scope", labelAr: "الانتقال إلى نطاق المراجعة" },
+  scope_not_confirmed: { hrefSuffix: "/scope", labelAr: "الانتقال إلى تأكيد نطاق المراجعة" },
   extraction_not_confirmed: { hrefSuffix: "/extraction", labelAr: "الانتقال إلى استخراج الأدلة" },
   identity_conflict_unresolved: { hrefSuffix: "/extraction", labelAr: "معالجة تعارض الهوية" },
 };
