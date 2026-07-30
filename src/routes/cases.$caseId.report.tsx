@@ -149,6 +149,29 @@ function Section({
 }
 
 function ReportScreen() {
+  return <ReportScreenInner />;
+}
+
+function ActionWithReason({
+  reasonAr,
+  children,
+}: {
+  reasonAr: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex flex-col">
+      {children}
+      {reasonAr && (
+        <span className="mt-1 max-w-[16rem] text-[11px] text-muted-foreground">
+          {reasonAr}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function ReportScreenInner() {
   const { caseId } = Route.useParams();
   const services = useServices();
   const [c, setC] = useState<ReviewCase | null>(null);
