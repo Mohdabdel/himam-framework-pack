@@ -36,23 +36,36 @@ function CasesDashboard() {
   }, []);
   return (
     <div dir="rtl" className="mx-auto max-w-5xl px-6 py-10 font-sans">
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">لوحة حالات المراجعة</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            إدارة حالات المراجعة: إنشاء، تحديد النطاق، الإغلاق. لا استخراج ولا مراجعة تلقائية.
+          <h1 className="text-2xl font-bold text-foreground">ابدأ مراجعة خطة تربوية</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            أنشئ حالة مراجعة، ارفع ملف الخطة التربوية، ثم تابع رحلة المراجعة خطوة بخطوة حتى
+            التقرير.
           </p>
         </div>
         <Link
           to="/cases/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          data-testid="start-review-cta"
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          إنشاء حالة مراجعة
+          إنشاء حالة مراجعة جديدة
         </Link>
       </header>
       {cases.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">
-          لا توجد حالات مراجعة بعد. ابدأ بإنشاء حالة لخطة واحدة.
+        <div
+          data-testid="cases-empty-state"
+          className="rounded-md border border-dashed border-border p-10 text-center"
+        >
+          <p className="text-sm text-muted-foreground">
+            لا توجد حالات مراجعة بعد. ابدأ بإنشاء حالة لخطة واحدة.
+          </p>
+          <Link
+            to="/cases/new"
+            className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            إنشاء حالة مراجعة جديدة
+          </Link>
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -106,6 +119,15 @@ function CasesDashboard() {
           })}
         </ul>
       )}
+      <div className="mt-10 border-t border-border pt-4 text-center">
+        <Link
+          to="/framework-package"
+          data-testid="framework-package-link"
+          className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          فتح حزمة HIMAM المرجعية
+        </Link>
+      </div>
     </div>
   );
 }
