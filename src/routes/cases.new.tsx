@@ -111,7 +111,7 @@ function NewCase() {
         titleAr="إنشاء حالة مراجعة"
         stepIndicatorAr="الخطوة 1 من 8 — البيانات الأساسية"
         descriptionAr="لا يلزم إدخال اسم المتعلم؛ استخدم معرفًا داخليًا غير كاشف للهوية عند الحاجة."
-        requiredNowAr="المطلوب الآن: ملف الخطة الحالية + العمر أو المرحلة (يكفي أحدهما)."
+        requiredNowAr="ملف الخطة الحالية + العمر أو المرحلة (يكفي أحدهما)."
       />
       <form onSubmit={submit} className="mt-4 space-y-4" data-testid="new-case-form">
         <div
