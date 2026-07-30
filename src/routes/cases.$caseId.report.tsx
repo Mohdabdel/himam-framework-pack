@@ -184,6 +184,8 @@ function ReportScreen() {
     }
   };
   const onPrint = () => {
+    // G3 — لا نفتح مربع حوار الطباعة قبل تجهيز محتوى التقرير على الشاشة.
+    if (!active) return;
     if (typeof window !== "undefined") window.print();
   };
 
@@ -238,7 +240,7 @@ function ReportScreen() {
           type="button"
           onClick={onPrint}
           disabled={!active}
-          className="rounded-md border border-input px-3 py-1.5 text-sm"
+          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
           data-testid="print-report-btn"
         >
           طباعة / حفظ PDF
