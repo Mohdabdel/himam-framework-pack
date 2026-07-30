@@ -96,10 +96,26 @@ function ItemCard({ item }: { item: ReportFindingItem }) {
         <span className="font-medium">درجة عدم اليقين:</span>{" "}
         {UNCERTAINTY_LABELS_AR[item.uncertainty]}
       </p>
-      {item.sourceIds.length > 0 && (
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          مصادر: {item.sourceIds.length} · أدلة: {item.evidenceIds.length}
-        </p>
+      {item.provenance.length > 0 ? (
+        <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2" data-testid="report-item-provenance">
+          <div className="mb-1 text-[11px] font-medium">المصدر داخل الخطة</div>
+          <ul className="space-y-1">
+            {item.provenance.map((p) => (
+              <li key={p.evidenceId} className="text-[11px] text-muted-foreground">
+                <span className="font-medium">
+                  {p.sourceTypeLabelAr} — {p.sourceNameAr} · {p.locatorLabelAr}
+                </span>
+                <span className="mt-0.5 block whitespace-pre-wrap">«{p.quote}»</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        item.sourceIds.length > 0 && (
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            مصادر: {item.sourceIds.length} · أدلة: {item.evidenceIds.length}
+          </p>
+        )
       )}
     </li>
   );
