@@ -842,7 +842,7 @@ function SourcesPage() {
 
       <StageFooter
         returnToCaseHref={`/cases/${caseId}`}
-        continueLabelAr="المتابعة إلى تجهيز النصوص"
+        continueLabelAr="تجهيز الخطة وبدء المراجعة"
         continueHref={planUsable ? `/cases/${caseId}/ingestion` : undefined}
         continueDisabled={!planUsable}
         continueDisabledReasonAr={
