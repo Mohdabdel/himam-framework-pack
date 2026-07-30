@@ -633,10 +633,10 @@ function ExtractionPage() {
 
       <StageFooter
         backHref={`/cases/${caseId}/ingestion`}
-        backLabelAr="السابق: تجهيز النصوص"
+        backLabelAr="السابق: قراءة المحتوى"
         returnToCaseHref={`/cases/${caseId}`}
-        continueLabelAr="الانتقال إلى المراجعة المهنية"
-        continueHref={extractionConfirmed ? `/cases/${caseId}/review` : undefined}
+        continueLabelAr="المتابعة إلى تأكيد نطاق المراجعة"
+        continueHref={extractionConfirmed ? `/cases/${caseId}/scope` : undefined}
         continueDisabled={!extractionConfirmed}
         continueDisabledReasonAr={
           extractionConfirmed
