@@ -38,7 +38,7 @@ export const LOCAL_FALLBACK_RULES: FallbackRule[] = [
   },
   {
     evidenceType: "need_statement",
-    markers: ["الاحتياج", "احتياجات", "الاحتياجات"],
+    markers: ["الاحتياج", "احتياجات", "الاحتياجات", "الحاجة", "حاجات", "يحتاج"],
     confidence: "medium",
     labelAr: "احتياج",
   },
@@ -68,7 +68,15 @@ export const LOCAL_FALLBACK_RULES: FallbackRule[] = [
   },
   {
     evidenceType: "support",
-    markers: ["الدعم", "خدمات الدعم", "الخدمات المساندة"],
+    markers: [
+      "الدعم",
+      "خدمات الدعم",
+      "الخدمات المساندة",
+      "الخدمة الداعمة",
+      "الخدمات الداعمة",
+      "جلسة",
+      "جلسات",
+    ],
     confidence: "low",
     labelAr: "دعم",
   },
