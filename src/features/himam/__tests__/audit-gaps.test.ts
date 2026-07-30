@@ -52,8 +52,9 @@ describe("HIMAM — الفجوات المؤكدة G1–G4", () => {
   });
 
   it("T-P1: زر الطباعة معطَّل بلا نسخة تقرير ولا يستدعي window.print", () => {
+    // الشرط أصبح أقوى: الطباعة تُفعَّل فقط عند وجود نسخة معتمدة.
     expect(reportSrc).toMatch(
-      /onClick=\{onPrint\}[\s\S]{0,60}disabled=\{!active\}/,
+      /onClick=\{onPrint\}[\s\S]{0,120}disabled=\{!active \|\| active\.status !== "finalized"\}/,
     );
     expect(reportSrc).toMatch(/const onPrint = \(\) => \{[\s\S]{0,200}if \(!active\) return;/);
   });
