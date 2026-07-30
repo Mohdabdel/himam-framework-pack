@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
   CaseService,
+  CollapsibleSection,
   DefaultDocumentTextExtractor,
   INPUT_IMPACTS,
   PROVISIONAL_SCOPE_DISCLAIMER_AR,
