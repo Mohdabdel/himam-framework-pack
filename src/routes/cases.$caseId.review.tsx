@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppShell,
   DOMAIN_LABELS_AR,
+  StageFooter,
+  GATE_REASON_TARGET_STEP_AR,
+  ResponsivePanel,
   FINDING_SEVERITY_LABELS_AR,
   FINDING_STATUS_LABELS_AR,
   HUMAN_DECISION_LABELS_AR,
@@ -180,6 +183,15 @@ function ReviewWorkspace() {
         >
           <p className="font-semibold mb-1">لا يمكن فتح المراجعة التشغيلية.</p>
           <p>{REVIEW_GATE_LABELS_AR[gate.reason] ?? gate.reason}</p>
+          {GATE_REASON_TARGET_STEP_AR[gate.reason] && (
+            <a
+              href={`/cases/${caseId}${GATE_REASON_TARGET_STEP_AR[gate.reason].hrefSuffix}`}
+              data-testid="review-gate-goto-step"
+              className="mt-2 inline-flex rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+            >
+              {GATE_REASON_TARGET_STEP_AR[gate.reason].labelAr}
+            </a>
+          )}
         </section>
       )}
 
@@ -258,7 +270,46 @@ function ReviewWorkspace() {
 
       {version && (
         <section className="mb-4 rounded-md border border-border p-4">
-          <h2 className="mb-3 text-lg font-semibold">الفلاتر</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">الفلاتر</h2>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span data-testid="review-filter-count" className="text-muted-foreground">
+                نتائج معروضة: {filtered.length} من {findings.length}
+              </span>
+              <button
+                type="button"
+                data-testid="review-filter-pending"
+                onClick={() =>
+                  setFilters({
+                    domain: "",
+                    level: "",
+                    status: "",
+                    severity: "",
+                    humanDecision: "pending",
+                  })
+                }
+                className="rounded-md border border-input px-2 py-1 hover:bg-accent"
+              >
+                ما ينتظر قرارًا
+              </button>
+              <button
+                type="button"
+                data-testid="review-filter-reset"
+                onClick={() =>
+                  setFilters({
+                    domain: "",
+                    level: "",
+                    status: "",
+                    severity: "",
+                    humanDecision: "",
+                  })
+                }
+                className="rounded-md border border-input px-2 py-1 hover:bg-accent"
+              >
+                إلغاء الفلاتر
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-5">
             <select
               className="rounded-md border border-input p-1.5"
@@ -360,6 +411,22 @@ function ReviewWorkspace() {
           />
         ))}
       </ul>
+
+      <StageFooter
+        backHref={`/cases/${caseId}/extraction`}
+        backLabelAr="السابق: استخراج الأدلة"
+        returnToCaseHref={`/cases/${caseId}`}
+        continueLabelAr="الانتقال إلى التقرير"
+        continueHref={version && !drift.drifted ? `/cases/${caseId}/report` : undefined}
+        continueDisabled={!version || drift.drifted}
+        continueDisabledReasonAr={
+          !version
+            ? "شغّل محرك المراجعة أولًا."
+            : drift.drifted
+              ? "أعد تشغيل المحرك بعد تغيّر الأدلة."
+              : undefined
+        }
+      />
     </AppShell>
   );
 }
@@ -394,6 +461,7 @@ function FindingCard({
   const [modifyStatus, setModifyStatus] = useState<FindingStatus>(f.automatedStatus);
   const [modifySeverity, setModifySeverity] = useState<FindingSeverity>(f.automatedSeverity);
   const [rationale, setRationale] = useState("");
+  const openerRef = useRef<HTMLButtonElement | null>(null);
 
   return (
     <li
@@ -406,19 +474,26 @@ function FindingCard({
             {f.criterionId}
           </span>
           <span className="text-xs text-muted-foreground">
-            {f.domainId} · {f.reviewLevel}
+            {DOMAIN_LABELS_AR[f.domainId] ?? f.domainId} · {f.reviewLevel}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full bg-muted px-2 py-0.5">
             {FINDING_STATUS_LABELS_AR[f.automatedStatus]}
           </span>
           <span className="rounded-full bg-muted px-2 py-0.5">
             {FINDING_SEVERITY_LABELS_AR[f.automatedSeverity]}
           </span>
-          {f.humanDecision && (
+          {f.humanDecision ? (
             <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5">
               {HUMAN_DECISION_LABELS_AR[f.humanDecision]}
+            </span>
+          ) : (
+            <span
+              className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-900"
+              data-testid="finding-awaiting-decision"
+            >
+              بانتظار قرار المراجع
             </span>
           )}
         </div>
@@ -426,99 +501,143 @@ function FindingCard({
       {criterion && (
         <p className="mt-1 text-sm font-medium">{criterion.reviewQuestion || criterion.nameAr}</p>
       )}
-      <p className="mt-1 text-xs text-muted-foreground">{f.rationale}</p>
-      <p className="mt-1 text-xs">
-        الأدلة: {f.evidenceIds.length} · المصادر: {f.sourceIds.length}
-      </p>
-      {f.limitations && (
-        <p className="mt-1 text-xs text-muted-foreground">قيود: {f.limitations}</p>
-      )}
-      <p className="mt-1 text-xs text-muted-foreground" data-testid="finding-uncertainty">
-        درجة عدم اليقين: {UNCERTAINTY_LABELS_AR[f.uncertainty]}
-      </p>
-      {f.humanStatus && (
-        <p className="mt-1 text-xs">
-          قرار المراجع: {FINDING_STATUS_LABELS_AR[f.humanStatus]}
-          {f.humanSeverity && ` · ${FINDING_SEVERITY_LABELS_AR[f.humanSeverity]}`}
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <span>
+          الأدلة: {f.evidenceIds.length} · المصادر: {f.sourceIds.length}
+        </span>
+        <span data-testid="finding-uncertainty">
+          درجة عدم اليقين: {UNCERTAINTY_LABELS_AR[f.uncertainty]}
+        </span>
+        <button
+          type="button"
+          ref={openerRef}
+          data-testid={`open-finding-panel-${f.findingId}`}
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+          className="rounded-md border border-input px-2 py-1 text-xs text-foreground hover:bg-accent"
+        >
+          تفاصيل ونتيجة المراجعة
+        </button>
+      </div>
+      {f.isStale && (
+        <p className="mt-2 text-xs text-amber-800" data-testid="finding-stale-note">
+          هذه النتيجة قديمة — أعد تشغيل المحرك قبل اتخاذ قرار.
         </p>
       )}
-      {f.humanRationale && (
-        <p className="mt-1 text-xs text-muted-foreground">مبرر المراجع: {f.humanRationale}</p>
-      )}
 
-      {!readOnly && !f.isStale && (
-        <div className="mt-2">
-          <button
-            type="button"
-            className="text-xs underline"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? "إخفاء إجراءات المراجع" : "إجراءات المراجع"}
-          </button>
-          {open && (
-            <div className="mt-2 space-y-2 rounded-md border border-border/60 p-2">
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                <select
-                  className="rounded-md border border-input p-1.5 text-xs"
-                  value={modifyStatus}
-                  onChange={(e) => setModifyStatus(e.target.value as FindingStatus)}
-                >
-                  {ALL_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {FINDING_STATUS_LABELS_AR[s]}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="rounded-md border border-input p-1.5 text-xs"
-                  value={modifySeverity}
-                  onChange={(e) => setModifySeverity(e.target.value as FindingSeverity)}
-                >
-                  {ALL_SEVERITIES.map((s) => (
-                    <option key={s} value={s}>
-                      {FINDING_SEVERITY_LABELS_AR[s]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <textarea
-                placeholder="مبرر المراجع (اختياري)"
-                className="w-full rounded-md border border-input p-1.5 text-xs"
-                rows={2}
-                value={rationale}
-                onChange={(e) => setRationale(e.target.value)}
-              />
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    "accept",
-                    "modify",
-                    "reject",
-                    "request_more_information",
-                    "defer",
-                  ] as HumanDecision[]
-                ).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
-                    onClick={() =>
-                      onDecide({
-                        findingId: f.findingId,
-                        decision: d,
-                        humanStatus: d === "modify" ? modifyStatus : undefined,
-                        humanSeverity: d === "modify" ? modifySeverity : undefined,
-                        humanRationale: rationale || undefined,
-                      })
-                    }
-                  >
-                    {HUMAN_DECISION_LABELS_AR[d]}
-                  </button>
-                ))}
-              </div>
+      {open && (
+        <ResponsivePanel
+          open
+          data-testid="finding-panel"
+          titleAr={`النتيجة ${f.criterionId}`}
+          descriptionAr={criterion?.reviewQuestion || criterion?.nameAr || undefined}
+          dirty={rationale.trim().length > 0}
+          onClose={() => setOpen(false)}
+          returnFocusTo={openerRef}
+        >
+          <div className="space-y-3 text-xs">
+            <div>
+              <div className="font-medium">تفسير النتيجة</div>
+              <p className="mt-1 text-muted-foreground">{f.rationale}</p>
             </div>
-          )}
-        </div>
+            {f.limitations && (
+              <div>
+                <div className="font-medium">قيود</div>
+                <p className="mt-1 text-muted-foreground">{f.limitations}</p>
+              </div>
+            )}
+            <div>
+              <div className="font-medium">الأدلة والمصادر</div>
+              <p className="mt-1 text-muted-foreground">
+                عدد الأدلة: {f.evidenceIds.length} · عدد المصادر: {f.sourceIds.length}
+              </p>
+            </div>
+            {f.humanStatus && (
+              <p>
+                قرار المراجع: {FINDING_STATUS_LABELS_AR[f.humanStatus]}
+                {f.humanSeverity && ` · ${FINDING_SEVERITY_LABELS_AR[f.humanSeverity]}`}
+              </p>
+            )}
+            {f.humanRationale && (
+              <p className="text-muted-foreground">مبرر المراجع: {f.humanRationale}</p>
+            )}
+
+            {readOnly ? (
+              <p className="text-muted-foreground">الحالة مغلقة — عرض للقراءة فقط.</p>
+            ) : f.isStale ? (
+              <p className="text-amber-800">أعد تشغيل المحرك لتحديث النتيجة قبل القرار.</p>
+            ) : (
+              <div className="space-y-2 rounded-md border border-border/60 p-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <select
+                    data-autofocus
+                    aria-label="حالة النتيجة بعد التعديل"
+                    className="rounded-md border border-input p-1.5 text-xs"
+                    value={modifyStatus}
+                    onChange={(e) => setModifyStatus(e.target.value as FindingStatus)}
+                  >
+                    {ALL_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {FINDING_STATUS_LABELS_AR[s]}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="درجة الأهمية بعد التعديل"
+                    className="rounded-md border border-input p-1.5 text-xs"
+                    value={modifySeverity}
+                    onChange={(e) => setModifySeverity(e.target.value as FindingSeverity)}
+                  >
+                    {ALL_SEVERITIES.map((s) => (
+                      <option key={s} value={s}>
+                        {FINDING_SEVERITY_LABELS_AR[s]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <textarea
+                  placeholder="مبرر المراجع (اختياري)"
+                  aria-label="مبرر المراجع"
+                  className="w-full rounded-md border border-input p-1.5 text-xs"
+                  rows={3}
+                  value={rationale}
+                  onChange={(e) => setRationale(e.target.value)}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      "accept",
+                      "modify",
+                      "reject",
+                      "request_more_information",
+                      "defer",
+                    ] as HumanDecision[]
+                  ).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      data-testid={`finding-decision-${d}`}
+                      className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+                      onClick={() => {
+                        onDecide({
+                          findingId: f.findingId,
+                          decision: d,
+                          humanStatus: d === "modify" ? modifyStatus : undefined,
+                          humanSeverity: d === "modify" ? modifySeverity : undefined,
+                          humanRationale: rationale || undefined,
+                        });
+                        setRationale("");
+                        setOpen(false);
+                      }}
+                    >
+                      {HUMAN_DECISION_LABELS_AR[d]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ResponsivePanel>
       )}
     </li>
   );

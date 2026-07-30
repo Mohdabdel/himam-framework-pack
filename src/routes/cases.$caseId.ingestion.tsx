@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
   CaseService,
@@ -8,6 +8,8 @@ import {
   IngestionService,
   StageFooter,
   StageHeader,
+  CollapsibleSection,
+  ResponsivePanel,
   SOURCE_TYPE_LABELS_AR,
   getDefaultPlanFileStorage,
   getDefaultRepository,
@@ -51,6 +53,8 @@ function IngestionPage() {
   const [error, setError] = useState<string | null>(null);
   const [openPreview, setOpenPreview] = useState<string | null>(null);
   const [planBlobMissing, setPlanBlobMissing] = useState<boolean>(false);
+  const previewOpenerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const activeOpenerRef = useRef<HTMLElement | null>(null);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -133,6 +137,120 @@ function IngestionPage() {
     void refresh();
   };
 
+  const counts = {
+    total: sources.length,
+    ready: sources.filter((s) => s.extractionStage === "text_extracted").length,
+    pending: sources.filter((s) => s.extractionStage === "not_started").length,
+    attention: sources.filter(
+      (s) => s.extractionStage === "failed" || s.extractionStage === "text_unavailable",
+    ).length,
+  };
+
+  const isSettled = (s: InputSource): boolean =>
+    s.extractionStage === "text_extracted" ||
+    (s.extractionStage === "text_unavailable" && !!s.unavailableResolution);
+  const planFirst = (a: InputSource, b: InputSource) =>
+    a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0;
+  const activeSources = [...sources].filter((s) => !isSettled(s)).sort(planFirst);
+  const settledSources = [...sources].filter(isSettled).sort(planFirst);
+  const previewSource = openPreview ? (sources.find((s) => s.id === openPreview) ?? null) : null;
+
+  const renderSourceCard = (s: InputSource) => {
+    const chunks = chunksBySource[s.id] ?? [];
+    const stageLabel = EXTRACTION_STAGE_LABELS_AR[s.extractionStage];
+    return (
+      <li key={s.id} className="rounded-md border border-border p-4" data-source-id={s.id}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="font-medium">
+              {SOURCE_TYPE_LABELS_AR[s.type]} — {s.fileName}
+            </div>
+            <div className="text-xs text-muted-foreground">حالة التجهيز: {stageLabel}</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {s.manualTextArtifactId ? null : (
+              <button
+                type="button"
+                disabled={readOnly || busy !== null || !s.storagePath}
+                onClick={() => void doIngest(s)}
+                className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+              >
+                {s.extractionStage === "not_started"
+                  ? "تجهيز النص"
+                  : s.extractionStage === "failed"
+                    ? "إعادة المحاولة"
+                    : "إعادة تجهيز النص"}
+              </button>
+            )}
+            {chunks.length > 0 && (
+              <button
+                type="button"
+                ref={(el) => {
+                  previewOpenerRefs.current[s.id] = el;
+                }}
+                data-testid={`open-preview-${s.id}`}
+                aria-expanded={openPreview === s.id}
+                onClick={() => {
+                  activeOpenerRef.current = previewOpenerRefs.current[s.id] ?? null;
+                  setOpenPreview(s.id);
+                }}
+                className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+              >
+                معاينة النص
+              </button>
+            )}
+            <Link
+              to="/cases/$caseId/sources"
+              params={{ caseId }}
+              className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
+            >
+              العودة للمصدر
+            </Link>
+          </div>
+        </div>
+
+        {s.extractionStage === "text_unavailable" && !s.unavailableResolution && (
+          <div
+            role="alert"
+            data-testid={`unavailable-${s.id}`}
+            className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+          >
+            <p className="mb-2 font-medium">لا يوجد نص قابل للاستخراج. اختر معالجة:</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => doResolveUnavailable(s, "source_replaced")}
+                className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
+              >
+                استبدال المصدر
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => doResolveUnavailable(s, "manual_evidence_added")}
+                className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
+              >
+                إضافة دليل يدوي
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() => doResolveUnavailable(s, "source_excluded_with_reason")}
+                className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
+              >
+                استبعاد مع سبب
+              </button>
+            </div>
+          </div>
+        )}
+        {s.extractionStage === "text_unavailable" && s.unavailableResolution && (
+          <p className="mt-2 text-xs text-muted-foreground">تمت معالجة غياب النص.</p>
+        )}
+      </li>
+    );
+  };
+
   return (
     <AppShell width="regular">
       <StageHeader
@@ -172,108 +290,69 @@ function IngestionPage() {
           </Link>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {[...sources]
-            .sort((a, b) => (a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0))
-            .map((s) => {
-            const chunks = chunksBySource[s.id] ?? [];
-            const stageLabel = EXTRACTION_STAGE_LABELS_AR[s.extractionStage];
-            return (
-              <li key={s.id} className="rounded-md border border-border p-4" data-source-id={s.id}>
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="font-medium">
-                      {SOURCE_TYPE_LABELS_AR[s.type]} — {s.fileName}
-                    </div>
-                    <div className="text-xs text-muted-foreground">حالة التجهيز: {stageLabel}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {s.manualTextArtifactId ? null : (
-                      <button
-                        type="button"
-                        disabled={readOnly || busy !== null || !s.storagePath}
-                        onClick={() => void doIngest(s)}
-                        className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
-                      >
-                        {s.extractionStage === "not_started"
-                          ? "تجهيز النص"
-                          : s.extractionStage === "failed"
-                            ? "إعادة المحاولة"
-                            : "إعادة تجهيز النص"}
-                      </button>
-                    )}
-                    {chunks.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setOpenPreview(openPreview === s.id ? null : s.id)}
-                        className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
-                      >
-                        {openPreview === s.id ? "إخفاء المعاينة" : "معاينة النص"}
-                      </button>
-                    )}
-                    <Link
-                      to="/cases/$caseId/sources"
-                      params={{ caseId }}
-                      className="rounded-md border border-input px-2 py-1 text-xs hover:bg-accent"
-                    >
-                      العودة للمصدر
-                    </Link>
-                  </div>
+        <>
+          <section
+            className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3"
+            data-testid="ingestion-counters"
+          >
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <div className="text-xs text-muted-foreground">مصادر جاهزة النص</div>
+              <div className="mt-1 text-lg font-semibold">{counts.ready}</div>
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <div className="text-xs text-muted-foreground">بانتظار التجهيز</div>
+              <div className="mt-1 text-lg font-semibold">{counts.pending}</div>
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <div className="text-xs text-muted-foreground">تحتاج انتباهًا</div>
+              <div className="mt-1 text-lg font-semibold">{counts.attention}</div>
+            </div>
+          </section>
+
+          {activeSources.length === 0 ? (
+            <p
+              className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground"
+              data-testid="ingestion-all-settled"
+            >
+              كل المصادر جاهزة أو تمّت معالجتها.
+            </p>
+          ) : (
+            <ul className="space-y-3">{activeSources.map(renderSourceCard)}</ul>
+          )}
+
+          {settledSources.length > 0 && (
+            <CollapsibleSection
+              className="mt-4"
+              titleAr={`مصادر مكتملة (${settledSources.length})`}
+              hintAr="تفاصيل ثانوية"
+              data-testid="ingestion-settled-section"
+            >
+              <ul className="space-y-3">{settledSources.map(renderSourceCard)}</ul>
+            </CollapsibleSection>
+          )}
+        </>
+      )}
+
+      {previewSource && (
+        <ResponsivePanel
+          open
+          data-testid={`preview-panel-${previewSource.id}`}
+          titleAr={`معاينة النص — ${previewSource.fileName}`}
+          descriptionAr="مقتطفات النص المستخرج مع موضع كل مقتطف."
+          onClose={() => setOpenPreview(null)}
+          returnFocusTo={activeOpenerRef}
+        >
+          <ul className="space-y-2 text-xs">
+            {(chunksBySource[previewSource.id] ?? []).map((ch) => (
+              <li key={ch.chunkId} className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <div className="text-muted-foreground">{locatorLabel(ch.locator)}</div>
+                <div className="mt-0.5 whitespace-pre-wrap">
+                  {ch.text.length > 300 ? ch.text.slice(0, 300) + "…" : ch.text}
                 </div>
-
-                {s.extractionStage === "text_unavailable" && (
-                  <div
-                    role="alert"
-                    data-testid={`unavailable-${s.id}`}
-                    className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-                  >
-                    <p className="mb-2 font-medium">لا يوجد نص قابل للاستخراج. اختر معالجة:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={readOnly}
-                        onClick={() => doResolveUnavailable(s, "source_replaced")}
-                        className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
-                      >
-                        استبدال المصدر
-                      </button>
-                      <button
-                        type="button"
-                        disabled={readOnly}
-                        onClick={() => doResolveUnavailable(s, "manual_evidence_added")}
-                        className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
-                      >
-                        إضافة دليل يدوي
-                      </button>
-                      <button
-                        type="button"
-                        disabled={readOnly}
-                        onClick={() => doResolveUnavailable(s, "source_excluded_with_reason")}
-                        className="rounded-md border border-input bg-background px-2 py-1 hover:bg-accent"
-                      >
-                        استبعاد مع سبب
-                      </button>
-                    </div>
-                    {s.unavailableResolution && <p className="mt-2 text-xs">تمت المعالجة.</p>}
-                  </div>
-                )}
-
-                {openPreview === s.id && chunks.length > 0 && (
-                  <ul className="mt-3 space-y-2 rounded-md border border-border/60 bg-muted/30 p-3 text-xs">
-                    {chunks.map((ch) => (
-                      <li key={ch.chunkId}>
-                        <div className="text-muted-foreground">{locatorLabel(ch.locator)}</div>
-                        <div className="mt-0.5 whitespace-pre-wrap">
-                          {ch.text.length > 300 ? ch.text.slice(0, 300) + "…" : ch.text}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        </ResponsivePanel>
       )}
 
       {error && <p className="mt-4 text-sm text-destructive">{error}</p>}

@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AppShell,
+  CollapsibleSection,
   DOMAIN_LABELS_AR,
+  GATE_REASON_TARGET_STEP_AR,
   FINDING_SEVERITY_LABELS_AR,
   FINDING_STATUS_LABELS_AR,
   GovernedReportService,
@@ -115,7 +117,7 @@ function Section({
   testId: string;
 }) {
   return (
-    <section className="mb-6" data-testid={testId}>
+    <section id={testId} className="mb-6" data-testid={testId}>
       <h2 className="mb-2 text-lg font-semibold">{title}</h2>
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">{emptyLabel}</p>
@@ -261,7 +263,16 @@ function ReportScreen() {
           className="no-print mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
           data-testid="report-gate-blocker"
         >
-          لا يمكن توليد التقرير حاليًا: {GATE_LABELS_AR[gate.reason] ?? gate.reason}
+          <p>لا يمكن توليد التقرير حاليًا: {GATE_LABELS_AR[gate.reason] ?? gate.reason}</p>
+          {GATE_REASON_TARGET_STEP_AR[gate.reason] && (
+            <a
+              href={`/cases/${caseId}${GATE_REASON_TARGET_STEP_AR[gate.reason].hrefSuffix}`}
+              data-testid="report-gate-goto-step"
+              className="mt-2 inline-flex rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+            >
+              {GATE_REASON_TARGET_STEP_AR[gate.reason].labelAr}
+            </a>
+          )}
         </div>
       )}
       {error && (
@@ -292,7 +303,40 @@ function ReportScreen() {
         <p className="text-sm text-muted-foreground">لم تُولَّد أي نسخة تقرير بعد.</p>
       ) : (
         <>
-          <section className="mb-6 rounded-md border border-border p-4" data-testid="report-metadata">
+          <nav
+            className="mb-6 rounded-md border border-border bg-muted/30 p-4 text-sm"
+            data-testid="report-toc"
+            aria-label="فهرس أقسام التقرير"
+          >
+            <h2 className="mb-2 text-base font-semibold">فهرس التقرير</h2>
+            <ol className="list-inside list-decimal space-y-1 text-muted-foreground">
+              {[
+                ["report-metadata", "هوية التقرير"],
+                ["report-scope", "نطاق المراجعة"],
+                ["report-inputs-impact", "أثر المدخلات"],
+                ["report-coverage", "تغطية المراجعة"],
+                ["section-action-required", "نقاط تتطلب معالجة"],
+                ["section-major-gaps", "الفجوات الجوهرية"],
+                ["section-quality", "فرص تحسين الجودة"],
+                ["section-guidance", "ملاحظات إرشادية"],
+                ["section-needs-clarification", "عناصر تحتاج توضيحًا"],
+                ["section-not-reviewable", "عناصر غير قابلة للمراجعة"],
+                ["section-governance", "حوكمة التقرير"],
+              ].map(([id, label]) => (
+                <li key={id}>
+                  <a href={`#${id}`} className="underline">
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          <section
+            id="report-metadata"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="report-metadata"
+          >
             <h2 className="mb-2 text-lg font-semibold">هوية التقرير</h2>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
               <div className="flex justify-between border-b border-border/60 py-1">
@@ -345,7 +389,7 @@ function ReportScreen() {
             )}
           </section>
 
-          <section className="mb-6 rounded-md border border-border p-4" data-testid="report-scope">
+          <section id="report-scope" className="mb-6 rounded-md border border-border p-4" data-testid="report-scope">
             <h2 className="mb-2 text-lg font-semibold">نطاق المراجعة</h2>
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
@@ -375,13 +419,13 @@ function ReportScreen() {
             </div>
           </section>
 
-          <section
-            className="mb-6 rounded-md border border-border p-4"
+          <CollapsibleSection
+            className="mb-6"
+            id="report-inputs-impact"
+            titleAr="المدخلات المتاحة وغير المتاحة وأثرها على المراجعة"
+            hintAr="تفاصيل — تُطبع كاملة"
             data-testid="report-inputs-impact"
           >
-            <h2 className="mb-2 text-lg font-semibold">
-              المدخلات المتاحة وغير المتاحة وأثرها على المراجعة
-            </h2>
             <ul className="space-y-2 text-sm">
               {(
                 [
@@ -421,9 +465,9 @@ function ReportScreen() {
                 );
               })}
             </ul>
-          </section>
+          </CollapsibleSection>
 
-          <section className="mb-6 rounded-md border border-border p-4" data-testid="report-coverage">
+          <section id="report-coverage" className="mb-6 rounded-md border border-border p-4" data-testid="report-coverage">
             <h2 className="mb-2 text-lg font-semibold">تغطية المراجعة</h2>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
               <div>معايير مُفعَّلة: {active.coverage.activeCriteriaCount}</div>
@@ -476,7 +520,7 @@ function ReportScreen() {
             testId="section-not-reviewable"
           />
 
-          <section className="mb-6 rounded-md border border-border p-4" data-testid="section-governance">
+          <section id="section-governance" className="mb-6 rounded-md border border-border p-4" data-testid="section-governance">
             <h2 className="mb-2 text-lg font-semibold">حوكمة التقرير</h2>
             <p className="text-sm text-muted-foreground">{active.sections.governanceStatement}</p>
             {active.sections.limitations.length > 0 && (
