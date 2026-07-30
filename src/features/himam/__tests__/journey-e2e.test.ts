@@ -167,7 +167,7 @@ describe("HIMAM — real journey from plan file to printable report", () => {
     }
 
     const approved = h.report.finalize(draft.reportVersionId);
-    expect(approved.status).toBe("final");
+    expect(approved.status).toBe("finalized");
     expect(resolveCaseNextAction(c.id, h.repo).kind).toBe("close_case");
   });
 });
