@@ -9,6 +9,9 @@ import {
   EVIDENCE_TYPE_LABELS_AR,
   EvidenceService,
   IdentityIntegrityService,
+  ExtractionRunService,
+  LocalFallbackExtractionProvider,
+  LOCAL_FALLBACK_LABEL_AR,
   ServerEvidenceExtractionProvider,
   StageFooter,
   StageHeader,
@@ -76,6 +79,8 @@ function ExtractionPage() {
   const [addNormalized, setAddNormalized] = useState<string>("");
   const [addError, setAddError] = useState<string | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
+  const [suggestBusy, setSuggestBusy] = useState<boolean>(false);
+  const [suggestNote, setSuggestNote] = useState<string | null>(null);
   // Evidence action panel replaces the old native browser dialogs.
   const [panel, setPanel] = useState<
     { evidenceId: string; mode: "edit" | "reject" } | null
@@ -196,6 +201,38 @@ function ExtractionPage() {
     }
   };
 
+  // Deterministic offline suggestion pass. It never judges and never invents
+  // text; it only lifts literal lines out of the already-stored chunks so the
+  // reviewer has something concrete to confirm, edit, or reject.
+  const runLocalSuggestions = async () => {
+    if (readOnly || suggestBusy) return;
+    setSuggestBusy(true);
+    setError(null);
+    setSuggestNote(null);
+    try {
+      const repo = getDefaultRepository();
+      const svc = new ExtractionRunService(repo, new LocalFallbackExtractionProvider());
+      const withText = sources.filter((s) =>
+        chunks.some((ch) => ch.sourceId === s.id),
+      );
+      let created = 0;
+      for (const s of withText) {
+        const res = await svc.start({ reviewCaseId: caseId, sourceId: s.id });
+        created += res.createdEvidence.length;
+      }
+      setSuggestNote(
+        created > 0
+          ? `تم اقتراح ${created} بندًا من نص المصادر. راجع كل بند وأكِّده أو عدّله أو ارفضه.`
+          : "لم يُعثر على بنود جديدة قابلة للاقتراح. يمكنك إضافة الأدلة يدويًا.",
+      );
+      refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSuggestBusy(false);
+    }
+  };
+
   const extractionConfirmed = c.extractionStage === "extraction_confirmed";
   const canComplete = new CaseExtractionService(
     getDefaultRepository(),
@@ -240,28 +277,36 @@ function ExtractionPage() {
       </div>
 
       <section className="mb-6 rounded-md border border-border p-4" data-testid="ai-status">
-        <h2 className="mb-2 text-lg font-semibold">الاستخراج الآلي</h2>
-        {aiAvailability === "not_configured" ? (
-          <p className="text-sm text-muted-foreground">
-            الاستخراج الآلي غير مهيأ حاليًا. يمكنك استكمال العمل بإضافة الأدلة يدويًا.
+        <h2 className="mb-2 text-lg font-semibold">اقتراح بنود الخطة تلقائيًا</h2>
+        <p className="text-sm text-muted-foreground">
+          {LOCAL_FALLBACK_LABEL_AR} — يقرأ النظام نص المصادر ويعرض عليك الأسطر الموجودة فعلًا داخل
+          الملف. لا يصدر أي حكم، ولا يُحتسب أي بند قبل تأكيدك له.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            data-testid="run-local-extraction"
+            disabled={readOnly || suggestBusy || chunks.length === 0}
+            onClick={() => void runLocalSuggestions()}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            {suggestBusy ? "جارٍ الاقتراح…" : "اقتراح البنود من نص الخطة"}
+          </button>
+          {chunks.length === 0 && (
+            <span className="text-xs text-muted-foreground">
+              لا يوجد نص مقروء بعد — عد إلى خطوة قراءة المحتوى.
+            </span>
+          )}
+          {aiAvailability === "configured" && (
+            <span className="text-xs text-muted-foreground">
+              مزود الاستخراج المتقدم مهيأ على الخادم.
+            </span>
+          )}
+        </div>
+        {suggestNote && (
+          <p className="mt-2 text-sm text-emerald-800" data-testid="local-extraction-note">
+            {suggestNote}
           </p>
-        ) : aiAvailability === "unavailable" ? (
-          <p className="text-sm text-amber-700">مزود الاستخراج الآلي غير متاح حاليًا.</p>
-        ) : (
-          <>
-            <p className="text-sm">
-              مزود الاستخراج الآلي متاح. سيتم إرسال بيانات مُقلَّصة فقط (نصوص Chunks بدون أسماء
-              ملفات أو هوية).
-            </p>
-            <button
-              type="button"
-              disabled
-              className="mt-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground opacity-50"
-              title="تشغيل الاستخراج غير مُفعَّل في هذا الإصدار"
-            >
-              بدء الاستخراج المنظم
-            </button>
-          </>
         )}
       </section>
 
