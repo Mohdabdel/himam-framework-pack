@@ -38,7 +38,7 @@ describe("HIMAM — UX Correction Gate", () => {
 
   it("FLOW-CORR-T05: sources screen offers continue + return-to-case actions via StageFooter", () => {
     expect(sourcesSrc).toContain("<StageFooter");
-    expect(sourcesSrc).toContain("المتابعة إلى تجهيز النصوص");
+    expect(sourcesSrc).toContain("تجهيز الخطة وبدء المراجعة");
     expect(sourcesSrc).toContain("returnToCaseHref");
   });
 

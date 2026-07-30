@@ -74,6 +74,26 @@ function useServices() {
   }, []);
 }
 
+// Engine errors are technical strings; the reviewer only ever sees Arabic.
+const REVIEW_ERROR_AR: Array<[string, string]> = [
+  [
+    "critical findings still pending",
+    "لا يمكن ختم المراجعة: توجد ملاحظات مطلوبة بلا قرار.",
+  ],
+  ["scope needs reconfirmation", "لا يمكن ختم المراجعة: النطاق يحتاج إلى إعادة تأكيد."],
+  ["No active review version", "لم يُشغَّل محرك المراجعة بعد."],
+  ["Case is closed", "الحالة مغلقة — العرض للقراءة فقط."],
+  ["stale finding", "هذه الملاحظة قديمة — أعد تشغيل المحرك."],
+  ["Cannot complete review", "تعذّر ختم المراجعة — أعد تشغيل المحرك ثم حاول مجددًا."],
+];
+
+function reviewErrorAr(message: string): string {
+  for (const [needle, ar] of REVIEW_ERROR_AR) {
+    if (message.includes(needle)) return ar;
+  }
+  return "تعذّر إتمام الإجراء. راجع الخطوات السابقة ثم حاول مجددًا.";
+}
+
 function ReviewWorkspace() {
   const { caseId } = Route.useParams();
   const services = useServices();
@@ -140,7 +160,30 @@ function ReviewWorkspace() {
       services.versions.completeHumanReview(caseId);
       refresh();
     } catch (e) {
-      setError((e as Error).message);
+      setError(reviewErrorAr((e as Error).message));
+    }
+  };
+
+  // Findings that block review completion: critical severity, still pending.
+  const criticalPending = findings.filter(
+    (f) =>
+      !f.isStale &&
+      f.humanReviewStatus === "pending" &&
+      f.automatedSeverity === "action_required_before_goal_approval",
+  );
+
+  // Explicit, human-initiated bulk decision: accepts the engine's outcome
+  // as-is for every blocking finding. It is still a recorded human decision
+  // per finding — no automatic judgment is issued.
+  const acceptAllCritical = () => {
+    setError(null);
+    try {
+      for (const f of criticalPending) {
+        services.human.applyDecision({ findingId: f.findingId, decision: "accept" });
+      }
+      refresh();
+    } catch (e) {
+      setError(reviewErrorAr((e as Error).message));
     }
   };
 
@@ -210,6 +253,47 @@ function ReviewWorkspace() {
       )}
 
       {version && coverage && (
+        <>
+        {!readOnly && criticalPending.length > 0 && (
+          <section
+            data-testid="critical-pending-banner"
+            className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+          >
+            <p className="font-semibold">
+              قرارات مطلوبة قبل ختم المراجعة: {criticalPending.length}
+            </p>
+            <p className="mt-1">
+              هذه ملاحظات تتطلب قرارًا صريحًا منك. راجعها واحدة واحدة، أو اعتمد نتيجة
+              المحرك لها جميعًا بقرار واحد مسجَّل باسمك.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                data-testid="filter-critical-pending"
+                onClick={() =>
+                  setFilters({
+                    domain: "",
+                    level: "",
+                    status: "",
+                    severity: "action_required_before_goal_approval",
+                    humanDecision: "pending",
+                  })
+                }
+                className="rounded-md border border-amber-400 bg-background px-3 py-1.5 text-xs hover:bg-accent"
+              >
+                عرض الملاحظات المطلوبة
+              </button>
+              <button
+                type="button"
+                data-testid="accept-all-critical"
+                onClick={acceptAllCritical}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+              >
+                اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة
+              </button>
+            </div>
+          </section>
+        )}
         <section className="mb-4 rounded-md border border-border p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">تغطية المراجعة</h2>
@@ -252,10 +336,10 @@ function ReviewWorkspace() {
             <button
               type="button"
               onClick={completeReview}
-              disabled={readOnly || drift.drifted}
+              disabled={readOnly || drift.drifted || criticalPending.length > 0}
               className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              إكمال المراجعة
+              ختم المراجعة والانتقال إلى التقرير
             </button>
             <Link
               to="/cases/$caseId/report"
@@ -265,7 +349,13 @@ function ReviewWorkspace() {
               فتح التقرير
             </Link>
           </div>
+          {criticalPending.length > 0 && (
+            <p className="mt-2 text-xs text-amber-800" data-testid="complete-blocked-reason">
+              لا يمكن ختم المراجعة قبل إصدار قرار على {criticalPending.length} ملاحظة مطلوبة.
+            </p>
+          )}
         </section>
+        </>
       )}
 
       {version && (

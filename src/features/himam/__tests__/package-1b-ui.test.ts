@@ -113,14 +113,14 @@ describe("Package 1B — Operational UI (1B.3)", () => {
     expect(ingestionRoute).toContain("استبعاد مع سبب");
   });
 
-  it("PKG1B-UI-T06: extraction UI honors AI not_configured and shows no active AI trigger", () => {
-    // The 'بدء الاستخراج المنظم' button only renders under 'configured' branch and is disabled
-    expect(extractionRoute).toMatch(/not_configured[\s\S]{0,400}الاستخراج الآلي غير مهيأ/);
-    // Assert the trigger button appears only inside the configured branch, and is disabled
-    expect(extractionRoute).toMatch(
-      /aiAvailability === "not_configured"[\s\S]*aiAvailability === "unavailable"[\s\S]*بدء الاستخراج المنظم/,
-    );
-    expect(extractionRoute).toContain("disabled\n              className");
+  it("PKG1B-UI-T06: extraction UI offers a deterministic local suggestion run, never a remote AI judgment", () => {
+    // The extraction trigger is the offline, judgment-free fallback provider.
+    expect(extractionRoute).toContain("LocalFallbackExtractionProvider");
+    expect(extractionRoute).toContain("run-local-extraction");
+    // It is only enabled once readable text exists, and is blocked read-only.
+    expect(extractionRoute).toContain("readOnly || suggestBusy || chunks.length === 0");
+    // Remote provider availability is informational only — no trigger.
+    expect(extractionRoute).toContain('aiAvailability === "configured"');
   });
 
   it("PKG1B-UI-T07: manual evidence rejects non-verbatim quote", async () => {

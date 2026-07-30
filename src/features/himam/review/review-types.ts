@@ -137,6 +137,19 @@ export type ReportGateReason =
 
 export type ReportGateResult = { ok: true } | { ok: false; reason: ReportGateReason };
 
+// Human-readable provenance for one report item: which source the quote
+// came from, where inside that source, and the literal quote itself.
+// Report contract (file 10, §4): a finding with no provenance is excluded.
+export interface ReportEvidenceRef {
+  evidenceId: string;
+  sourceId: string;
+  sourceTypeLabelAr: string;
+  sourceNameAr: string;
+  locatorLabelAr: string;
+  evidenceTypeLabelAr: string;
+  quote: string;
+}
+
 export interface ReportFindingItem {
   findingId: string;
   criterionId: string;
@@ -151,6 +164,7 @@ export interface ReportFindingItem {
   limitations: string;
   evidenceIds: string[];
   sourceIds: string[];
+  provenance: ReportEvidenceRef[];
   activationReason: ActivationReason;
   humanDecision: HumanDecision;
   uncertainty: "low" | "medium" | "high";
@@ -159,10 +173,25 @@ export interface ReportFindingItem {
 export interface ExcludedFindingRecord {
   findingId: string;
   criterionId: string;
-  reason: "rejected_by_reviewer" | "deferred" | "not_applicable";
+  reason: "rejected_by_reviewer" | "deferred" | "not_applicable" | "no_provenance";
+}
+
+// Deterministic executive summary. Every string is copied from an already
+// approved finding — the summary never adds a new claim.
+export interface ReportExecutiveSummary {
+  actionRequiredCount: number;
+  majorGapCount: number;
+  qualityOpportunityCount: number;
+  needsClarificationCount: number;
+  notReviewableCount: number;
+  actionRequiredHeadlinesAr: string[];
+  majorGapHeadlinesAr: string[];
+  qualityOpportunityHeadlinesAr: string[];
+  limitsAr: string[];
 }
 
 export interface GovernedReportSections {
+  executiveSummary: ReportExecutiveSummary;
   actionRequired: ReportFindingItem[];
   majorPlanGaps: ReportFindingItem[];
   qualityImprovements: ReportFindingItem[];

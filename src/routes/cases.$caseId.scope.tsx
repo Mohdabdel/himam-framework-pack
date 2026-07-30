@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
   CaseService,
@@ -34,6 +34,7 @@ function ScopeConfirmPage() {
   const [lastConfirmed, setLastConfirmed] = useState<ReviewScopeSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const autoGenRef = useRef(false);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -45,6 +46,23 @@ function ScopeConfirmPage() {
   useEffect(() => {
     void refresh();
   }, [caseId]);
+
+  // The scope snapshot is fully deterministic, so generating it is not a
+  // decision the reviewer needs to make. Generate it once automatically and
+  // leave the human with a single explicit act: confirming it.
+  useEffect(() => {
+    if (autoGenRef.current) return;
+    if (!c || c.status === "closed") return;
+    if (current && !c.scopeNeedsReconfirmation) return;
+    if (c.status !== "minimum_inputs_complete" && c.status !== "scope_confirmed") return;
+    autoGenRef.current = true;
+    try {
+      new CaseService().generateScope(caseId);
+      void refresh();
+    } catch {
+      // Surfaced by the explicit generate button below.
+    }
+  }, [c, current, caseId]);
 
   if (!c) {
     return (
@@ -201,19 +219,22 @@ function ScopeConfirmPage() {
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={doGenerate}
-          disabled={!canGenerate || busy}
-          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
-        >
-          توليد النطاق
-        </button>
-        <button
-          type="button"
+          data-testid="confirm-scope-button"
           onClick={doConfirm}
           disabled={!canConfirm || busy}
           className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {c.scopeNeedsReconfirmation ? "إعادة تأكيد النطاق" : "تأكيد النطاق"}
+          {c.scopeNeedsReconfirmation
+            ? "إعادة تأكيد النطاق"
+            : "تأكيد النطاق وفتح المراجعة"}
+        </button>
+        <button
+          type="button"
+          onClick={doGenerate}
+          disabled={!canGenerate || busy}
+          className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
+        >
+          إعادة احتساب النطاق
         </button>
       </div>
 
@@ -223,13 +244,17 @@ function ScopeConfirmPage() {
         returnToCaseHref={`/cases/${caseId}`}
         continueLabelAr="الانتقال إلى مساحة المراجعة"
         continueHref={`/cases/${caseId}/review`}
-        continueDisabled={!current || c.scopeNeedsReconfirmation}
+        continueDisabled={
+          !current || c.scopeNeedsReconfirmation || c.status !== "scope_confirmed"
+        }
         continueDisabledReasonAr={
           !current
-            ? "ولّد النطاق وأكّده أولًا."
+            ? "يجري احتساب النطاق…"
             : c.scopeNeedsReconfirmation
               ? "أعد تأكيد النطاق قبل فتح مساحة المراجعة."
-              : undefined
+              : c.status !== "scope_confirmed"
+                ? "اضغط تأكيد النطاق أولًا."
+                : undefined
         }
       />
     </AppShell>

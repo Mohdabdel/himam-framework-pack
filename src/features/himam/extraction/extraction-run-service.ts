@@ -110,7 +110,16 @@ export class ExtractionRunService {
     }
 
     const created: ExtractedEvidence[] = [];
+    // Re-run safety: never duplicate an identical quote for the same chunk.
+    const existingKeys = new Set(
+      nowStore.extractedEvidence
+        .filter((e) => e.reviewCaseId === input.reviewCaseId && e.status !== "invalidated")
+        .map((e) => `${e.sourceId}::${e.sourceChunkId}::${e.exactQuote}`),
+    );
     for (const v of validation.validated) {
+      const key = `${input.sourceId}::${v.chunk.chunkId}::${v.candidate.exactQuote}`;
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
       const ev = this.evidence.createAiEvidenceFromValidatedResult({
         sourceId: input.sourceId,
         chunkId: v.chunk.chunkId,

@@ -150,7 +150,7 @@ function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
       ctaLabelAr: c.scopeNeedsReconfirmation
         ? "إعادة تأكيد نطاق المراجعة"
         : "تأكيد نطاق المراجعة النهائي",
-      ctaHref: "/cases/$caseId/extraction",
+      ctaHref: "/cases/$caseId/scope",
       blockedReasonAr: c.scopeNeedsReconfirmation
         ? "تغيّرت المصادر — أعد تأكيد النطاق."
         : null,
