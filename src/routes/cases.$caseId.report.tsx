@@ -233,45 +233,87 @@ function ReportScreen() {
       </div>
 
       <div
-        className="no-print mb-6 flex flex-wrap items-center gap-2"
+        className="no-print mb-6 flex flex-wrap items-start gap-2"
         data-testid="report-actions"
       >
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={!gate?.ok}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
-          data-testid="generate-report-btn"
+        <ActionWithReason
+          reasonAr={
+            gate?.ok
+              ? null
+              : c.status === "closed"
+                ? "الحالة مغلقة — يمكنك عرض التقرير المعتمد فقط."
+                : "أكمل ختم المراجعة أولًا حتى يمكن توليد التقرير."
+          }
         >
-          توليد مسودة جديدة
-        </button>
-        <button
-          type="button"
-          onClick={onFinalize}
-          disabled={!active || active.status !== "draft"}
-          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          data-testid="finalize-report-btn"
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={!gate?.ok}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
+            data-testid="generate-report-btn"
+          >
+            توليد مسودة جديدة
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            !active
+              ? "ولّد مسودة التقرير أولًا."
+              : active.status === "finalized"
+                ? "هذه النسخة معتمدة بالفعل."
+                : active.status !== "draft"
+                  ? "هذه النسخة قديمة — ولّد مسودة جديدة قبل الاعتماد."
+                  : null
+          }
         >
-          اعتماد التقرير
-        </button>
-        <button
-          type="button"
-          onClick={onPrint}
-          disabled={!active || active.status !== "finalized"}
-          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          data-testid="print-report-btn"
+          <button
+            type="button"
+            onClick={onFinalize}
+            disabled={!active || active.status !== "draft"}
+            className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
+            data-testid="finalize-report-btn"
+          >
+            اعتماد التقرير
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            !active
+              ? "ولّد مسودة التقرير أولًا."
+              : active.status !== "finalized"
+                ? "اعتمد التقرير أولًا لتتمكن من طباعته."
+                : null
+          }
         >
-          طباعة / حفظ PDF
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={c.status === "closed"}
-          className="rounded-md border border-destructive/40 px-3 py-1.5 text-sm text-destructive disabled:opacity-50"
-          data-testid="close-case-btn"
+          <button
+            type="button"
+            onClick={onPrint}
+            disabled={!active || active.status !== "finalized"}
+            className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
+            data-testid="print-report-btn"
+          >
+            طباعة التقرير
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            c.status === "closed"
+              ? "الحالة مغلقة بالفعل."
+              : !active || active.status !== "finalized"
+                ? "اعتمد تقريرًا نهائيًا قبل إغلاق الحالة."
+                : null
+          }
         >
-          إغلاق الحالة بعد التقرير
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={c.status === "closed" || !active || active.status !== "finalized"}
+            className="rounded-md border border-destructive/40 px-3 py-1.5 text-sm text-destructive disabled:opacity-50"
+            data-testid="close-case-btn"
+          >
+            إغلاق الحالة بعد التقرير
+          </button>
+        </ActionWithReason>
       </div>
 
       {gate && !gate.ok && (
