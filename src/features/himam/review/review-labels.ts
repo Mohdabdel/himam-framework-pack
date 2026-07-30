@@ -67,3 +67,28 @@ export const REVIEW_GATE_LABELS_AR: Record<string, string> = {
   no_confirmed_evidence_and_no_not_reviewable:
     "لا توجد أدلة مؤكدة ولا معايير قابلة للعرض.",
 };
+// Arabic reasons shown next to every disabled report action.
+export const REPORT_GATE_LABELS_AR: Record<string, string> = {
+  case_not_found: "الحالة غير موجودة.",
+  no_review_version: "لم تُشغَّل المراجعة بعد.",
+  review_not_completed: "المراجعة المهنية لم تُختم بعد.",
+  review_stale: "نسخة المراجعة قديمة — أعد تشغيل المحرك.",
+  scope_needs_reconfirmation: "نطاق المراجعة يحتاج إعادة تأكيد.",
+  extraction_not_confirmed: "تأكيد الأدلة لم يكتمل بعد.",
+  identity_conflict_unresolved: "تعارض هوية لم يُقرَّ بعد.",
+  critical_findings_pending: "توجد ملاحظات حرجة بدون قرار مراجع.",
+  evidence_drift_detected: "تغيّرت الأدلة المؤكدة بعد تشغيل المحرك.",
+  case_closed_read_only: "الحالة مغلقة — عرض للقراءة فقط.",
+};
+
+// Route each gate reason to the screen that resolves it.
+export const GATE_REASON_TARGET_STEP_AR: Record<string, { hrefSuffix: string; labelAr: string }> = {
+  no_review_version: { hrefSuffix: "/review", labelAr: "الانتقال إلى المراجعة المهنية" },
+  review_not_completed: { hrefSuffix: "/review", labelAr: "الانتقال إلى المراجعة المهنية" },
+  review_stale: { hrefSuffix: "/review", labelAr: "إعادة تشغيل المحرك في المراجعة" },
+  critical_findings_pending: { hrefSuffix: "/review", labelAr: "استكمال قرارات المراجع" },
+  evidence_drift_detected: { hrefSuffix: "/review", labelAr: "إعادة تشغيل المحرك في المراجعة" },
+  scope_needs_reconfirmation: { hrefSuffix: "/scope", labelAr: "الانتقال إلى نطاق المراجعة" },
+  extraction_not_confirmed: { hrefSuffix: "/extraction", labelAr: "الانتقال إلى استخراج الأدلة" },
+  identity_conflict_unresolved: { hrefSuffix: "/extraction", labelAr: "معالجة تعارض الهوية" },
+};

@@ -13,6 +13,7 @@ import {
   getDefaultRepository,
   IngestionService,
   MANUAL_TEXT_SOURCE_TYPES,
+  ResponsivePanel,
   SINGLE_ACTIVE_SOURCE_TYPES,
   SOURCE_TYPE_LABELS_AR,
   SOURCE_TYPES_ORDER,
@@ -120,9 +121,18 @@ function SourcesPage() {
   };
   const [openSourceType, setOpenSourceType] = useState<InputSourceType | null>(null);
   const [impactDetailsOpen, setImpactDetailsOpen] = useState<boolean>(false);
-  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const openerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const activeOpenerRef = useRef<HTMLElement | null>(null);
   const toggleId = "optional-inputs-toggle";
   const panelId = "optional-inputs-panel";
+  // Unsaved-changes state for the source management panel.
+  const panelDirty = addFile !== null || addManualText.trim().length > 0;
+  const closeManagePanel = () => {
+    setOpenSourceType(null);
+    setAddFile(null);
+    setAddManualText("");
+    setError(null);
+  };
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -344,7 +354,10 @@ function SourcesPage() {
         <p className="mb-3 text-xs text-muted-foreground">
           هذه مؤشرات لنطاق المراجعة الممكن، وليست درجة لجودة الخطة.
         </p>
-        <div className="grid grid-cols-3 gap-3 text-sm">
+        <div
+          className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3"
+          data-testid="scope-counters-grid"
+        >
           <div className="rounded-md border border-border bg-background p-3 text-center">
             <div className="text-2xl font-bold" data-testid="count-available">
               {bucketCounts.available}
@@ -667,7 +680,6 @@ function SourcesPage() {
                   const added = items.length > 0;
                   const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
                   const isOpen = openSourceType === t;
-                  const isTypeManual = MANUAL_TEXT_SOURCE_TYPES.includes(t);
                   return (
                     <div
                       key={t}
@@ -694,11 +706,16 @@ function SourcesPage() {
                         </div>
                         <button
                           type="button"
+                          ref={(el) => {
+                            openerRefs.current[t] = el;
+                          }}
                           data-testid={`open-manage-${t}`}
+                          aria-expanded={isOpen}
+                          aria-controls={isOpen ? "source-manage-panel" : undefined}
                           onClick={() => {
-                            const target = isOpen ? null : t;
-                            setOpenSourceType(target);
-                            if (target) setAddType(target);
+                            activeOpenerRef.current = openerRefs.current[t] ?? null;
+                            setOpenSourceType(t);
+                            setAddType(t);
                             setError(null);
                             setAddFile(null);
                             setAddManualText("");
@@ -709,109 +726,6 @@ function SourcesPage() {
                           {added ? "عرض وإدارة" : "إضافة"}
                         </button>
                       </div>
-
-                      {isOpen && (
-                        <div
-                          className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3"
-                          data-testid={`manage-drawer-${t}`}
-                          role="region"
-                          aria-label={`إدارة ${impact.titleAr}`}
-                        >
-                          <div className="mb-2 flex items-center justify-between">
-                            <div className="text-sm font-semibold">
-                              إدارة: {impact.titleAr}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setOpenSourceType(null)}
-                              className="rounded-md border border-input px-2 py-0.5 text-xs hover:bg-accent"
-                              aria-label="إغلاق"
-                            >
-                              إغلاق
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground">
-                            <div>
-                              <span className="font-medium">عند الإضافة: </span>
-                              {impact.whenPresentAr}
-                            </div>
-                            <div>
-                              <span className="font-medium">عند الغياب: </span>
-                              {impact.whenAbsentAr}
-                            </div>
-                          </div>
-
-                          {items.length > 0 && (
-                            <ul className="mt-2 space-y-1 text-xs">
-                              {items.map((s) => (
-                                <li
-                                  key={s.id}
-                                  className="flex items-center justify-between rounded-md border border-border bg-background px-2 py-1"
-                                >
-                                  <span className="truncate">
-                                    {s.manualTextArtifactId ? "نص يدوي" : s.fileName} · تجهيز:{" "}
-                                    {EXTRACTION_STAGE_LABELS_AR[s.extractionStage]}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    disabled={readOnly || busy}
-                                    onClick={() => void onRemove(s.id)}
-                                    className="rounded-md border border-destructive/40 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                                  >
-                                    إزالة
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-
-                          <div className="mt-3 space-y-2">
-                            {isTypeManual ? (
-                              <label className="block text-xs">
-                                نص يدوي
-                                <textarea
-                                  value={addManualText}
-                                  onChange={(e) => setAddManualText(e.target.value)}
-                                  disabled={readOnly || busy}
-                                  rows={3}
-                                  className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                                />
-                              </label>
-                            ) : (
-                              <label className="block text-xs">
-                                ملف (PDF / DOCX / TXT)
-                                <input
-                                  type="file"
-                                  accept=".pdf,.docx,.txt"
-                                  onChange={(e) => setAddFile(e.target.files?.[0] ?? null)}
-                                  disabled={readOnly || busy}
-                                  className="mt-1 block w-full text-xs"
-                                />
-                              </label>
-                            )}
-                            {error && (
-                              <p className="text-xs text-destructive" role="alert">
-                                {error}
-                              </p>
-                            )}
-                            <p className="text-[10px] text-muted-foreground">
-                              يُحفظ الملف/النص محليًا داخل المتصفح ولا يُرفع لأي خدمة خارجية.
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                disabled={readOnly || busy}
-                                onClick={async () => {
-                                  await onAdd();
-                                }}
-                                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                              >
-                                حفظ
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -820,6 +734,118 @@ function SourcesPage() {
           </div>
         )}
       </section>
+
+      {/* Single source-management panel: drawer on desktop, bottom sheet on mobile. */}
+      {openSourceType && (
+        <ResponsivePanel
+          open
+          data-testid={`manage-drawer-${openSourceType}`}
+          titleAr={`إدارة: ${INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[openSourceType]].titleAr}`}
+          descriptionAr="أضف مصدرًا واحدًا في كل مرة. البيانات تُحفظ محليًا داخل المتصفح."
+          dirty={panelDirty}
+          onClose={closeManagePanel}
+          returnFocusTo={activeOpenerRef}
+          footer={
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                data-testid="panel-save-source"
+                disabled={readOnly || busy}
+                onClick={async () => {
+                  await onAdd();
+                  setAddFile(null);
+                  setAddManualText("");
+                }}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                حفظ
+              </button>
+              <button
+                type="button"
+                onClick={closeManagePanel}
+                className="rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent"
+              >
+                إلغاء
+              </button>
+            </div>
+          }
+        >
+          <div id="source-manage-panel" className="space-y-3 text-xs">
+            <div className="space-y-1 text-muted-foreground">
+              <div>
+                <span className="font-medium">عند الإضافة: </span>
+                {INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[openSourceType]].whenPresentAr}
+              </div>
+              <div>
+                <span className="font-medium">عند الغياب: </span>
+                {INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[openSourceType]].whenAbsentAr}
+              </div>
+            </div>
+
+            {sources.filter((s) => s.type === openSourceType).length > 0 && (
+              <ul className="space-y-1" data-testid="panel-existing-sources">
+                {sources
+                  .filter((s) => s.type === openSourceType)
+                  .map((s) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1"
+                    >
+                      <span className="truncate">
+                        {s.manualTextArtifactId ? "نص يدوي" : s.fileName} · تجهيز:{" "}
+                        {EXTRACTION_STAGE_LABELS_AR[s.extractionStage]}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={readOnly || busy}
+                        onClick={() => void onRemove(s.id)}
+                        className="shrink-0 rounded-md border border-destructive/40 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        إزالة
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+
+            {MANUAL_TEXT_SOURCE_TYPES.includes(openSourceType) ? (
+              <label className="block">
+                نص يدوي
+                <textarea
+                  data-autofocus
+                  data-testid="panel-manual-text"
+                  value={addManualText}
+                  onChange={(e) => setAddManualText(e.target.value)}
+                  disabled={readOnly || busy}
+                  rows={4}
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+                />
+              </label>
+            ) : (
+              <label className="block">
+                ملف (PDF / DOCX / TXT)
+                <input
+                  type="file"
+                  data-autofocus
+                  data-testid="panel-file-input"
+                  accept=".pdf,.docx,.txt"
+                  onChange={(e) => setAddFile(e.target.files?.[0] ?? null)}
+                  disabled={readOnly || busy}
+                  className="mt-1 block w-full text-xs"
+                />
+              </label>
+            )}
+            {error && (
+              <p className="text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              يُحفظ الملف/النص محليًا داخل المتصفح ولا يُرفع لأي خدمة خارجية.
+            </p>
+          </div>
+        </ResponsivePanel>
+      )}
 
       <StageFooter
         returnToCaseHref={`/cases/${caseId}`}

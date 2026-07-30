@@ -25,3 +25,7 @@ export {
   NEXT_ACTION_VARIANT,
 } from "./status-variants";
 export type { StatusVariant } from "./status-variants";
+export { ResponsivePanel } from "./ResponsivePanel";
+export type { ResponsivePanelProps } from "./ResponsivePanel";
+export { CollapsibleSection } from "./CollapsibleSection";
+export type { CollapsibleSectionProps } from "./CollapsibleSection";

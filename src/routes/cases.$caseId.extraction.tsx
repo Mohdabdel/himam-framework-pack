@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppShell,
   CaseExtractionService,
+  CollapsibleSection,
+  ResponsivePanel,
   EVIDENCE_STATUS_LABELS_AR,
   EVIDENCE_TYPE_LABELS_AR,
   EvidenceService,
@@ -74,6 +76,13 @@ function ExtractionPage() {
   const [addNormalized, setAddNormalized] = useState<string>("");
   const [addError, setAddError] = useState<string | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
+  // Evidence action panel replaces the old native browser dialogs.
+  const [panel, setPanel] = useState<
+    { evidenceId: string; mode: "edit" | "reject" } | null
+  >(null);
+  const [panelText, setPanelText] = useState<string>("");
+  const evidenceOpenerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const activeOpenerRef = useRef<HTMLElement | null>(null);
 
   const refresh = () => {
     const repo = getDefaultRepository();
@@ -178,7 +187,7 @@ function ExtractionPage() {
     setSuccess(null);
     try {
       new CaseExtractionService(getDefaultRepository()).completeExtractionConfirmation(caseId);
-      setSuccess("تم إكمال تأكيد الاستخراج. تبقى مراجعة جودة الخطة مقفلة.");
+      setSuccess("تم إكمال تأكيد الاستخراج. يمكنك الآن الانتقال إلى المراجعة المهنية.");
       refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -187,6 +196,7 @@ function ExtractionPage() {
     }
   };
 
+  const extractionConfirmed = c.extractionStage === "extraction_confirmed";
   const canComplete = new CaseExtractionService(
     getDefaultRepository(),
   ).canCompleteExtractionConfirmation(caseId);
@@ -255,8 +265,12 @@ function ExtractionPage() {
         )}
       </section>
 
-      <section className="mb-6 rounded-md border border-border p-4">
-        <h2 className="mb-2 text-lg font-semibold">إضافة دليل يدوي</h2>
+      <CollapsibleSection
+        className="mb-6"
+        titleAr="إضافة دليل يدوي"
+        hintAr="اختياري"
+        data-testid="manual-add-section"
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             المصدر
@@ -347,7 +361,7 @@ function ExtractionPage() {
         >
           حفظ الدليل (معلق)
         </button>
-      </section>
+      </CollapsibleSection>
 
       <section className="mb-6 rounded-md border border-border p-4" data-testid="identity-section">
         <h2 className="mb-2 text-lg font-semibold">فحص الهوية</h2>
@@ -452,10 +466,16 @@ function ExtractionPage() {
                       </button>
                       <button
                         type="button"
+                        ref={(el) => {
+                          evidenceOpenerRefs.current[`edit-${ev.id}`] = el;
+                        }}
+                        data-testid={`open-edit-${ev.id}`}
                         disabled={readOnly}
                         onClick={() => {
-                          const nt = window.prompt("النص المُطبَّع الجديد:", ev.normalizedText);
-                          if (nt && nt.trim()) withSvc((s) => void s.editNormalizedText(ev.id, nt));
+                          activeOpenerRef.current =
+                            evidenceOpenerRefs.current[`edit-${ev.id}`] ?? null;
+                          setPanelText(ev.normalizedText);
+                          setPanel({ evidenceId: ev.id, mode: "edit" });
                         }}
                         className="rounded-md border border-input px-2 py-1 hover:bg-accent"
                       >
@@ -463,10 +483,16 @@ function ExtractionPage() {
                       </button>
                       <button
                         type="button"
+                        ref={(el) => {
+                          evidenceOpenerRefs.current[`reject-${ev.id}`] = el;
+                        }}
+                        data-testid={`open-reject-${ev.id}`}
                         disabled={readOnly}
                         onClick={() => {
-                          const r = window.prompt("سبب الرفض (اختياري):") ?? undefined;
-                          withSvc((s) => void s.rejectEvidence(ev.id, r));
+                          activeOpenerRef.current =
+                            evidenceOpenerRefs.current[`reject-${ev.id}`] ?? null;
+                          setPanelText("");
+                          setPanel({ evidenceId: ev.id, mode: "reject" });
                         }}
                         className="rounded-md border border-input px-2 py-1 hover:bg-accent"
                       >
@@ -500,10 +526,81 @@ function ExtractionPage() {
         </button>
         {success && <p className="mt-2 text-sm text-green-700">{success}</p>}
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-        <p className="mt-3 text-xs text-muted-foreground">
-          تبقى مراجعة جودة الخطة والتقرير مقفلة في هذا الإصدار.
-        </p>
       </section>
+
+      {panel && (
+        <ResponsivePanel
+          open
+          data-testid={`evidence-panel-${panel.mode}`}
+          titleAr={panel.mode === "edit" ? "تعديل النص المُطبَّع" : "رفض الدليل"}
+          descriptionAr={
+            panel.mode === "edit"
+              ? "لا يمكن تعديل الاقتباس الحرفي؛ التعديل يقتصر على النص المُطبَّع."
+              : "يمكنك إضافة سبب مختصر للرفض (اختياري)."
+          }
+          dirty={panelText.trim().length > 0}
+          onClose={() => setPanel(null)}
+          returnFocusTo={activeOpenerRef}
+          footer={
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                data-testid="evidence-panel-save"
+                disabled={readOnly || (panel.mode === "edit" && !panelText.trim())}
+                onClick={() => {
+                  const id = panel.evidenceId;
+                  const text = panelText.trim();
+                  if (panel.mode === "edit") {
+                    withSvc((s) => void s.editNormalizedText(id, text));
+                  } else {
+                    withSvc((s) => void s.rejectEvidence(id, text || undefined));
+                  }
+                  setPanel(null);
+                  setPanelText("");
+                }}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {panel.mode === "edit" ? "حفظ التعديل" : "تأكيد الرفض"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPanel(null)}
+                className="rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent"
+              >
+                إلغاء
+              </button>
+            </div>
+          }
+        >
+          <label className="block text-xs">
+            {panel.mode === "edit" ? "النص المُطبَّع" : "سبب الرفض (اختياري)"}
+            <textarea
+              data-autofocus
+              data-testid="evidence-panel-text"
+              value={panelText}
+              onChange={(e) => setPanelText(e.target.value)}
+              rows={4}
+              className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+            />
+          </label>
+        </ResponsivePanel>
+      )}
+
+      <StageFooter
+        backHref={`/cases/${caseId}/ingestion`}
+        backLabelAr="السابق: تجهيز النصوص"
+        returnToCaseHref={`/cases/${caseId}`}
+        continueLabelAr="الانتقال إلى المراجعة المهنية"
+        continueHref={extractionConfirmed ? `/cases/${caseId}/review` : undefined}
+        continueDisabled={!extractionConfirmed}
+        continueDisabledReasonAr={
+          extractionConfirmed
+            ? undefined
+            : canComplete.ok
+              ? "أكمِل تأكيد الاستخراج أولًا."
+              : REASON_LABELS_AR[canComplete.reason]
+        }
+      />
     </AppShell>
   );
 }

@@ -5,7 +5,12 @@ import {
   CaseExtractionService,
   CaseService,
   CASE_STAGE_LABELS_AR,
+  CollapsibleSection,
   computeJourneyStatuses,
+  GovernedReportService,
+  REPORT_GATE_LABELS_AR,
+  REVIEW_GATE_LABELS_AR,
+  ReviewVersionService,
   resolveCaseNextAction,
   JourneyStepper,
   NextActionCard,
@@ -98,6 +103,14 @@ function CaseDetail() {
   const [nextAction, setNextAction] = useState<CaseNextAction | null>(null);
   const [reviewState, setReviewState] = useState({ finalized: false, stale: false });
   const [reportState, setReportState] = useState({ finalized: false, stale: false });
+  const [reviewGate, setReviewGate] = useState<{ ok: boolean; reasonAr: string }>({
+    ok: false,
+    reasonAr: "يجري تحديث حالة المراجعة.",
+  });
+  const [reportGate, setReportGate] = useState<{ ok: boolean; reasonAr: string }>({
+    ok: false,
+    reasonAr: "يجري تحديث حالة التقرير.",
+  });
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -129,6 +142,19 @@ function CaseDetail() {
       finalized: !!repLive,
       stale: reps.some((r) => r.status === "stale") && !repLive,
     });
+    const rg = new ReviewVersionService(repo).canOpenReview(caseId);
+    setReviewGate(
+      rg.ok
+        ? { ok: true, reasonAr: "" }
+        : { ok: false, reasonAr: REVIEW_GATE_LABELS_AR[rg.reason] ?? rg.reason },
+    );
+    const pg = new GovernedReportService(repo).canGenerateGovernedReport(caseId);
+    const hasReport = reps.length > 0;
+    setReportGate(
+      pg.ok || hasReport
+        ? { ok: true, reasonAr: "" }
+        : { ok: false, reasonAr: REPORT_GATE_LABELS_AR[pg.reason] ?? pg.reason },
+    );
   };
   useEffect(() => {
     void refresh();
@@ -236,8 +262,75 @@ function CaseDetail() {
         </div>
       )}
 
-      <section className="mb-6 rounded-md border border-border p-4" data-testid="basics-summary">
-        <h2 className="mb-2 text-lg font-semibold">البيانات الأساسية</h2>
+      {/* Always-available actions, directly under the header + next action. */}
+      <section
+        className="mb-6 flex flex-wrap gap-2 rounded-md border border-border bg-muted/30 p-3"
+        data-testid="case-top-actions"
+      >
+        <Link
+          to="/cases/$caseId/sources"
+          params={{ caseId }}
+          data-testid="action-manage-sources"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          إدارة المصادر
+        </Link>
+        {reviewGate.ok ? (
+          <Link
+            to="/cases/$caseId/review"
+            params={{ caseId }}
+            data-testid="action-open-review"
+            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
+          >
+            {reviewState.finalized ? "متابعة المراجعة المهنية" : "بدء المراجعة المهنية"}
+          </Link>
+        ) : (
+          <span data-testid="action-open-review-disabled" className="inline-flex flex-col">
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+            >
+              بدء المراجعة المهنية
+            </button>
+            <span className="mt-1 text-[11px] text-muted-foreground">
+              {reviewGate.reasonAr}
+            </span>
+          </span>
+        )}
+        {reportGate.ok ? (
+          <Link
+            to="/cases/$caseId/report"
+            params={{ caseId }}
+            data-testid="action-open-report"
+            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
+          >
+            {reportState.finalized ? "عرض التقرير" : "إنشاء التقرير"}
+          </Link>
+        ) : (
+          <span data-testid="action-open-report-disabled" className="inline-flex flex-col">
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+            >
+              إنشاء التقرير
+            </button>
+            <span className="mt-1 text-[11px] text-muted-foreground">
+              {reportGate.reasonAr}
+            </span>
+          </span>
+        )}
+      </section>
+
+      <CollapsibleSection
+        className="mb-6"
+        titleAr="البيانات الأساسية"
+        hintAr="تفاصيل ثانوية"
+        data-testid="basics-summary"
+      >
         <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
           <div className="flex justify-between gap-3 border-b border-border/60 py-1">
             <dt className="text-muted-foreground">العمر</dt>
@@ -269,7 +362,7 @@ function CaseDetail() {
             يرجى مراجعة المرحلة المختارة.
           </div>
         )}
-      </section>
+      </CollapsibleSection>
 
       <section className="mb-6 rounded-md border border-border p-4">
         <div className="mb-2 flex items-center justify-between">
