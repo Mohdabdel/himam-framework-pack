@@ -233,9 +233,6 @@ function ScopeConfirmPage() {
               : undefined
         }
       />
-
-      {/* keep unused nav suppression to allow useNavigate to be reserved for future flow */}
-      <span data-nav-reserved data-hidden hidden aria-hidden onClick={() => navigate({ to: "/cases/$caseId", params: { caseId } })} />
     </AppShell>
   );
 }
