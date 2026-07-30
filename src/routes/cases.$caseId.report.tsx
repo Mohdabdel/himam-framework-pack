@@ -484,6 +484,48 @@ function ReportScreen() {
           </CollapsibleSection>
 
           <section id="report-coverage" className="mb-6 rounded-md border border-border p-4" data-testid="report-coverage">
+            {null}
+          </section>
+
+          <section
+            id="report-executive-summary"
+            className="mb-6 rounded-md border-2 border-primary/30 bg-primary/5 p-4 print:break-inside-avoid"
+            data-testid="report-executive-summary"
+          >
+            <h2 className="mb-2 text-lg font-semibold">الخلاصة التنفيذية</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              تجميع آلي للملاحظات المعتمدة من المراجع فقط، دون أي حكم إضافي.
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+              <div>تتطلب معالجة: {active.sections.executiveSummary.actionRequiredCount}</div>
+              <div>فجوات جوهرية: {active.sections.executiveSummary.majorGapCount}</div>
+              <div>فرص تحسين: {active.sections.executiveSummary.qualityOpportunityCount}</div>
+              <div>تحتاج توضيحًا: {active.sections.executiveSummary.needsClarificationCount}</div>
+              <div>غير قابلة للمراجعة: {active.sections.executiveSummary.notReviewableCount}</div>
+            </div>
+            {active.sections.executiveSummary.actionRequiredHeadlinesAr.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs font-medium">أبرز ما يتطلب معالجة</div>
+                <ul className="mt-1 list-disc space-y-1 pr-5 text-xs text-muted-foreground">
+                  {active.sections.executiveSummary.actionRequiredHeadlinesAr.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {active.sections.executiveSummary.majorGapHeadlinesAr.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs font-medium">أبرز الفجوات على مستوى الخطة</div>
+                <ul className="mt-1 list-disc space-y-1 pr-5 text-xs text-muted-foreground">
+                  {active.sections.executiveSummary.majorGapHeadlinesAr.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+
+          <section className="mb-6 rounded-md border border-border p-4">
             <h2 className="mb-2 text-lg font-semibold">تغطية المراجعة</h2>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
               <div>معايير مُفعَّلة: {active.coverage.activeCriteriaCount}</div>
