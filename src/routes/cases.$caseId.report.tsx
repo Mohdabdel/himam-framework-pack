@@ -237,6 +237,7 @@ function ReportScreen() {
         <button
           type="button"
           onClick={onPrint}
+          disabled={!active}
           className="rounded-md border border-input px-3 py-1.5 text-sm"
           data-testid="print-report-btn"
         >
@@ -277,7 +278,8 @@ function ReportScreen() {
           >
             {versions.map((v) => (
               <option key={v.reportVersionId} value={v.reportVersionId}>
-                نسخة {v.versionNumber} — {v.status} — {formatArabicDate(v.createdAt)}
+                نسخة {v.versionNumber} — {REPORT_VERSION_STATUS_LABELS_AR[v.status] ?? v.status} —{" "}
+                {formatArabicDate(v.createdAt)}
               </option>
             ))}
           </select>
@@ -313,7 +315,9 @@ function ReportScreen() {
               </div>
               <div className="flex justify-between border-b border-border/60 py-1">
                 <dt className="text-muted-foreground">حالة النسخة</dt>
-                <dd>{active.status}</dd>
+                <dd data-testid="report-version-status">
+                  {REPORT_VERSION_STATUS_LABELS_AR[active.status] ?? active.status}
+                </dd>
               </div>
               <div className="flex justify-between border-b border-border/60 py-1">
                 <dt className="text-muted-foreground">تاريخ التوليد</dt>
