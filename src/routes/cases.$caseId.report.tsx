@@ -483,10 +483,6 @@ function ReportScreen() {
             </ul>
           </CollapsibleSection>
 
-          <section id="report-coverage" className="mb-6 rounded-md border border-border p-4" data-testid="report-coverage">
-            {null}
-          </section>
-
           <section
             id="report-executive-summary"
             className="mb-6 rounded-md border-2 border-primary/30 bg-primary/5 p-4 print:break-inside-avoid"
@@ -525,7 +521,11 @@ function ReportScreen() {
             )}
           </section>
 
-          <section className="mb-6 rounded-md border border-border p-4">
+          <section
+            id="report-coverage"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="report-coverage"
+          >
             <h2 className="mb-2 text-lg font-semibold">تغطية المراجعة</h2>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
               <div>معايير مُفعَّلة: {active.coverage.activeCriteriaCount}</div>
