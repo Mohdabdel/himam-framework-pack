@@ -76,7 +76,7 @@ function ExtractionPage() {
   const [addNormalized, setAddNormalized] = useState<string>("");
   const [addError, setAddError] = useState<string | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
-  // Evidence action panel replaces window.prompt dialogs.
+  // Evidence action panel replaces the old native browser dialogs.
   const [panel, setPanel] = useState<
     { evidenceId: string; mode: "edit" | "reject" } | null
   >(null);

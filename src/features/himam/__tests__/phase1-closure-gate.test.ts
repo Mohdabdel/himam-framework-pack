@@ -99,7 +99,7 @@ describe("HIMAM — Phase 1 Closure Gate", () => {
   it("P1-T14: review decisions happen inside the shared panel with a dirty guard", () => {
     expect(review).toContain("<ResponsivePanel");
     expect(review).toContain("dirty={rationale.trim().length > 0}");
-    expect(review).toContain('data-testid="finding-decision-accept"');
+    expect(review).toContain("data-testid={`finding-decision-${d}`}");
   });
 
   it("P1-T15: review filters expose result counts and quick pending filter", () => {
