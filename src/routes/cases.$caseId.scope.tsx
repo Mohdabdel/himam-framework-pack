@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   AppShell,
@@ -29,7 +29,6 @@ export const Route = createFileRoute("/cases/$caseId/scope")({
 
 function ScopeConfirmPage() {
   const { caseId } = Route.useParams();
-  const navigate = useNavigate();
   const [c, setC] = useState<ReviewCase | null>(null);
   const [current, setCurrent] = useState<ReviewScopeSnapshot | null>(null);
   const [lastConfirmed, setLastConfirmed] = useState<ReviewScopeSnapshot | null>(null);
@@ -233,9 +232,6 @@ function ScopeConfirmPage() {
               : undefined
         }
       />
-
-      {/* keep unused nav suppression to allow useNavigate to be reserved for future flow */}
-      <span data-nav-reserved data-hidden hidden aria-hidden onClick={() => navigate({ to: "/cases/$caseId", params: { caseId } })} />
     </AppShell>
   );
 }

@@ -11,6 +11,7 @@ import {
   ReviewCoverageService,
   ReviewVersionService,
   StageHeader,
+  UNCERTAINTY_LABELS_AR,
   formatArabicDate,
   getDefaultRepository,
   getKnowledgeRegistry,
@@ -432,6 +433,9 @@ function FindingCard({
       {f.limitations && (
         <p className="mt-1 text-xs text-muted-foreground">قيود: {f.limitations}</p>
       )}
+      <p className="mt-1 text-xs text-muted-foreground" data-testid="finding-uncertainty">
+        درجة عدم اليقين: {UNCERTAINTY_LABELS_AR[f.uncertainty]}
+      </p>
       {f.humanStatus && (
         <p className="mt-1 text-xs">
           قرار المراجع: {FINDING_STATUS_LABELS_AR[f.humanStatus]}

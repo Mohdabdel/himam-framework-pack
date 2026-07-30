@@ -8,6 +8,8 @@ import {
   GovernedReportService,
   CaseService,
   INPUT_IMPACTS,
+  REPORT_VERSION_STATUS_LABELS_AR,
+  UNCERTAINTY_LABELS_AR,
   describeInputAbsenceForReport,
   formatArabicDate,
   getDefaultRepository,
@@ -88,6 +90,10 @@ function ItemCard({ item }: { item: ReportFindingItem }) {
           <span className="font-medium">القيود:</span> {item.limitations}
         </p>
       )}
+      <p className="mt-1 text-xs text-muted-foreground" data-testid="report-item-uncertainty">
+        <span className="font-medium">درجة عدم اليقين:</span>{" "}
+        {UNCERTAINTY_LABELS_AR[item.uncertainty]}
+      </p>
       {item.sourceIds.length > 0 && (
         <p className="mt-1 text-[10px] text-muted-foreground">
           مصادر: {item.sourceIds.length} · أدلة: {item.evidenceIds.length}
@@ -178,6 +184,8 @@ function ReportScreen() {
     }
   };
   const onPrint = () => {
+    // G3 — لا نفتح مربع حوار الطباعة قبل تجهيز محتوى التقرير على الشاشة.
+    if (!active) return;
     if (typeof window !== "undefined") window.print();
   };
 
@@ -231,7 +239,8 @@ function ReportScreen() {
         <button
           type="button"
           onClick={onPrint}
-          className="rounded-md border border-input px-3 py-1.5 text-sm"
+          disabled={!active}
+          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
           data-testid="print-report-btn"
         >
           طباعة / حفظ PDF
@@ -271,7 +280,8 @@ function ReportScreen() {
           >
             {versions.map((v) => (
               <option key={v.reportVersionId} value={v.reportVersionId}>
-                نسخة {v.versionNumber} — {v.status} — {formatArabicDate(v.createdAt)}
+                نسخة {v.versionNumber} — {REPORT_VERSION_STATUS_LABELS_AR[v.status] ?? v.status} —{" "}
+                {formatArabicDate(v.createdAt)}
               </option>
             ))}
           </select>
@@ -307,7 +317,9 @@ function ReportScreen() {
               </div>
               <div className="flex justify-between border-b border-border/60 py-1">
                 <dt className="text-muted-foreground">حالة النسخة</dt>
-                <dd>{active.status}</dd>
+                <dd data-testid="report-version-status">
+                  {REPORT_VERSION_STATUS_LABELS_AR[active.status] ?? active.status}
+                </dd>
               </div>
               <div className="flex justify-between border-b border-border/60 py-1">
                 <dt className="text-muted-foreground">تاريخ التوليد</dt>
