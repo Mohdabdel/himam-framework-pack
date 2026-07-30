@@ -97,7 +97,10 @@ function ItemCard({ item }: { item: ReportFindingItem }) {
         {UNCERTAINTY_LABELS_AR[item.uncertainty]}
       </p>
       {item.provenance.length > 0 ? (
-        <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2" data-testid="report-item-provenance">
+        <div
+          className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2"
+          data-testid="report-item-provenance"
+        >
           <div className="mb-1 text-[11px] font-medium">المصدر داخل الخطة</div>
           <ul className="space-y-1">
             {item.provenance.map((p) => (
@@ -149,6 +152,27 @@ function Section({
 }
 
 function ReportScreen() {
+  return <ReportScreenInner />;
+}
+
+function ActionWithReason({
+  reasonAr,
+  children,
+}: {
+  reasonAr: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex flex-col">
+      {children}
+      {reasonAr && (
+        <span className="mt-1 max-w-[16rem] text-[11px] text-muted-foreground">{reasonAr}</span>
+      )}
+    </span>
+  );
+}
+
+function ReportScreenInner() {
   const { caseId } = Route.useParams();
   const services = useServices();
   const [c, setC] = useState<ReviewCase | null>(null);
@@ -232,46 +256,85 @@ function ReportScreen() {
         />
       </div>
 
-      <div
-        className="no-print mb-6 flex flex-wrap items-center gap-2"
-        data-testid="report-actions"
-      >
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={!gate?.ok}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
-          data-testid="generate-report-btn"
+      <div className="no-print mb-6 flex flex-wrap items-start gap-2" data-testid="report-actions">
+        <ActionWithReason
+          reasonAr={
+            gate?.ok
+              ? null
+              : c.status === "closed"
+                ? "الحالة مغلقة — يمكنك عرض التقرير المعتمد فقط."
+                : "أكمل ختم المراجعة أولًا حتى يمكن توليد التقرير."
+          }
         >
-          توليد مسودة جديدة
-        </button>
-        <button
-          type="button"
-          onClick={onFinalize}
-          disabled={!active || active.status !== "draft"}
-          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          data-testid="finalize-report-btn"
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={!gate?.ok}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
+            data-testid="generate-report-btn"
+          >
+            توليد مسودة جديدة
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            !active
+              ? "ولّد مسودة التقرير أولًا."
+              : active.status === "finalized"
+                ? "هذه النسخة معتمدة بالفعل."
+                : active.status !== "draft"
+                  ? "هذه النسخة قديمة — ولّد مسودة جديدة قبل الاعتماد."
+                  : null
+          }
         >
-          اعتماد التقرير
-        </button>
-        <button
-          type="button"
-          onClick={onPrint}
-          disabled={!active || active.status !== "finalized"}
-          className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
-          data-testid="print-report-btn"
+          <button
+            type="button"
+            onClick={onFinalize}
+            disabled={!active || active.status !== "draft"}
+            className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
+            data-testid="finalize-report-btn"
+          >
+            اعتماد التقرير
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            !active
+              ? "ولّد مسودة التقرير أولًا."
+              : active.status !== "finalized"
+                ? "اعتمد التقرير أولًا لتتمكن من طباعته."
+                : null
+          }
         >
-          طباعة / حفظ PDF
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={c.status === "closed"}
-          className="rounded-md border border-destructive/40 px-3 py-1.5 text-sm text-destructive disabled:opacity-50"
-          data-testid="close-case-btn"
+          <button
+            type="button"
+            onClick={onPrint}
+            disabled={!active || active.status !== "finalized"}
+            className="rounded-md border border-input px-3 py-1.5 text-sm disabled:opacity-50"
+            data-testid="print-report-btn"
+          >
+            طباعة التقرير
+          </button>
+        </ActionWithReason>
+        <ActionWithReason
+          reasonAr={
+            c.status === "closed"
+              ? "الحالة مغلقة بالفعل."
+              : !active || active.status !== "finalized"
+                ? "اعتمد تقريرًا نهائيًا قبل إغلاق الحالة."
+                : null
+          }
         >
-          إغلاق الحالة بعد التقرير
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={c.status === "closed" || !active || active.status !== "finalized"}
+            className="rounded-md border border-destructive/40 px-3 py-1.5 text-sm text-destructive disabled:opacity-50"
+            data-testid="close-case-btn"
+          >
+            إغلاق الحالة بعد التقرير
+          </button>
+        </ActionWithReason>
       </div>
 
       {gate && !gate.ok && (
@@ -399,13 +462,15 @@ function ReportScreen() {
               </div>
             </dl>
             {active.staleReason && (
-              <p className="mt-2 text-xs text-amber-800">
-                هذه النسخة قديمة: {active.staleReason}
-              </p>
+              <p className="mt-2 text-xs text-amber-800">هذه النسخة قديمة: {active.staleReason}</p>
             )}
           </section>
 
-          <section id="report-scope" className="mb-6 rounded-md border border-border p-4" data-testid="report-scope">
+          <section
+            id="report-scope"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="report-scope"
+          >
             <h2 className="mb-2 text-lg font-semibold">نطاق المراجعة</h2>
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
@@ -578,7 +643,11 @@ function ReportScreen() {
             testId="section-not-reviewable"
           />
 
-          <section id="section-governance" className="mb-6 rounded-md border border-border p-4" data-testid="section-governance">
+          <section
+            id="section-governance"
+            className="mb-6 rounded-md border border-border p-4"
+            data-testid="section-governance"
+          >
             <h2 className="mb-2 text-lg font-semibold">حوكمة التقرير</h2>
             <p className="text-sm text-muted-foreground">{active.sections.governanceStatement}</p>
             {active.sections.limitations.length > 0 && (

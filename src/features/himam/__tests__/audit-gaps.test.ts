@@ -3,10 +3,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import {
-  REPORT_VERSION_STATUS_LABELS_AR,
-  UNCERTAINTY_LABELS_AR,
-} from "../review/review-labels";
+import { REPORT_VERSION_STATUS_LABELS_AR, UNCERTAINTY_LABELS_AR } from "../review/review-labels";
 
 function read(p: string): string {
   return fs.readFileSync(path.resolve(process.cwd(), p), "utf8");
@@ -52,10 +49,13 @@ describe("HIMAM — الفجوات المؤكدة G1–G4", () => {
   });
 
   it("T-P1: زر الطباعة معطَّل بلا نسخة تقرير ولا يستدعي window.print", () => {
+    // الشرط أصبح أقوى: الطباعة تُفعَّل فقط عند وجود نسخة معتمدة.
     expect(reportSrc).toMatch(
-      /onClick=\{onPrint\}[\s\S]{0,60}disabled=\{!active\}/,
+      /onClick=\{onPrint\}[\s\S]{0,120}disabled=\{!active \|\| active\.status !== "finalized"\}/,
     );
-    expect(reportSrc).toMatch(/const onPrint = \(\) => \{[\s\S]{0,200}if \(!active\) return;/);
+    expect(reportSrc).toMatch(
+      /const onPrint = \(\) => \{[\s\S]{0,200}if \(!active \|\| active\.status !== "finalized"\) return;/,
+    );
   });
 
   it("T-P2: window.print يُستدعى مرة واحدة فقط في المسار", () => {
