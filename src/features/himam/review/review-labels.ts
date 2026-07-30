@@ -1,4 +1,24 @@
-import type { FindingSeverity, FindingStatus, HumanDecision } from "./review-types";
+import type {
+  FindingSeverity,
+  FindingStatus,
+  HumanDecision,
+  ReportVersionStatus,
+} from "./review-types";
+
+// G1 — عدم اليقين مخزَّن في كل ملاحظة ويجب أن يُعرض للمراجع لا أن يُخفى.
+export const UNCERTAINTY_LABELS_AR: Record<"low" | "medium" | "high", string> = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "عالية",
+};
+
+// G2 — حالة نسخة التقرير تُعرض بالعربية دائمًا، لا بقيمتها التقنية.
+export const REPORT_VERSION_STATUS_LABELS_AR: Record<ReportVersionStatus, string> = {
+  draft: "مسودة",
+  finalized: "معتمدة",
+  superseded: "مستبدلة",
+  stale: "قديمة",
+};
 
 export const FINDING_STATUS_LABELS_AR: Record<FindingStatus, string> = {
   achieved: "متحقق",
