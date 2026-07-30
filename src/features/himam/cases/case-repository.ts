@@ -201,3 +201,10 @@ export function getDefaultRepository(): ReviewCaseRepository {
 export function createInMemoryRepository(): ReviewCaseRepository {
   return inMemoryRepo();
 }
+
+// Exposed so integration tests can exercise the exact serialization +
+// migration path the browser uses (JSON in localStorage), not just the
+// structuredClone in-memory shortcut.
+export function createLocalStorageRepository(): ReviewCaseRepository {
+  return localStorageRepo();
+}
