@@ -94,19 +94,6 @@ function reviewErrorAr(message: string): string {
   return "تعذّر إتمام الإجراء. راجع الخطوات السابقة ثم حاول مجددًا.";
 }
 
-function unusedServices() {
-  return useMemo(() => {
-    const repo = getDefaultRepository();
-    return {
-      repo,
-      versions: new ReviewVersionService(repo),
-      human: new HumanReviewService(repo),
-      coverage: new ReviewCoverageService(repo),
-      registry: getKnowledgeRegistry(),
-    };
-  }, []);
-}
-
 function ReviewWorkspace() {
   const { caseId } = Route.useParams();
   const services = useServices();
