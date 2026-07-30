@@ -142,7 +142,7 @@ describe("HIMAM — browser-parity journey through localStorage repository", () 
       ...draft.sections.majorPlanGaps,
       ...draft.sections.qualityImprovements,
       ...draft.sections.guidanceNotes,
-      ...draft.sections.needsClarification,
+      ...draft.sections.needsClarificationItems,
     ];
     expect(judged.length).toBeGreaterThan(0);
     const withProvenance = judged.filter((i) => i.provenance.length > 0);
