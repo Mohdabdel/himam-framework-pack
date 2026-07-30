@@ -103,6 +103,8 @@ function ReviewWorkspace() {
   const [findings, setFindings] = useState<ReviewFinding[]>([]);
   const [coverage, setCoverage] = useState<ReviewCoverage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResult, setBulkResult] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     domain: "" as string,
     level: "" as string,
@@ -154,9 +156,22 @@ function ReviewWorkspace() {
     }
   };
 
-  const completeReview = () => {
+  const completeReview = async () => {
     setError(null);
     try {
+      refresh();
+      await Promise.resolve();
+      const freshVersion = services.versions.currentVersion(caseId);
+      const freshFindings = services.versions.findingsFor(caseId, freshVersion?.versionId);
+      const blocking = freshFindings.filter((f) =>
+        !f.isStale && f.humanReviewStatus === "pending" &&
+        f.automatedSeverity === "action_required_before_goal_approval"
+      );
+      if (blocking.length > 0) {
+        setError(`لا يمكن ختم المراجعة: ما زالت ${blocking.length === 1 ? "نتيجة حرجة واحدة" : `${blocking.length} نتائج حرجة`} دون قرار.`);
+        refresh();
+        return;
+      }
       services.versions.completeHumanReview(caseId);
       refresh();
     } catch (e) {
@@ -175,15 +190,26 @@ function ReviewWorkspace() {
   // Explicit, human-initiated bulk decision: accepts the engine's outcome
   // as-is for every blocking finding. It is still a recorded human decision
   // per finding — no automatic judgment is issued.
-  const acceptAllCritical = () => {
+  const acceptAllCritical = async () => {
     setError(null);
+    setBulkResult(null);
+    setBulkBusy(true);
     try {
-      for (const f of criticalPending) {
-        services.human.applyDecision({ findingId: f.findingId, decision: "accept" });
-      }
+      services.human.applyDecisions(
+        criticalPending.map((f) => ({ findingId: f.findingId, decision: "accept" as const })),
+      );
+      await Promise.resolve();
       refresh();
+      const current = services.versions.currentVersion(caseId);
+      const fresh = services.versions.findingsFor(caseId, current?.versionId);
+      const remaining = fresh.filter((f) => !f.isStale && f.humanReviewStatus === "pending" && f.automatedSeverity === "action_required_before_goal_approval");
+      setBulkResult(remaining.length === 0
+        ? `حُفظت ${criticalPending.length} قرارات بنجاح. يمكن الآن ختم المراجعة.`
+        : `حُفظت القرارات، وما زالت ${remaining.length} نتائج حرجة دون قرار.`);
     } catch (e) {
       setError(reviewErrorAr((e as Error).message));
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -287,13 +313,15 @@ function ReviewWorkspace() {
                 type="button"
                 data-testid="accept-all-critical"
                 onClick={acceptAllCritical}
+                disabled={bulkBusy}
                 className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
               >
-                اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة
+                {bulkBusy ? "جارٍ حفظ القرارات…" : "اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة"}
               </button>
             </div>
           </section>
         )}
+        {bulkResult && <p role="status" data-testid="bulk-decision-result" className="mb-4 text-sm text-muted-foreground">{bulkResult}</p>}
         <section className="mb-4 rounded-md border border-border p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">تغطية المراجعة</h2>
@@ -336,24 +364,25 @@ function ReviewWorkspace() {
             <button
               type="button"
               onClick={completeReview}
-              disabled={readOnly || drift.drifted || criticalPending.length > 0}
+              disabled={readOnly || bulkBusy || drift.drifted || criticalPending.length > 0 || Boolean(version.completedAt)}
+              data-testid="complete-review-btn"
               className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              ختم المراجعة والانتقال إلى التقرير
+              {version.completedAt ? "اكتملت المراجعة" : "ختم المراجعة"}
             </button>
-            <Link
-              to="/cases/$caseId/report"
-              params={{ caseId }}
-              className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-            >
-              فتح التقرير
-            </Link>
+            {version.completedAt && <Link
+                to="/cases/$caseId/report"
+                params={{ caseId }}
+                data-testid="create-report-link"
+                className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+              >إنشاء التقرير</Link>}
           </div>
           {criticalPending.length > 0 && (
             <p className="mt-2 text-xs text-amber-800" data-testid="complete-blocked-reason">
               لا يمكن ختم المراجعة قبل إصدار قرار على {criticalPending.length} ملاحظة مطلوبة.
             </p>
           )}
+          {error && <p role="alert" data-testid="review-error" className="mt-2 text-sm text-destructive">{error}</p>}
         </section>
         </>
       )}

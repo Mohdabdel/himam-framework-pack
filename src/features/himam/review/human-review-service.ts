@@ -23,63 +23,65 @@ export interface HumanReviewInput {
 export class HumanReviewService {
   constructor(private readonly repo: ReviewCaseRepository) {}
 
-  applyDecision(input: HumanReviewInput): ReviewFinding {
+  applyDecisions(inputs: HumanReviewInput[]): ReviewFinding[] {
     const store = this.repo.load();
-    const f = store.reviewFindings.find((x) => x.findingId === input.findingId);
-    if (!f) throw new Error("Finding not found");
-    if (f.isStale) throw new Error("Cannot decide a stale finding");
-    const c = store.cases.find((x) => x.id === f.caseId);
-    if (!c) throw new Error("Case not found");
-    if (c.status === "closed") throw new Error("Case is closed");
-
+    const decided: ReviewFinding[] = [];
     const now = new Date().toISOString();
-    f.humanDecision = input.decision;
-    f.humanReviewStatus = "decided";
-    f.reviewedBy = input.actorId ?? null;
-    f.reviewedAt = now;
+    for (const input of inputs) {
+      const f = store.reviewFindings.find((x) => x.findingId === input.findingId);
+      if (!f) throw new Error("Finding not found");
+      if (f.isStale) throw new Error("Cannot decide a stale finding");
+      const c = store.cases.find((x) => x.id === f.caseId);
+      if (!c) throw new Error("Case not found");
+      if (c.status === "closed") throw new Error("Case is closed");
 
-    // Automated fields are NEVER mutated. Human fields are separate.
-    if (input.decision === "accept") {
-      f.humanStatus = f.automatedStatus;
-      f.humanSeverity = f.automatedSeverity;
-      f.humanRationale = input.humanRationale ?? null;
-      f.humanRecommendation = input.humanRecommendation ?? null;
-    } else if (input.decision === "modify") {
-      f.humanStatus = input.humanStatus ?? f.automatedStatus;
-      f.humanSeverity = input.humanSeverity ?? f.automatedSeverity;
-      f.humanRationale = input.humanRationale ?? null;
-      f.humanRecommendation = input.humanRecommendation ?? null;
-    } else if (input.decision === "reject") {
-      // Rejection excludes the finding from the final report body but keeps
-      // the automated record for audit.
-      f.humanStatus = null;
-      f.humanSeverity = null;
-      f.humanRationale = input.humanRationale ?? null;
-      f.humanRecommendation = null;
-    } else if (input.decision === "request_more_information") {
-      f.humanStatus = "needs_clarification";
-      f.humanSeverity = f.automatedSeverity;
-      f.humanRationale = input.humanRationale ?? null;
-      f.humanRecommendation = input.humanRecommendation ?? null;
-      f.humanIncludeInReport = input.includeInReport ?? true;
-    } else if (input.decision === "defer") {
-      f.humanStatus = null;
-      f.humanSeverity = null;
-      f.humanRationale = input.humanRationale ?? null;
-      f.humanRecommendation = null;
-      f.humanIncludeInReport = null;
-    }
-    store.auditEvents.push(
-      newAuditEvent(f.caseId, "finding_decided", {
+      f.humanDecision = input.decision;
+      f.humanReviewStatus = "decided";
+      f.reviewedBy = input.actorId ?? null;
+      f.reviewedAt = now;
+      if (input.decision === "accept") {
+        f.humanStatus = f.automatedStatus;
+        f.humanSeverity = f.automatedSeverity;
+        f.humanRationale = input.humanRationale ?? null;
+        f.humanRecommendation = input.humanRecommendation ?? null;
+      } else if (input.decision === "modify") {
+        f.humanStatus = input.humanStatus ?? f.automatedStatus;
+        f.humanSeverity = input.humanSeverity ?? f.automatedSeverity;
+        f.humanRationale = input.humanRationale ?? null;
+        f.humanRecommendation = input.humanRecommendation ?? null;
+      } else if (input.decision === "reject") {
+        f.humanStatus = null;
+        f.humanSeverity = null;
+        f.humanRationale = input.humanRationale ?? null;
+        f.humanRecommendation = null;
+      } else if (input.decision === "request_more_information") {
+        f.humanStatus = "needs_clarification";
+        f.humanSeverity = f.automatedSeverity;
+        f.humanRationale = input.humanRationale ?? null;
+        f.humanRecommendation = input.humanRecommendation ?? null;
+        f.humanIncludeInReport = input.includeInReport ?? true;
+      } else {
+        f.humanStatus = null;
+        f.humanSeverity = null;
+        f.humanRationale = input.humanRationale ?? null;
+        f.humanRecommendation = null;
+        f.humanIncludeInReport = null;
+      }
+      store.auditEvents.push(newAuditEvent(f.caseId, "finding_decided", {
         findingId: f.findingId,
         criterionId: f.criterionId,
         decision: input.decision,
         automatedStatus: f.automatedStatus,
         humanStatus: f.humanStatus,
-      }),
-    );
+      }));
+      decided.push(f);
+    }
     this.repo.save(store);
-    return f;
+    return decided;
+  }
+
+  applyDecision(input: HumanReviewInput): ReviewFinding {
+    return this.applyDecisions([input])[0];
   }
 
   listForCase(caseId: string): ReviewFinding[] {
