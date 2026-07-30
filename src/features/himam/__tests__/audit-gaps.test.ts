@@ -56,7 +56,9 @@ describe("HIMAM — الفجوات المؤكدة G1–G4", () => {
     expect(reportSrc).toMatch(
       /onClick=\{onPrint\}[\s\S]{0,120}disabled=\{!active \|\| active\.status !== "finalized"\}/,
     );
-    expect(reportSrc).toMatch(/const onPrint = \(\) => \{[\s\S]{0,200}if \(!active\) return;/);
+    expect(reportSrc).toMatch(
+      /const onPrint = \(\) => \{[\s\S]{0,200}if \(!active \|\| active\.status !== "finalized"\) return;/,
+    );
   });
 
   it("T-P2: window.print يُستدعى مرة واحدة فقط في المسار", () => {
