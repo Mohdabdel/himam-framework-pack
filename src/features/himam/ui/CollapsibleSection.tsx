@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface CollapsibleSectionProps {
+  id?: string;
   titleAr: string;
   hintAr?: string;
   defaultOpen?: boolean;
@@ -14,6 +15,7 @@ export interface CollapsibleSectionProps {
 // Accessible show/hide section (aria-expanded + aria-controls),
 // always expanded when printing via the `print:block` content rule.
 export function CollapsibleSection({
+  id,
   titleAr,
   hintAr,
   defaultOpen = false,
@@ -25,9 +27,11 @@ export function CollapsibleSection({
   const panelId = useId();
   return (
     <section
+      id={id}
       className={cn("rounded-md border border-border bg-background", className)}
       {...rest}
     >
+      <h2 className="hidden px-4 pt-4 text-base font-semibold print:block">{titleAr}</h2>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
