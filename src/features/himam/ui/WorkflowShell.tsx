@@ -94,7 +94,7 @@ export function WorkflowShell({
             onClick={() => setStepsOpen((o) => !o)}
             aria-expanded={stepsOpen}
             className="min-h-11 flex w-full items-center justify-between gap-2 text-start"
-            data-testid="workflow-steps-toggle"
+            data-testid="workflow-steps-mobile"
           >
             <span className="text-sm font-medium">
               الخطوة {index + 1} من 8 — {current.labelAr}
