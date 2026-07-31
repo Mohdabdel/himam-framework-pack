@@ -24,6 +24,7 @@ export const Route = createFileRoute("/framework-package")({
 function FrameworkPackagePage() {
   const [busy, setBusy] = useState(false);
   const [auditBusy, setAuditBusy] = useState(false);
+  const [supplementBusy, setSupplementBusy] = useState(false);
 
   const fileContent = (f: (typeof PACKAGE_FILES)[number]) =>
     f.isCsv ? BOM + f.content : f.content;
