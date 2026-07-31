@@ -23,6 +23,7 @@ export const Route = createFileRoute("/framework-package")({
 
 function FrameworkPackagePage() {
   const [busy, setBusy] = useState(false);
+  const [auditBusy, setAuditBusy] = useState(false);
 
   const fileContent = (f: (typeof PACKAGE_FILES)[number]) =>
     f.isCsv ? BOM + f.content : f.content;
@@ -55,6 +56,18 @@ function FrameworkPackagePage() {
       triggerDownload(blob, `${PACKAGE_FOLDER}.zip`);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const downloadAuditReport = async () => {
+    setAuditBusy(true);
+    try {
+      const res = await fetch("/HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+      if (!res.ok) throw new Error(`فشل التنزيل: ${res.status}`);
+      const blob = await res.blob();
+      triggerDownload(blob, "HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+    } finally {
+      setAuditBusy(false);
     }
   };
 
