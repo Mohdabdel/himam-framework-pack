@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CaseService,
   DefaultDocumentTextExtractor,
   EXTRACTION_STAGE_LABELS_AR,
@@ -282,7 +283,7 @@ function IngestionPage() {
   };
 
   return (
-    <AppShell width="regular">
+    <WorkflowShell caseId={caseId} currentStep="text" width="regular">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="قراءة محتوى الخطة"
@@ -400,6 +401,6 @@ function IngestionPage() {
         continueLabelAr="مراجعة بنود الخطة"
         continueHref={`/cases/${caseId}/extraction`}
       />
-    </AppShell>
+    </WorkflowShell>
   );
 }

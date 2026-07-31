@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CaseService,
   CollapsibleSection,
   DefaultDocumentTextExtractor,
@@ -322,7 +323,7 @@ function SourcesPage() {
   };
 
   return (
-    <AppShell width="regular">
+    <WorkflowShell caseId={caseId} currentStep="sources" width="regular">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="خطة المراجعة"
@@ -385,7 +386,7 @@ function SourcesPage() {
             to="/cases/$caseId/ingestion"
             params={{ caseId }}
             data-testid="sources-primary-cta"
-            className="mt-3 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="mt-3 min-h-11 inline-flex items-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent"
           >
             تجهيز الخطة وبدء المراجعة
           </Link>
@@ -864,6 +865,6 @@ function SourcesPage() {
           أرفق الخطة الحالية أولًا.
         </span>
       )}
-    </AppShell>
+    </WorkflowShell>
   );
 }

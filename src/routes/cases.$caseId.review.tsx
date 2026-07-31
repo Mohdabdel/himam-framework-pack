@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   DOMAIN_LABELS_AR,
   StageFooter,
   GATE_REASON_TARGET_STEP_AR,
@@ -229,7 +230,7 @@ function ReviewWorkspace() {
   });
 
   return (
-    <AppShell width="wide">
+    <WorkflowShell caseId={caseId} currentStep="review" width="wide">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="مساحة المراجعة المهنية"
@@ -546,7 +547,7 @@ function ReviewWorkspace() {
               : undefined
         }
       />
-    </AppShell>
+    </WorkflowShell>
   );
 }
 

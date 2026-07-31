@@ -17,6 +17,7 @@ import {
   PrimaryActionsBar,
   SOURCE_TYPE_LABELS_AR,
   StageHeader,
+  WorkflowShell,
   detectPhaseAgeInconsistency,
   formatArabicDate,
   getDefaultRepository,
@@ -245,7 +246,12 @@ function CaseDetail() {
   }
 
   return (
-    <AppShell width="regular">
+    <WorkflowShell
+      caseId={caseId}
+      currentStep={nextAction?.stepId ?? "sources"}
+      guard={false}
+      width="regular"
+    >
       <StageHeader
         caseCodeAr={`حالة مراجعة ${c.referenceCode}`}
         titleAr={
@@ -253,13 +259,9 @@ function CaseDetail() {
             ? `${c.planType} — ${phaseLabelAr(c.phaseId)}`
             : `مراجعة ${phaseLabelAr(c.phaseId)}`
         }
+        descriptionAr="هذه صفحة متابعة الحالة: تعرض الخطوة الحالية وتقودك إليها بإجراء واحد."
         statusLabelAr={statusLabelAr(c.status)}
         statusVariant="info"
-        trailing={
-          <Link to="/cases" className="text-sm underline">
-            العودة
-          </Link>
-        }
       />
 
       {nextAction && (
@@ -268,25 +270,21 @@ function CaseDetail() {
         </div>
       )}
 
-      {/* Always-available actions, directly under the header + next action. */}
+      {/* Secondary routes, folded so the single primary action stays dominant. */}
+      <CollapsibleSection
+        className="mb-6"
+        titleAr="خيارات أخرى"
+        hintAr="روابط ثانوية"
+      >
       <section
-        className="mb-6 flex flex-wrap gap-2 rounded-md border border-border bg-muted/30 p-3"
+        className="flex flex-wrap gap-2"
         data-testid="case-top-actions"
       >
-        {nextAction && nextAction.ctaEnabled && nextAction.ctaHref && (
-          <a
-            href={nextAction.ctaHref.replace("/cases/$caseId", `/cases/${caseId}`)}
-            data-testid="action-continue-review"
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            متابعة المراجعة
-          </a>
-        )}
         <Link
           to="/cases/$caseId/sources"
           params={{ caseId }}
           data-testid="action-manage-sources"
-          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
+          className="min-h-11 inline-flex items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
         >
           إدارة المصادر
         </Link>
@@ -335,6 +333,7 @@ function CaseDetail() {
           </span>
         )}
       </section>
+      </CollapsibleSection>
 
       <CollapsibleSection
         className="mb-6"
@@ -375,20 +374,21 @@ function CaseDetail() {
         )}
       </CollapsibleSection>
 
-      <section className="mb-6 rounded-md border border-border p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">رحلة الحالة</h2>
-        </div>
+      <CollapsibleSection
+        className="mb-6"
+        titleAr="تفاصيل رحلة المراجعة"
+        hintAr="حالة كل خطوة"
+      >
         <JourneyStepper caseId={caseId} statuses={journeyStatuses} stepHref={stepHref} />
         <p className="mt-3 text-xs text-muted-foreground">
           المرحلة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}
         </p>
         {completeStatus && !completeStatus.ok && c.extractionStage !== "extraction_confirmed" && (
-          <p className="mt-2 text-xs text-amber-700" data-testid="journey-blocker">
+          <p className="mt-2 text-xs text-himam-warning-foreground" data-testid="journey-blocker">
             تعذّر إكمال تأكيد الأدلة بعد.
           </p>
         )}
-      </section>
+      </CollapsibleSection>
 
       {c.scopeNeedsReconfirmation && lastConfirmedScope && scope && (
         <section
@@ -453,6 +453,6 @@ function CaseDetail() {
       )}
 
       <PrimaryActionsBar actions={bottomActions} align="between" />
-    </AppShell>
+    </WorkflowShell>
   );
 }

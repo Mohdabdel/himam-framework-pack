@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CaseService,
   StageFooter,
   StageHeader,
@@ -129,7 +130,7 @@ function ScopeConfirmPage() {
   const canConfirm = !readOnly && !!current;
 
   return (
-    <AppShell width="regular">
+    <WorkflowShell caseId={caseId} currentStep="scope" width="regular">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="تأكيد نطاق المراجعة"
@@ -257,6 +258,6 @@ function ScopeConfirmPage() {
                 : undefined
         }
       />
-    </AppShell>
+    </WorkflowShell>
   );
 }

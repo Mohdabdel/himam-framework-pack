@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CaseExtractionService,
   CollapsibleSection,
   ResponsivePanel,
@@ -254,7 +255,7 @@ function ExtractionPage() {
   };
 
   return (
-    <AppShell width="wide">
+    <WorkflowShell caseId={caseId} currentStep="evidence" width="wide">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="استخراج الأدلة وتأكيدها"
@@ -646,6 +647,6 @@ function ExtractionPage() {
               : REASON_LABELS_AR[canComplete.reason]
         }
       />
-    </AppShell>
+    </WorkflowShell>
   );
 }

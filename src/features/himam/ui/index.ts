@@ -29,3 +29,11 @@ export { ResponsivePanel } from "./ResponsivePanel";
 export type { ResponsivePanelProps } from "./ResponsivePanel";
 export { CollapsibleSection } from "./CollapsibleSection";
 export type { CollapsibleSectionProps } from "./CollapsibleSection";
+export { WorkflowShell } from "./WorkflowShell";
+export type { WorkflowShellProps } from "./WorkflowShell";
+export {
+  useCaseJourney,
+  JOURNEY_STEP_HREF,
+  journeyStepIndex,
+} from "./use-case-journey";
+export type { CaseJourneyState } from "./use-case-journey";
