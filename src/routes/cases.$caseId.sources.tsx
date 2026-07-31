@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CaseService,
   CollapsibleSection,
   DefaultDocumentTextExtractor,
@@ -322,7 +323,7 @@ function SourcesPage() {
   };
 
   return (
-    <AppShell width="regular">
+    <WorkflowShell caseId={caseId} currentStep="sources" width="regular">
       <StageHeader
         caseCodeAr={c.referenceCode}
         titleAr="خطة المراجعة"
@@ -864,6 +865,6 @@ function SourcesPage() {
           أرفق الخطة الحالية أولًا.
         </span>
       )}
-    </AppShell>
+    </WorkflowShell>
   );
 }

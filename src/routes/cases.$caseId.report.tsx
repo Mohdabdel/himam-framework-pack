@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AppShell,
+  WorkflowShell,
   CollapsibleSection,
   DOMAIN_LABELS_AR,
   GATE_REASON_TARGET_STEP_AR,
@@ -240,7 +241,7 @@ function ReportScreenInner() {
   }
 
   return (
-    <AppShell width="regular" className="himam-report">
+    <WorkflowShell caseId={caseId} currentStep="report" width="regular" className="himam-report">
       <div className="no-print">
         <StageHeader
           caseCodeAr={c.referenceCode}
@@ -675,6 +676,6 @@ function ReportScreenInner() {
           </section>
         </>
       )}
-    </AppShell>
+    </WorkflowShell>
   );
 }
