@@ -60,16 +60,36 @@ function FrameworkPackagePage() {
     }
   };
 
-  const downloadAuditReport = async () => {
-    setAuditBusy(true);
+  const downloadFile = async (
+    path: string,
+    filename: string,
+    setBusyState: (value: boolean) => void,
+  ) => {
+    setBusyState(true);
     try {
-      const res = await fetch("/HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+      const res = await fetch(path);
       if (!res.ok) throw new Error(`فشل التنزيل: ${res.status}`);
       const blob = await res.blob();
-      triggerDownload(blob, "HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+      triggerDownload(blob, filename);
     } finally {
-      setAuditBusy(false);
+      setBusyState(false);
     }
+  };
+
+  const downloadAuditReport = async () => {
+    await downloadFile(
+      "/HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md",
+      "HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md",
+      setAuditBusy,
+    );
+  };
+
+  const downloadSupplementReport = async () => {
+    await downloadFile(
+      "/HIMAM_CURRENT_IMPLEMENTATION_AUDIT_SUPPLEMENT.md",
+      "HIMAM_CURRENT_IMPLEMENTATION_AUDIT_SUPPLEMENT.md",
+      setSupplementBusy,
+    );
   };
 
   return (
