@@ -96,6 +96,26 @@ function FrameworkPackagePage() {
           </div>
         </header>
 
+        <section className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium text-primary">تقرير التدقيق التنفيذي</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                تقرير قراءة وتشخيص كامل للحالة البرمجية الفعلية لمشروع HIMAM Framework Pack.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={downloadAuditReport}
+              disabled={auditBusy}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+              data-testid="download-audit-report"
+            >
+              {auditBusy ? "جارٍ التحضير..." : "تنزيل التقرير الكامل"}
+            </button>
+          </div>
+        </section>
+
         <section className="mb-8 rounded-lg border border-border bg-card p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
