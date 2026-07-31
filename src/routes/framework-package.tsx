@@ -24,6 +24,7 @@ export const Route = createFileRoute("/framework-package")({
 function FrameworkPackagePage() {
   const [busy, setBusy] = useState(false);
   const [auditBusy, setAuditBusy] = useState(false);
+  const [supplementBusy, setSupplementBusy] = useState(false);
 
   const fileContent = (f: (typeof PACKAGE_FILES)[number]) =>
     f.isCsv ? BOM + f.content : f.content;
@@ -59,16 +60,36 @@ function FrameworkPackagePage() {
     }
   };
 
-  const downloadAuditReport = async () => {
-    setAuditBusy(true);
+  const downloadFile = async (
+    path: string,
+    filename: string,
+    setBusyState: (value: boolean) => void,
+  ) => {
+    setBusyState(true);
     try {
-      const res = await fetch("/HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+      const res = await fetch(path);
       if (!res.ok) throw new Error(`فشل التنزيل: ${res.status}`);
       const blob = await res.blob();
-      triggerDownload(blob, "HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md");
+      triggerDownload(blob, filename);
     } finally {
-      setAuditBusy(false);
+      setBusyState(false);
     }
+  };
+
+  const downloadAuditReport = async () => {
+    await downloadFile(
+      "/HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md",
+      "HIMAM_CURRENT_IMPLEMENTATION_AUDIT.md",
+      setAuditBusy,
+    );
+  };
+
+  const downloadSupplementReport = async () => {
+    await downloadFile(
+      "/HIMAM_CURRENT_IMPLEMENTATION_AUDIT_SUPPLEMENT.md",
+      "HIMAM_CURRENT_IMPLEMENTATION_AUDIT_SUPPLEMENT.md",
+      setSupplementBusy,
+    );
   };
 
   return (
@@ -112,6 +133,27 @@ function FrameworkPackagePage() {
               data-testid="download-audit-report"
             >
               {auditBusy ? "جارٍ التحضير..." : "تنزيل التقرير الكامل"}
+            </button>
+          </div>
+        </section>
+
+        <section className="mb-6 rounded-lg border border-border bg-card p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold">ملحق تقرير التدقيق التنفيذي</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                استكمال إلزامي يوضح الفروقات بين بيانات المعاينة والنسخ المحفوظة، والأحكام النهائية
+                للجاهزية.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={downloadSupplementReport}
+              disabled={supplementBusy}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+              data-testid="download-audit-supplement"
+            >
+              {supplementBusy ? "جارٍ التحضير..." : "تنزيل الملحق الكامل"}
             </button>
           </div>
         </section>
