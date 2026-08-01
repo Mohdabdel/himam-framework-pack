@@ -43,9 +43,7 @@ export function StageHeader({
             <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
               {caseCodeAr && <span data-testid="stage-header-code">{caseCodeAr}</span>}
               {caseCodeAr && stepIndicatorAr && <span aria-hidden>·</span>}
-              {stepIndicatorAr && (
-                <span data-testid="stage-header-step">{stepIndicatorAr}</span>
-              )}
+              {stepIndicatorAr && <span data-testid="stage-header-step">{stepIndicatorAr}</span>}
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2">

@@ -54,10 +54,7 @@ export function WorkflowShell({
 
   return (
     <AppShell width={width} className={className}>
-      <div
-        className="mb-6 rounded-lg border border-border bg-card"
-        data-testid="workflow-shell"
-      >
+      <div className="mb-6 rounded-lg border border-border bg-card" data-testid="workflow-shell">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <div className="text-[11px] font-medium tracking-wide text-muted-foreground">
@@ -153,8 +150,7 @@ export function WorkflowShell({
         >
           <h1 className="text-lg font-bold">هذه الخطوة غير متاحة بعد</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {currentStatus?.blockedReasonAr ??
-              "أكمل الخطوات السابقة للوصول إلى هذه الخطوة."}
+            {currentStatus?.blockedReasonAr ?? "أكمل الخطوات السابقة للوصول إلى هذه الخطوة."}
           </p>
           <Link
             to={target}

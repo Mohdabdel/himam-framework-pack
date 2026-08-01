@@ -9,10 +9,7 @@ export type { StageFooterProps } from "./StageFooter";
 export { NextActionCard } from "./NextActionCard";
 export type { NextActionCardProps } from "./NextActionCard";
 export { PrimaryActionsBar } from "./PrimaryActionsBar";
-export type {
-  PrimaryActionsBarProps,
-  PrimaryActionSpec,
-} from "./PrimaryActionsBar";
+export type { PrimaryActionsBarProps, PrimaryActionSpec } from "./PrimaryActionsBar";
 export { GateReason } from "./GateReason";
 export type { GateReasonProps } from "./GateReason";
 export { JourneyStepper } from "./JourneyStepper";
@@ -31,9 +28,5 @@ export { CollapsibleSection } from "./CollapsibleSection";
 export type { CollapsibleSectionProps } from "./CollapsibleSection";
 export { WorkflowShell } from "./WorkflowShell";
 export type { WorkflowShellProps } from "./WorkflowShell";
-export {
-  useCaseJourney,
-  JOURNEY_STEP_HREF,
-  journeyStepIndex,
-} from "./use-case-journey";
+export { useCaseJourney, JOURNEY_STEP_HREF, journeyStepIndex } from "./use-case-journey";
 export type { CaseJourneyState } from "./use-case-journey";

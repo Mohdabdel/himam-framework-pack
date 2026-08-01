@@ -19,12 +19,10 @@ export interface PrimaryActionsBarProps {
 }
 
 const VARIANT_CLASS: Record<NonNullable<PrimaryActionSpec["variant"]>, string> = {
-  primary:
-    "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60",
+  primary: "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60",
   secondary:
     "border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-60",
-  ghost:
-    "text-muted-foreground hover:text-foreground",
+  ghost: "text-muted-foreground hover:text-foreground",
 };
 
 const ALIGN_CLASS: Record<NonNullable<PrimaryActionsBarProps["align"]>, string> = {

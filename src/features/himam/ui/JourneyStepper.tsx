@@ -16,17 +16,9 @@ export interface JourneyStepperProps {
   className?: string;
 }
 
-export function JourneyStepper({
-  caseId,
-  statuses,
-  stepHref,
-  className,
-}: JourneyStepperProps) {
+export function JourneyStepper({ caseId, statuses, stepHref, className }: JourneyStepperProps) {
   return (
-    <ol
-      className={cn("space-y-2", className)}
-      data-testid="case-journey-stepper"
-    >
+    <ol className={cn("space-y-2", className)} data-testid="case-journey-stepper">
       {statuses.map((s, i) => {
         const href = stepHref?.[s.step.id];
         const openable = s.state !== "not_started" && !!href;
@@ -42,13 +34,9 @@ export function JourneyStepper({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">{i + 1}.</span>
                 <span className="text-sm font-medium">{s.step.labelAr}</span>
-                <StatusBadge variant={variant}>
-                  {JOURNEY_STATE_LABELS_AR[s.state]}
-                </StatusBadge>
+                <StatusBadge variant={variant}>{JOURNEY_STATE_LABELS_AR[s.state]}</StatusBadge>
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {s.step.descriptionAr}
-              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{s.step.descriptionAr}</div>
               {s.blockedReasonAr && (
                 <div
                   className="mt-1 text-xs text-himam-warning-foreground"

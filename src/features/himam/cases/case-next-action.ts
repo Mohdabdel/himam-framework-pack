@@ -47,22 +47,24 @@ export interface CaseNextAction {
 function hasReadyPlanMeta(store: HimamStore, caseId: string): boolean {
   return store.sources.some(
     (s) =>
-      s.reviewCaseId === caseId &&
-      s.type === "plan" &&
-      s.status === "ready_for_future_ingestion",
+      s.reviewCaseId === caseId && s.type === "plan" && s.status === "ready_for_future_ingestion",
   );
 }
 
 function currentReviewVersion(store: HimamStore, caseId: string) {
-  return store.reviewVersions
-    .filter((v) => v.caseId === caseId && !v.isStale)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+  return (
+    store.reviewVersions
+      .filter((v) => v.caseId === caseId && !v.isStale)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null
+  );
 }
 
 function latestReport(store: HimamStore, caseId: string) {
-  return store.reportVersions
-    .filter((r) => r.caseId === caseId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+  return (
+    store.reportVersions
+      .filter((r) => r.caseId === caseId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null
+  );
 }
 
 function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
@@ -108,9 +110,7 @@ function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
 
   // 3) Text preparation
   const caseSources = store.sources.filter((s) => s.reviewCaseId === c.id);
-  const textReadyCount = caseSources.filter(
-    (s) => s.extractionStage === "text_extracted",
-  ).length;
+  const textReadyCount = caseSources.filter((s) => s.extractionStage === "text_extracted").length;
   if (textReadyCount === 0) {
     return {
       kind: "prepare_text",
@@ -151,9 +151,7 @@ function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
         ? "إعادة تأكيد نطاق المراجعة"
         : "تأكيد نطاق المراجعة النهائي",
       ctaHref: "/cases/$caseId/scope",
-      blockedReasonAr: c.scopeNeedsReconfirmation
-        ? "تغيّرت المصادر — أعد تأكيد النطاق."
-        : null,
+      blockedReasonAr: c.scopeNeedsReconfirmation ? "تغيّرت المصادر — أعد تأكيد النطاق." : null,
       ctaEnabled: true,
       stateSummaryAr: c.scopeNeedsReconfirmation
         ? "النطاق يحتاج إلى إعادة تأكيد."
@@ -177,9 +175,7 @@ function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
   if (version.completedAt === null) {
     const pendingHuman = store.reviewFindings.filter(
       (f) =>
-        f.reviewVersionId === version.versionId &&
-        !f.isStale &&
-        f.humanReviewStatus === "pending",
+        f.reviewVersionId === version.versionId && !f.isStale && f.humanReviewStatus === "pending",
     ).length;
     return {
       kind: "complete_human_decisions",
@@ -205,9 +201,7 @@ function resolveForCase(store: HimamStore, c: ReviewCase): CaseNextAction {
       ctaHref: "/cases/$caseId/report",
       blockedReasonAr: null,
       ctaEnabled: true,
-      stateSummaryAr: report
-        ? "التقرير الحالي يحتاج إلى تحديث."
-        : "التالي: توليد التقرير المحكوم.",
+      stateSummaryAr: report ? "التقرير الحالي يحتاج إلى تحديث." : "التالي: توليد التقرير المحكوم.",
     };
   }
   if (report.status === "draft") {
@@ -264,8 +258,7 @@ export const CASE_GATE_REASONS_AR: Record<string, string> = {
   scope_needs_reconfirmation: "النطاق يحتاج إلى إعادة تأكيد.",
   extraction_not_confirmed: "تأكيد الأدلة لم يكتمل بعد.",
   identity_conflict_unresolved: "يوجد تعارض هوية لم يُقرَّ بعد.",
-  no_confirmed_evidence_and_no_not_reviewable:
-    "لا توجد أدلة مؤكدة ولا معايير قابلة للعرض.",
+  no_confirmed_evidence_and_no_not_reviewable: "لا توجد أدلة مؤكدة ولا معايير قابلة للعرض.",
   no_review_version: "لم تُشغَّل المراجعة المهنية بعد.",
   review_not_completed: "المراجعة المهنية لم تُكتمل بعد.",
   review_stale: "نتائج المراجعة قديمة — أعد تشغيل المراجعة.",

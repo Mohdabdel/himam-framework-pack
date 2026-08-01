@@ -39,6 +39,15 @@ export function phaseLabelAr(phaseId: ReviewPhaseId | null | undefined): string 
   return PHASE_LABELS_AR[phaseId] ?? "غير محددة";
 }
 
+export function phaseOrAgeLabelAr(
+  phaseId: ReviewPhaseId | null | undefined,
+  ageYears: number | null | undefined,
+): string {
+  if (phaseId) return phaseLabelAr(phaseId);
+  if (ageYears != null) return `العمر ${ageYears} سنوات`;
+  return "العمر والمرحلة غير محددين";
+}
+
 export const STATUS_LABELS_AR: Record<ReviewCaseStatus, string> = {
   draft: "مسودة",
   minimum_inputs_complete: "المدخلات الدنيا مكتملة",

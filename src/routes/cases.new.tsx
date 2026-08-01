@@ -1,6 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { AppShell, CaseService, REVIEW_PHASES, StageHeader, validatePlanFile } from "@/features/himam";
+import {
+  AppShell,
+  CaseService,
+  REVIEW_PHASES,
+  StageHeader,
+  validatePlanFile,
+} from "@/features/himam";
 import type { ReviewPhaseId } from "@/features/himam";
 
 export const Route = createFileRoute("/cases/new")({
@@ -81,9 +87,7 @@ function NewCase() {
     }
     if (!fileValidation || fileValidation.ok !== true) {
       setError(
-        fileValidation && !fileValidation.ok
-          ? fileValidation.reason
-          : "ملف الخطة غير صالح.",
+        fileValidation && !fileValidation.ok ? fileValidation.reason : "ملف الخطة غير صالح.",
       );
       return;
     }
@@ -125,40 +129,37 @@ function NewCase() {
           لا يُشترط إدخال التشخيص لمراجعة الخطة، ولا يستخدمه النظام لاستنتاج القدرة.
         </p>
 
-        <fieldset
-          className="rounded-md border border-border p-3"
-          data-testid="basics-fieldset"
-        >
+        <fieldset className="rounded-md border border-border p-3" data-testid="basics-fieldset">
           <legend className="px-1 text-xs font-medium text-muted-foreground">
             العمر أو المرحلة — يكفي إدخال أحدهما
           </legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               العمر (سنوات)
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              inputMode="numeric"
-            />
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                inputMode="numeric"
+              />
             </label>
             <label className="block text-sm">
               المرحلة التعليمية
-            <select
-              value={phaseId}
-              onChange={(e) => setPhaseId(e.target.value as ReviewPhaseId | "")}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">— اختر —</option>
-              {REVIEW_PHASES.map((p) => (
-                <option key={p} value={p}>
-                  {PHASE_LABELS[p]}
-                </option>
-              ))}
-            </select>
+              <select
+                value={phaseId}
+                onChange={(e) => setPhaseId(e.target.value as ReviewPhaseId | "")}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">— اختر —</option>
+                {REVIEW_PHASES.map((p) => (
+                  <option key={p} value={p}>
+                    {PHASE_LABELS[p]}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
         </fieldset>
@@ -167,9 +168,7 @@ function NewCase() {
           className="rounded-md border border-border p-3"
           data-testid="optional-basics-fieldset"
         >
-          <legend className="px-1 text-xs font-medium text-muted-foreground">
-            حقول اختيارية
-          </legend>
+          <legend className="px-1 text-xs font-medium text-muted-foreground">حقول اختيارية</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block text-sm" data-testid="field-plan-type-label">
               نوع الخطة
@@ -258,10 +257,7 @@ function NewCase() {
             </div>
           )}
           {planFile && fileReady && (
-            <p
-              className="mt-2 text-[11px] text-muted-foreground"
-              data-testid="next-step-hint"
-            >
+            <p className="mt-2 text-[11px] text-muted-foreground" data-testid="next-step-hint">
               ستتمكن في الخطوة التالية من إضافة التقييم وأولويات الأسرة والمعلومات الأخرى عند
               توفرها.
             </p>

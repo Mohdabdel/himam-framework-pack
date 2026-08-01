@@ -34,7 +34,18 @@ function harness() {
   const versions = new ReviewVersionService(repo);
   const human = new HumanReviewService(repo);
   const coverage = new ReviewCoverageService(repo);
-  return { repo, storage, cases, ingestion, evidence, identity, caseExtraction, versions, human, coverage };
+  return {
+    repo,
+    storage,
+    cases,
+    ingestion,
+    evidence,
+    identity,
+    caseExtraction,
+    versions,
+    human,
+    coverage,
+  };
 }
 
 async function fullyPreparedCase(h: ReturnType<typeof harness>) {
@@ -111,7 +122,11 @@ describe("HIMAM Package 1C — Deterministic Review Engine", () => {
     // Case has no assessment/family_priorities/etc.
     const { findings } = h.versions.runEngine(c.id);
     // Criteria requiring assessment (not provided) must be not_reviewable
-    const relying = findings.filter((f) => f.criterionId === "C003" /* identity */ === false && f.rationale.includes("مدخل مطلوب غير متاح"));
+    const relying = findings.filter(
+      (f) =>
+        (f.criterionId === "C003") /* identity */ === false &&
+        f.rationale.includes("مدخل مطلوب غير متاح"),
+    );
     // At least one criterion should be not_reviewable due to missing optional input
     const notReviewable = findings.filter((f) => f.automatedStatus === "not_reviewable");
     expect(notReviewable.length).toBeGreaterThan(0);
@@ -239,9 +254,9 @@ describe("HIMAM Package 1C — Deterministic Review Engine", () => {
     h.versions.runEngine(c.id);
     const f = h.versions.findingsFor(c.id)[0];
     h.cases.closeCase(c.id);
-    expect(() =>
-      h.human.applyDecision({ findingId: f.findingId, decision: "accept" }),
-    ).toThrow(/closed/);
+    expect(() => h.human.applyDecision({ findingId: f.findingId, decision: "accept" })).toThrow(
+      /closed/,
+    );
   });
 
   it("PKG1C-T14: identity conflict blocks review gate", async () => {

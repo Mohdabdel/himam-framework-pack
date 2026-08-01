@@ -80,9 +80,7 @@ export class IngestionService {
         }
       }
       this.repo.save(store);
-      throw new Error(
-        src.type === "plan" ? "ملف الخطة مفقود — أعد رفعه." : "File missing",
-      );
+      throw new Error(src.type === "plan" ? "ملف الخطة مفقود — أعد رفعه." : "File missing");
     }
 
     const blobHash = await hashBlob(blob);

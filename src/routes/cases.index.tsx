@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import {
   CaseService,
   formatArabicDate,
-  phaseLabelAr,
+  phaseOrAgeLabelAr,
   resolveCaseNextAction,
   statusLabelAr,
 } from "@/features/himam";
@@ -45,8 +45,7 @@ function CasesDashboard() {
         </div>
         <h1 className="mt-1 text-2xl font-bold text-foreground">ابدأ مراجعة خطة تربوية</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          أنشئ حالة مراجعة، ارفع ملف الخطة التربوية، ثم تابع رحلة المراجعة خطوة بخطوة حتى
-          التقرير.
+          أنشئ حالة مراجعة، ارفع ملف الخطة التربوية، ثم تابع رحلة المراجعة خطوة بخطوة حتى التقرير.
         </p>
         {cases.length > 0 && (
           <Link
@@ -82,16 +81,14 @@ function CasesDashboard() {
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-semibold text-foreground">
-                    {c.referenceCode}
-                  </span>
+                  <span className="text-base font-semibold text-foreground">{c.referenceCode}</span>
                   <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                     {statusLabelAr(c.status)}
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {c.planType ?? "نوع الخطة غير محدد"} · {phaseLabelAr(c.phaseId)} · آخر تحديث{" "}
-                  {formatArabicDate(c.updatedAt ?? c.createdAt)}
+                  {c.planType ?? "نوع الخطة غير محدد"} · {phaseOrAgeLabelAr(c.phaseId, c.ageYears)}{" "}
+                  · آخر تحديث {formatArabicDate(c.updatedAt ?? c.createdAt)}
                 </div>
                 <div className="mt-1 text-xs text-foreground">
                   الخطوة الحالية: {next[c.id]?.stateSummaryAr ?? "قيد التحديث."}

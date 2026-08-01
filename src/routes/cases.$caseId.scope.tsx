@@ -125,8 +125,7 @@ function ScopeConfirmPage() {
   };
 
   const canGenerate =
-    !readOnly &&
-    (c.status === "minimum_inputs_complete" || c.status === "scope_confirmed");
+    !readOnly && (c.status === "minimum_inputs_complete" || c.status === "scope_confirmed");
   const canConfirm = !readOnly && !!current;
 
   return (
@@ -174,10 +173,7 @@ function ScopeConfirmPage() {
         </div>
       </section>
 
-      <section
-        className="mb-6 rounded-md border border-border p-4"
-        data-testid="scope-confirmed"
-      >
+      <section className="mb-6 rounded-md border border-border p-4" data-testid="scope-confirmed">
         <div className="mb-2 flex items-center gap-2">
           <h2 className="text-lg font-semibold">النطاق النهائي (المؤكَّد)</h2>
           {confirmedCounts ? (
@@ -225,9 +221,7 @@ function ScopeConfirmPage() {
           disabled={!canConfirm || busy}
           className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {c.scopeNeedsReconfirmation
-            ? "إعادة تأكيد النطاق"
-            : "تأكيد النطاق وفتح المراجعة"}
+          {c.scopeNeedsReconfirmation ? "إعادة تأكيد النطاق" : "تأكيد النطاق وفتح المراجعة"}
         </button>
         <button
           type="button"
@@ -245,9 +239,7 @@ function ScopeConfirmPage() {
         returnToCaseHref={`/cases/${caseId}`}
         continueLabelAr="الانتقال إلى مساحة المراجعة"
         continueHref={`/cases/${caseId}/review`}
-        continueDisabled={
-          !current || c.scopeNeedsReconfirmation || c.status !== "scope_confirmed"
-        }
+        continueDisabled={!current || c.scopeNeedsReconfirmation || c.status !== "scope_confirmed"}
         continueDisabledReasonAr={
           !current
             ? "يجري احتساب النطاق…"

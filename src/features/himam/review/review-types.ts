@@ -24,12 +24,7 @@ export type FindingSeverity =
 
 export type HumanReviewStatus = "pending" | "decided";
 
-export type HumanDecision =
-  | "accept"
-  | "modify"
-  | "reject"
-  | "request_more_information"
-  | "defer";
+export type HumanDecision = "accept" | "modify" | "reject" | "request_more_information" | "defer";
 
 // Why the engine activated this criterion for this case.
 export type ActivationReason =

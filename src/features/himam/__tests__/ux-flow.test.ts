@@ -82,7 +82,10 @@ describe("HIMAM Package 1C.3 addendum — UX flow", () => {
   });
 
   it("UX-FLOW-T03: absent assessment turns dependent criteria into not_reviewable (never not_achieved)", () => {
-    const withoutAssessment = getReviewScope({ inputs: ["age_phase", "plan"], phaseId: "elementary" });
+    const withoutAssessment = getReviewScope({
+      inputs: ["age_phase", "plan"],
+      phaseId: "elementary",
+    });
     const withAssessment = getReviewScope({
       inputs: ["age_phase", "plan", "assessment"],
       phaseId: "elementary",
@@ -120,9 +123,7 @@ describe("HIMAM Package 1C.3 addendum — UX flow", () => {
   });
 
   it("UX-FLOW-T07: provisional scope changes when an optional source is added", () => {
-    const base = countScopeBuckets(
-      computeProvisionalScope(["age_phase", "plan"], "elementary"),
-    );
+    const base = countScopeBuckets(computeProvisionalScope(["age_phase", "plan"], "elementary"));
     const withFam = countScopeBuckets(
       computeProvisionalScope(["age_phase", "plan", "family_priorities"], "elementary"),
     );

@@ -17,11 +17,7 @@ export function NextActionCard({ action, caseId, className }: NextActionCardProp
   const disabled = !action.ctaEnabled || !action.ctaHref;
   return (
     <section
-      className={cn(
-        "rounded-lg border p-4 shadow-sm",
-        variantClasses(variant),
-        className,
-      )}
+      className={cn("rounded-lg border p-4 shadow-sm", variantClasses(variant), className)}
       data-testid="case-next-action"
       data-next-action-kind={action.kind}
     >

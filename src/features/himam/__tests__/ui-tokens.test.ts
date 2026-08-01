@@ -17,7 +17,9 @@ describe("UI status variants — Commit 2 tokens", () => {
   });
 
   it("UI-T02: every journey state has both an Arabic label and a variant", () => {
-    for (const state of Object.keys(JOURNEY_STATE_LABELS_AR) as (keyof typeof JOURNEY_STATE_LABELS_AR)[]) {
+    for (const state of Object.keys(
+      JOURNEY_STATE_LABELS_AR,
+    ) as (keyof typeof JOURNEY_STATE_LABELS_AR)[]) {
       expect(JOURNEY_STATE_LABELS_AR[state]).toMatch(/[\u0600-\u06FF]/);
       expect(JOURNEY_STATE_VARIANT[state]).toBeTruthy();
     }

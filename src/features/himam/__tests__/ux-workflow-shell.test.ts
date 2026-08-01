@@ -60,7 +60,9 @@ describe("UX round — unified workflow shell", () => {
 
   it("UXW-T07: sources screen keeps one primary action in the footer", () => {
     const s = read("src/routes/cases.$caseId.sources.tsx");
-    expect(s).not.toMatch(/sources-primary-cta"\s*\n\s*className="mt-3 inline-flex rounded-md bg-primary/);
+    expect(s).not.toMatch(
+      /sources-primary-cta"\s*\n\s*className="mt-3 inline-flex rounded-md bg-primary/,
+    );
     expect(s).toContain("تجهيز الخطة وبدء المراجعة");
   });
 });
