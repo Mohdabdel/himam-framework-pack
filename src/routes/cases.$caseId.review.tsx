@@ -77,10 +77,7 @@ function useServices() {
 
 // Engine errors are technical strings; the reviewer only ever sees Arabic.
 const REVIEW_ERROR_AR: Array<[string, string]> = [
-  [
-    "critical findings still pending",
-    "لا يمكن ختم المراجعة: توجد ملاحظات مطلوبة بلا قرار.",
-  ],
+  ["critical findings still pending", "لا يمكن ختم المراجعة: توجد ملاحظات مطلوبة بلا قرار."],
   ["scope needs reconfirmation", "لا يمكن ختم المراجعة: النطاق يحتاج إلى إعادة تأكيد."],
   ["No active review version", "لم يُشغَّل محرك المراجعة بعد."],
   ["Case is closed", "الحالة مغلقة — العرض للقراءة فقط."],
@@ -139,7 +136,9 @@ function ReviewWorkspace() {
     return (
       <AppShell width="regular">
         <p className="text-sm text-muted-foreground">الحالة غير موجودة.</p>
-        <Link to="/cases" className="text-sm underline">العودة</Link>
+        <Link to="/cases" className="text-sm underline">
+          العودة
+        </Link>
       </AppShell>
     );
   }
@@ -164,12 +163,16 @@ function ReviewWorkspace() {
       await Promise.resolve();
       const freshVersion = services.versions.currentVersion(caseId);
       const freshFindings = services.versions.findingsFor(caseId, freshVersion?.versionId);
-      const blocking = freshFindings.filter((f) =>
-        !f.isStale && f.humanReviewStatus === "pending" &&
-        f.automatedSeverity === "action_required_before_goal_approval"
+      const blocking = freshFindings.filter(
+        (f) =>
+          !f.isStale &&
+          f.humanReviewStatus === "pending" &&
+          f.automatedSeverity === "action_required_before_goal_approval",
       );
       if (blocking.length > 0) {
-        setError(`لا يمكن ختم المراجعة: ما زالت ${blocking.length === 1 ? "نتيجة حرجة واحدة" : `${blocking.length} نتائج حرجة`} دون قرار.`);
+        setError(
+          `لا يمكن ختم المراجعة: ما زالت ${blocking.length === 1 ? "نتيجة حرجة واحدة" : `${blocking.length} نتائج حرجة`} دون قرار.`,
+        );
         refresh();
         return;
       }
@@ -203,10 +206,17 @@ function ReviewWorkspace() {
       refresh();
       const current = services.versions.currentVersion(caseId);
       const fresh = services.versions.findingsFor(caseId, current?.versionId);
-      const remaining = fresh.filter((f) => !f.isStale && f.humanReviewStatus === "pending" && f.automatedSeverity === "action_required_before_goal_approval");
-      setBulkResult(remaining.length === 0
-        ? `حُفظت ${criticalPending.length} قرارات بنجاح. يمكن الآن ختم المراجعة.`
-        : `حُفظت القرارات، وما زالت ${remaining.length} نتائج حرجة دون قرار.`);
+      const remaining = fresh.filter(
+        (f) =>
+          !f.isStale &&
+          f.humanReviewStatus === "pending" &&
+          f.automatedSeverity === "action_required_before_goal_approval",
+      );
+      setBulkResult(
+        remaining.length === 0
+          ? `حُفظت ${criticalPending.length} قرارات بنجاح. يمكن الآن ختم المراجعة.`
+          : `حُفظت القرارات، وما زالت ${remaining.length} نتائج حرجة دون قرار.`,
+      );
     } catch (e) {
       setError(reviewErrorAr((e as Error).message));
     } finally {
@@ -236,7 +246,9 @@ function ReviewWorkspace() {
         titleAr="مساحة المراجعة المهنية"
         stepIndicatorAr="الخطوة 6 من 8"
         descriptionAr="تشغيل محرك المراجعة الحتمي، ثم إصدار قرارات مهنية على النتائج."
-        requiredNowAr={readOnly ? "عرض للقراءة فقط." : "شغّل المحرك، ثم راجع كل ملاحظة قبل ختم المراجعة."}
+        requiredNowAr={
+          readOnly ? "عرض للقراءة فقط." : "شغّل المحرك، ثم راجع كل ملاحظة قبل ختم المراجعة."
+        }
         statusLabelAr={readOnly ? "للقراءة فقط" : "نشطة"}
         statusVariant={readOnly ? "locked" : "info"}
         trailing={
@@ -281,110 +293,132 @@ function ReviewWorkspace() {
 
       {version && coverage && (
         <>
-        {!readOnly && criticalPending.length > 0 && (
-          <section
-            data-testid="critical-pending-banner"
-            className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
-          >
-            <p className="font-semibold">
-              قرارات مطلوبة قبل ختم المراجعة: {criticalPending.length}
+          {!readOnly && criticalPending.length > 0 && (
+            <section
+              data-testid="critical-pending-banner"
+              className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              <p className="font-semibold">
+                قرارات مطلوبة قبل ختم المراجعة: {criticalPending.length}
+              </p>
+              <p className="mt-1">
+                هذه ملاحظات تتطلب قرارًا صريحًا منك. راجعها واحدة واحدة، أو اعتمد نتيجة المحرك لها
+                جميعًا بقرار واحد مسجَّل باسمك.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-testid="filter-critical-pending"
+                  onClick={() =>
+                    setFilters({
+                      domain: "",
+                      level: "",
+                      status: "",
+                      severity: "action_required_before_goal_approval",
+                      humanDecision: "pending",
+                    })
+                  }
+                  className="rounded-md border border-amber-400 bg-background px-3 py-1.5 text-xs hover:bg-accent"
+                >
+                  عرض الملاحظات المطلوبة
+                </button>
+                <button
+                  type="button"
+                  data-testid="accept-all-critical"
+                  onClick={acceptAllCritical}
+                  disabled={bulkBusy}
+                  className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+                >
+                  {bulkBusy ? "جارٍ حفظ القرارات…" : "اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة"}
+                </button>
+              </div>
+            </section>
+          )}
+          {bulkResult && (
+            <p
+              role="status"
+              data-testid="bulk-decision-result"
+              className="mb-4 text-sm text-muted-foreground"
+            >
+              {bulkResult}
             </p>
-            <p className="mt-1">
-              هذه ملاحظات تتطلب قرارًا صريحًا منك. راجعها واحدة واحدة، أو اعتمد نتيجة
-              المحرك لها جميعًا بقرار واحد مسجَّل باسمك.
+          )}
+          <section className="mb-4 rounded-md border border-border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">تغطية المراجعة</h2>
+              <div className="text-xs text-muted-foreground">
+                نسخة {version.versionId.slice(0, 6)} · {formatArabicDate(version.createdAt)}
+                {version.isStale && <span className="ms-2 text-amber-700">قديمة</span>}
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              هذه ليست درجة جودة أو نجاح — بل مؤشرات تغطية عددية.
             </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
+              <Kpi label="معايير نشطة" value={coverage.activeCriteriaCount} />
+              <Kpi label="مراجَعة" value={coverage.reviewedCriteriaCount} />
+              <Kpi label="بانتظار قرار" value={coverage.pendingHumanDecisionCount} />
+              <Kpi label="غير قابلة للمراجعة" value={coverage.notReviewableCount} />
+              <Kpi label="غير منطبقة" value={coverage.notApplicableCount} />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
+              <Kpi label="اعتماد" value={coverage.acceptedCount} />
+              <Kpi label="تعديل" value={coverage.modifiedCount} />
+              <Kpi label="رفض" value={coverage.rejectedCount} />
+              <Kpi label="طلب معلومات" value={coverage.requestedInfoCount} />
+              <Kpi label="تأجيل" value={coverage.deferredCount} />
+            </div>
+            {drift.drifted && (
+              <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                تغيّرت الأدلة أو النطاق منذ آخر تشغيل. النتائج قديمة — يلزم إعادة التشغيل.
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                data-testid="filter-critical-pending"
-                onClick={() =>
-                  setFilters({
-                    domain: "",
-                    level: "",
-                    status: "",
-                    severity: "action_required_before_goal_approval",
-                    humanDecision: "pending",
-                  })
-                }
-                className="rounded-md border border-amber-400 bg-background px-3 py-1.5 text-xs hover:bg-accent"
+                onClick={runEngine}
+                disabled={readOnly}
+                className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
               >
-                عرض الملاحظات المطلوبة
+                إعادة تشغيل المحرك
               </button>
               <button
                 type="button"
-                data-testid="accept-all-critical"
-                onClick={acceptAllCritical}
-                disabled={bulkBusy}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+                onClick={completeReview}
+                disabled={
+                  readOnly ||
+                  bulkBusy ||
+                  drift.drifted ||
+                  criticalPending.length > 0 ||
+                  Boolean(version.completedAt)
+                }
+                data-testid="complete-review-btn"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                {bulkBusy ? "جارٍ حفظ القرارات…" : "اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة"}
+                {version.completedAt ? "اكتملت المراجعة" : "ختم المراجعة"}
               </button>
+              {version.completedAt && (
+                <Link
+                  to="/cases/$caseId/report"
+                  params={{ caseId }}
+                  data-testid="create-report-link"
+                  className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  إنشاء التقرير
+                </Link>
+              )}
             </div>
+            {criticalPending.length > 0 && (
+              <p className="mt-2 text-xs text-amber-800" data-testid="complete-blocked-reason">
+                لا يمكن ختم المراجعة قبل إصدار قرار على {criticalPending.length} ملاحظة مطلوبة.
+              </p>
+            )}
+            {error && (
+              <p role="alert" data-testid="review-error" className="mt-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
           </section>
-        )}
-        {bulkResult && <p role="status" data-testid="bulk-decision-result" className="mb-4 text-sm text-muted-foreground">{bulkResult}</p>}
-        <section className="mb-4 rounded-md border border-border p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">تغطية المراجعة</h2>
-            <div className="text-xs text-muted-foreground">
-              نسخة {version.versionId.slice(0, 6)} · {formatArabicDate(version.createdAt)}
-              {version.isStale && <span className="ms-2 text-amber-700">قديمة</span>}
-            </div>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            هذه ليست درجة جودة أو نجاح — بل مؤشرات تغطية عددية.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
-            <Kpi label="معايير نشطة" value={coverage.activeCriteriaCount} />
-            <Kpi label="مراجَعة" value={coverage.reviewedCriteriaCount} />
-            <Kpi label="بانتظار قرار" value={coverage.pendingHumanDecisionCount} />
-            <Kpi label="غير قابلة للمراجعة" value={coverage.notReviewableCount} />
-            <Kpi label="غير منطبقة" value={coverage.notApplicableCount} />
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
-            <Kpi label="اعتماد" value={coverage.acceptedCount} />
-            <Kpi label="تعديل" value={coverage.modifiedCount} />
-            <Kpi label="رفض" value={coverage.rejectedCount} />
-            <Kpi label="طلب معلومات" value={coverage.requestedInfoCount} />
-            <Kpi label="تأجيل" value={coverage.deferredCount} />
-          </div>
-          {drift.drifted && (
-            <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
-              تغيّرت الأدلة أو النطاق منذ آخر تشغيل. النتائج قديمة — يلزم إعادة التشغيل.
-            </p>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={runEngine}
-              disabled={readOnly}
-              className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
-            >
-              إعادة تشغيل المحرك
-            </button>
-            <button
-              type="button"
-              onClick={completeReview}
-              disabled={readOnly || bulkBusy || drift.drifted || criticalPending.length > 0 || Boolean(version.completedAt)}
-              data-testid="complete-review-btn"
-              className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {version.completedAt ? "اكتملت المراجعة" : "ختم المراجعة"}
-            </button>
-            {version.completedAt && <Link
-                to="/cases/$caseId/report"
-                params={{ caseId }}
-                data-testid="create-report-link"
-                className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-accent"
-              >إنشاء التقرير</Link>}
-          </div>
-          {criticalPending.length > 0 && (
-            <p className="mt-2 text-xs text-amber-800" data-testid="complete-blocked-reason">
-              لا يمكن ختم المراجعة قبل إصدار قرار على {criticalPending.length} ملاحظة مطلوبة.
-            </p>
-          )}
-          {error && <p role="alert" data-testid="review-error" className="mt-2 text-sm text-destructive">{error}</p>}
-        </section>
         </>
       )}
 

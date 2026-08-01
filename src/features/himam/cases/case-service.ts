@@ -325,9 +325,7 @@ export class CaseService {
   // ingestion, with an actual Blob in storage? Metadata alone does not count.
   async hasUsablePlanSource(caseId: string): Promise<boolean> {
     const store = this.repo.load();
-    const plans = store.sources.filter(
-      (s) => s.reviewCaseId === caseId && s.type === "plan",
-    );
+    const plans = store.sources.filter((s) => s.reviewCaseId === caseId && s.type === "plan");
     if (plans.length !== 1) return false;
     const p = plans[0];
     if (p.status !== "ready_for_future_ingestion") return false;
@@ -375,9 +373,7 @@ export class CaseService {
     } catch (e) {
       // Roll back the case + any registered plan sources + blobs.
       const store = this.repo.load();
-      const plans = store.sources.filter(
-        (s) => s.reviewCaseId === c.id && s.type === "plan",
-      );
+      const plans = store.sources.filter((s) => s.reviewCaseId === c.id && s.type === "plan");
       for (const p of plans) {
         try {
           await this.storage.delete(p.id);

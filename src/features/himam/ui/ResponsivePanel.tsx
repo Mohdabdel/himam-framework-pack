@@ -17,8 +17,7 @@ export interface ResponsivePanelProps {
   "data-testid"?: string;
 }
 
-const DIRTY_WARNING_AR =
-  "لديك تغييرات غير محفوظة في هذه اللوحة. إذا أغلقتها الآن ستفقد ما أدخلته.";
+const DIRTY_WARNING_AR = "لديك تغييرات غير محفوظة في هذه اللوحة. إذا أغلقتها الآن ستفقد ما أدخلته.";
 
 // One shared panel used across every HIMAM stage.
 // Desktop: side drawer. Mobile (<768px): bottom sheet.
@@ -152,9 +151,7 @@ export function ResponsivePanel({
         )}
 
         <div className="flex-1 overflow-y-auto px-4 py-3">{children}</div>
-        {footer && (
-          <div className="border-t border-border px-4 py-3">{footer}</div>
-        )}
+        {footer && <div className="border-t border-border px-4 py-3">{footer}</div>}
       </div>
     </div>
   );

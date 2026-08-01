@@ -45,10 +45,7 @@ export function CollapsibleSection({
           {hintAr ? ` — ${hintAr}` : ""}
         </span>
       </button>
-      <div
-        id={panelId}
-        className={cn("px-4 pb-4", open ? "block" : "hidden print:block")}
-      >
+      <div id={panelId} className={cn("px-4 pb-4", open ? "block" : "hidden print:block")}>
         {children}
       </div>
     </section>

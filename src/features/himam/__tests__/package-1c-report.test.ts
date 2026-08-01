@@ -73,7 +73,11 @@ async function readyCase(h: ReturnType<typeof harness>) {
   return { c, src, goal };
 }
 
-function decideAll(h: ReturnType<typeof harness>, caseId: string, decision: "accept" | "reject" | "defer" = "accept") {
+function decideAll(
+  h: ReturnType<typeof harness>,
+  caseId: string,
+  decision: "accept" | "reject" | "defer" = "accept",
+) {
   const findings = h.repo.load().reviewFindings.filter((f) => f.caseId === caseId && !f.isStale);
   for (const f of findings) {
     if (f.humanReviewStatus === "decided") continue;
@@ -439,8 +443,7 @@ describe("HIMAM Package 1C.3 — Governed Report", () => {
       ...v.sections.needsClarificationItems,
       ...v.sections.notReviewableItems,
     ];
-    for (const it of all)
-      for (const sid of it.sourceIds) expect(validIds.has(sid)).toBe(true);
+    for (const it of all) for (const sid of it.sourceIds) expect(validIds.has(sid)).toBe(true);
   });
 
   it("PKG1C-R-T23: generating without ok gate throws", async () => {

@@ -193,9 +193,18 @@
 
 /* Package 1C.3 — Governed Report print styles */
 @media print {
-  body { background: white !important; }
-  .no-print, nav, [data-testid="report-actions"], [data-testid="report-versions-list"] { display: none !important; }
-  .print-only { display: block !important; }
+  body {
+    background: white !important;
+  }
+  .no-print,
+  nav,
+  [data-testid="report-actions"],
+  [data-testid="report-versions-list"] {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
   .himam-report {
     color: black !important;
     background: white !important;
@@ -203,9 +212,15 @@
     padding: 0 !important;
     font-size: 12pt;
   }
-  .himam-report h1, .himam-report h2, .himam-report h3 {
+  .himam-report h1,
+  .himam-report h2,
+  .himam-report h3 {
     page-break-after: avoid;
   }
-  .himam-report section { page-break-inside: avoid; }
+  .himam-report section {
+    page-break-inside: avoid;
+  }
 }
-.print-only { display: none; }
+.print-only {
+  display: none;
+}

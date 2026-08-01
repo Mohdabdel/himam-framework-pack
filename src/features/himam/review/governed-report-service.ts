@@ -151,8 +151,7 @@ export class GovernedReportService {
     const c = store.cases.find((x) => x.id === caseId);
     if (!c) return { ok: false, reason: "case_not_found" };
     if (c.status === "closed") return { ok: false, reason: "case_closed_read_only" };
-    if (c.scopeNeedsReconfirmation)
-      return { ok: false, reason: "scope_needs_reconfirmation" };
+    if (c.scopeNeedsReconfirmation) return { ok: false, reason: "scope_needs_reconfirmation" };
     if (c.extractionStage !== "extraction_confirmed")
       return { ok: false, reason: "extraction_not_confirmed" };
     const identity = store.identityChecks.find((i) => i.reviewCaseId === caseId);
@@ -449,9 +448,7 @@ export class GovernedReportService {
       }
     }
     if (touched) {
-      store.auditEvents.push(
-        newAuditEvent(caseId, "report_marked_stale", { reason }),
-      );
+      store.auditEvents.push(newAuditEvent(caseId, "report_marked_stale", { reason }));
       this.repo.save(store);
     }
   }
@@ -526,11 +523,15 @@ export class GovernedReportService {
       if (d !== 0) coverageDelta[k] = d;
     });
     const s = this.repo.load();
-    s.auditEvents.push(
-      newAuditEvent(caseId, "report_version_compared", { a: aId, b: bId }),
-    );
+    s.auditEvents.push(newAuditEvent(caseId, "report_version_compared", { a: aId, b: bId }));
     this.repo.save(s);
-    return { addedFindings: added, removedFindings: removed, changedFindings: changed, scopeChanges, coverageDelta };
+    return {
+      addedFindings: added,
+      removedFindings: removed,
+      changedFindings: changed,
+      scopeChanges,
+      coverageDelta,
+    };
   }
 
   canCloseCaseAfterReport(caseId: string): ReportGateResult {
@@ -541,8 +542,7 @@ export class GovernedReportService {
     const latest = this.latestFinalized(caseId);
     if (!latest) return { ok: false, reason: "no_review_version" };
     // Reject closing if any newer draft or the review has since drifted.
-    if (latest.staleReason)
-      return { ok: false, reason: "review_stale" };
+    if (latest.staleReason) return { ok: false, reason: "review_stale" };
     // Fresh drift check
     const current = store.reviewVersions
       .filter((v) => v.caseId === caseId && !v.isStale)

@@ -271,68 +271,61 @@ function CaseDetail() {
       )}
 
       {/* Secondary routes, folded so the single primary action stays dominant. */}
-      <CollapsibleSection
-        className="mb-6"
-        titleAr="خيارات أخرى"
-        hintAr="روابط ثانوية"
-      >
-      <section
-        className="flex flex-wrap gap-2"
-        data-testid="case-top-actions"
-      >
-        <Link
-          to="/cases/$caseId/sources"
-          params={{ caseId }}
-          data-testid="action-manage-sources"
-          className="min-h-11 inline-flex items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
-        >
-          إدارة المصادر
-        </Link>
-        {reviewGate.ok ? (
+      <CollapsibleSection className="mb-6" titleAr="خيارات أخرى" hintAr="روابط ثانوية">
+        <section className="flex flex-wrap gap-2" data-testid="case-top-actions">
           <Link
-            to="/cases/$caseId/review"
+            to="/cases/$caseId/sources"
             params={{ caseId }}
-            data-testid="action-open-review"
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
+            data-testid="action-manage-sources"
+            className="min-h-11 inline-flex items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
           >
-            {reviewState.finalized ? "متابعة المراجعة المهنية" : "بدء المراجعة المهنية"}
+            إدارة المصادر
           </Link>
-        ) : (
-          <span data-testid="action-open-review-disabled" className="inline-flex flex-col">
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+          {reviewGate.ok ? (
+            <Link
+              to="/cases/$caseId/review"
+              params={{ caseId }}
+              data-testid="action-open-review"
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
             >
-              بدء المراجعة المهنية
-            </button>
-            <span className="mt-1 text-[11px] text-muted-foreground">{reviewGate.reasonAr}</span>
-          </span>
-        )}
-        {reportGate.ok ? (
-          <Link
-            to="/cases/$caseId/report"
-            params={{ caseId }}
-            data-testid="action-open-report"
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            {reportState.finalized ? "عرض التقرير" : "إنشاء التقرير"}
-          </Link>
-        ) : (
-          <span data-testid="action-open-report-disabled" className="inline-flex flex-col">
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+              {reviewState.finalized ? "متابعة المراجعة المهنية" : "بدء المراجعة المهنية"}
+            </Link>
+          ) : (
+            <span data-testid="action-open-review-disabled" className="inline-flex flex-col">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+              >
+                بدء المراجعة المهنية
+              </button>
+              <span className="mt-1 text-[11px] text-muted-foreground">{reviewGate.reasonAr}</span>
+            </span>
+          )}
+          {reportGate.ok ? (
+            <Link
+              to="/cases/$caseId/report"
+              params={{ caseId }}
+              data-testid="action-open-report"
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-accent"
             >
-              إنشاء التقرير
-            </button>
-            <span className="mt-1 text-[11px] text-muted-foreground">{reportGate.reasonAr}</span>
-          </span>
-        )}
-      </section>
+              {reportState.finalized ? "عرض التقرير" : "إنشاء التقرير"}
+            </Link>
+          ) : (
+            <span data-testid="action-open-report-disabled" className="inline-flex flex-col">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="cursor-not-allowed rounded-md border border-input bg-background px-3 py-1.5 text-sm opacity-60"
+              >
+                إنشاء التقرير
+              </button>
+              <span className="mt-1 text-[11px] text-muted-foreground">{reportGate.reasonAr}</span>
+            </span>
+          )}
+        </section>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -374,11 +367,7 @@ function CaseDetail() {
         )}
       </CollapsibleSection>
 
-      <CollapsibleSection
-        className="mb-6"
-        titleAr="تفاصيل رحلة المراجعة"
-        hintAr="حالة كل خطوة"
-      >
+      <CollapsibleSection className="mb-6" titleAr="تفاصيل رحلة المراجعة" hintAr="حالة كل خطوة">
         <JourneyStepper caseId={caseId} statuses={journeyStatuses} stepHref={stepHref} />
         <p className="mt-3 text-xs text-muted-foreground">
           المرحلة الحالية: {CASE_STAGE_LABELS_AR[c.extractionStage]}

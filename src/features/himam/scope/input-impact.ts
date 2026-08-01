@@ -36,10 +36,8 @@ export const INPUT_IMPACTS: Record<InputImpactKey, InputImpact> = {
     titleAr: "الخطة الحالية",
     requirement: "required",
     requirementLabelAr: "إلزامي",
-    whenPresentAr:
-      "تمثل المصدر الأساسي لمراجعة الأهداف وبنية الخطة.",
-    whenAbsentAr:
-      "لا يمكن بدء تجهيز المراجعة قبل إرفاق الخطة.",
+    whenPresentAr: "تمثل المصدر الأساسي لمراجعة الأهداف وبنية الخطة.",
+    whenAbsentAr: "لا يمكن بدء تجهيز المراجعة قبل إرفاق الخطة.",
   },
   age_phase: {
     key: "age_phase",
@@ -48,16 +46,14 @@ export const INPUT_IMPACTS: Record<InputImpactKey, InputImpact> = {
     requirementLabelAr: "إلزامي أحدهما",
     whenPresentAr:
       "يُستخدم لتحديد المعايير والمآلات الملائمة للمرحلة، ولا يُستخدم لاستنتاج القدرة.",
-    whenAbsentAr:
-      "يتعذر تحديد نطاق المعايير الملائمة للمرحلة قبل إدخال العمر أو المرحلة.",
+    whenAbsentAr: "يتعذر تحديد نطاق المعايير الملائمة للمرحلة قبل إدخال العمر أو المرحلة.",
   },
   assessment: {
     key: "assessment",
     titleAr: "تقرير أو نتائج التقييم",
     requirement: "optional",
     requirementLabelAr: "اختياري",
-    whenPresentAr:
-      "يتيح مراجعة ارتباط الاحتياجات وخطوط الأساس والأهداف بنتائج التقييم.",
+    whenPresentAr: "يتيح مراجعة ارتباط الاحتياجات وخطوط الأساس والأهداف بنتائج التقييم.",
     whenAbsentAr:
       "تظهر المعايير المعتمدة على التقييم بوصفها غير قابلة للمراجعة، دون اعتبار ذلك فشلًا في الخطة.",
   },
@@ -82,28 +78,23 @@ export const INPUT_IMPACTS: Record<InputImpactKey, InputImpact> = {
     titleAr: "الدعم والتسهيلات",
     requirement: "optional",
     requirementLabelAr: "اختياري",
-    whenPresentAr:
-      "يتيح مراجعة اتساق الدعم والتسهيلات مع الاحتياجات والأهداف.",
-    whenAbsentAr:
-      "تظل المعايير المعتمدة على معلومات الدعم غير قابلة للمراجعة.",
+    whenPresentAr: "يتيح مراجعة اتساق الدعم والتسهيلات مع الاحتياجات والأهداف.",
+    whenAbsentAr: "تظل المعايير المعتمدة على معلومات الدعم غير قابلة للمراجعة.",
   },
   professional_notes: {
     key: "professional_notes",
     titleAr: "الملاحظات المهنية",
     requirement: "optional",
     requirementLabelAr: "اختياري",
-    whenPresentAr:
-      "توفر أدلة سياقية إضافية ولا تستبدل التقييم أو القرار المهني.",
-    whenAbsentAr:
-      "يتعذر توثيق ملاحظات مهنية إضافية داعمة لعناصر المراجعة.",
+    whenPresentAr: "توفر أدلة سياقية إضافية ولا تستبدل التقييم أو القرار المهني.",
+    whenAbsentAr: "يتعذر توثيق ملاحظات مهنية إضافية داعمة لعناصر المراجعة.",
   },
   prior_plan: {
     key: "prior_plan",
     titleAr: "الخطة السابقة",
     requirement: "optional",
     requirementLabelAr: "اختياري",
-    whenPresentAr:
-      "تتيح مراجعة الاستمرارية والتغير والتكرار مقارنةً بالخطة الحالية.",
+    whenPresentAr: "تتيح مراجعة الاستمرارية والتغير والتكرار مقارنةً بالخطة الحالية.",
     whenAbsentAr: "لا يمكن مراجعة الاستمرارية أو تكرار عناصر الخطة السابقة.",
   },
   prior_progress: {
@@ -307,11 +298,7 @@ export function computeJourneyStatuses(ctx: JourneyContext): JourneyStepStatus[]
   const basicsComplete = !!c && (c.ageYears !== null || c.phaseId !== null);
   out.push({
     step: JOURNEY_STEPS[0],
-    state: !c
-      ? "not_started"
-      : basicsComplete
-        ? isReadOnly("complete")
-        : "needs_action",
+    state: !c ? "not_started" : basicsComplete ? isReadOnly("complete") : "needs_action",
     blockedReasonAr: !basicsComplete ? "أدخل العمر أو المرحلة." : undefined,
   });
 

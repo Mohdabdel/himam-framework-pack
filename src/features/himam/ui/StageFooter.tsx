@@ -1,7 +1,4 @@
-import {
-  PrimaryActionsBar,
-  type PrimaryActionSpec,
-} from "./PrimaryActionsBar";
+import { PrimaryActionsBar, type PrimaryActionSpec } from "./PrimaryActionsBar";
 
 export interface StageFooterProps {
   // "السابق" / "العودة إلى حالة المراجعة" / etc.

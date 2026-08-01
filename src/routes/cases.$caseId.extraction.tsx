@@ -83,9 +83,7 @@ function ExtractionPage() {
   const [suggestBusy, setSuggestBusy] = useState<boolean>(false);
   const [suggestNote, setSuggestNote] = useState<string | null>(null);
   // Evidence action panel replaces the old native browser dialogs.
-  const [panel, setPanel] = useState<
-    { evidenceId: string; mode: "edit" | "reject" } | null
-  >(null);
+  const [panel, setPanel] = useState<{ evidenceId: string; mode: "edit" | "reject" } | null>(null);
   const [panelText, setPanelText] = useState<string>("");
   const evidenceOpenerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const activeOpenerRef = useRef<HTMLElement | null>(null);
@@ -213,9 +211,7 @@ function ExtractionPage() {
     try {
       const repo = getDefaultRepository();
       const svc = new ExtractionRunService(repo, new LocalFallbackExtractionProvider());
-      const withText = sources.filter((s) =>
-        chunks.some((ch) => ch.sourceId === s.id),
-      );
+      const withText = sources.filter((s) => chunks.some((ch) => ch.sourceId === s.id));
       let created = 0;
       for (const s of withText) {
         const res = await svc.start({ reviewCaseId: caseId, sourceId: s.id });

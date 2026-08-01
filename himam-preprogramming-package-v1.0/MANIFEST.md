@@ -7,6 +7,7 @@ encoding: UTF-8
 status: ready_for_pre_programming_review
 
 ## Files (21)
+
 - 00_README.md
 - 01_HIMAM_PRODUCT_IDENTITY_AND_SCOPE.md
 - 02_HIMAM_KNOWLEDGE_FRAMEWORK.md
@@ -30,6 +31,7 @@ status: ready_for_pre_programming_review
 - MANIFEST.md
 
 ## Notes
+
 - CSV files include UTF-8 BOM for correct Arabic rendering in spreadsheet apps.
 - All files are UTF-8 plain text.
 - No external network dependencies are required to consume this package.

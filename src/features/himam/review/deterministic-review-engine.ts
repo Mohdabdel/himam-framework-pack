@@ -5,11 +5,7 @@
 // `not_reviewable`.
 
 import type { HimamStore, ReviewCaseRepository } from "../cases/case-repository";
-import type {
-  ExtractedEvidence,
-  ReviewCase,
-  ReviewScopeSnapshot,
-} from "../cases/case-types";
+import type { ExtractedEvidence, ReviewCase, ReviewScopeSnapshot } from "../cases/case-types";
 import type { CriterionRecord, ReviewInputType } from "../knowledge/knowledge-types";
 import { getKnowledgeRegistry, KnowledgeRegistry } from "./knowledge-registry";
 import {
@@ -61,8 +57,7 @@ function isPlanGoalCriterion(c: CriterionRecord): boolean {
 
 function confirmedEvidence(store: HimamStore, caseId: string): ExtractedEvidence[] {
   return store.extractedEvidence.filter(
-    (e) =>
-      e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
+    (e) => e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
   );
 }
 
@@ -142,7 +137,16 @@ export class DeterministicReviewEngine {
         continue;
       }
       // status === "available"
-      const generated = this.evaluateAvailable(store, c, snap, crit, evidence, identity, versionId, now);
+      const generated = this.evaluateAvailable(
+        store,
+        c,
+        snap,
+        crit,
+        evidence,
+        identity,
+        versionId,
+        now,
+      );
       for (const f of generated) findings.push(f);
     }
     return { findings, evidenceDigest: digest, scopeSnapshotId: snap.id };
@@ -170,9 +174,7 @@ export class DeterministicReviewEngine {
 
     // C001, C002, C004 gatekeepers — deterministic based on presence.
     if (crit.criterionType === "gatekeeper") {
-      const planPresent = store.sources.some(
-        (s) => s.reviewCaseId === c.id && s.type === "plan",
-      );
+      const planPresent = store.sources.some((s) => s.reviewCaseId === c.id && s.type === "plan");
       const agePresent = c.ageYears !== null || c.phaseId !== null;
       let ok = true;
       if (crit.requiredInputs.includes("plan")) ok = ok && planPresent;
@@ -185,9 +187,7 @@ export class DeterministicReviewEngine {
           sourceIds: relevantEvidence.map((e) => e.sourceId),
           automatedStatus: ok ? "achieved" : "not_achieved",
           automatedSeverity: ok ? severityWhenAchieved() : severityFromArabic(crit.defaultSeverity),
-          rationale: ok
-            ? "المدخل الأساسي متاح."
-            : "المدخل الأساسي غير متاح.",
+          rationale: ok ? "المدخل الأساسي متاح." : "المدخل الأساسي غير متاح.",
           activationReason: "gatekeeper_check",
           uncertainty: "low",
           now,
@@ -236,8 +236,7 @@ export class DeterministicReviewEngine {
           sourceIds: [],
           automatedStatus: "not_reviewable",
           automatedSeverity: "no_judgment",
-          rationale:
-            "لا توجد أدلة مؤكدة تتصل بالمصادر المطلوبة لهذا المعيار.",
+          rationale: "لا توجد أدلة مؤكدة تتصل بالمصادر المطلوبة لهذا المعيار.",
           activationReason: "inputs_available",
           uncertainty: "low",
           now,
@@ -272,8 +271,7 @@ export class DeterministicReviewEngine {
           sourceIds: [g.sourceId],
           automatedStatus: "needs_clarification",
           automatedSeverity: severityFromArabic(crit.defaultSeverity),
-          rationale:
-            "الأدلة متاحة، لكن المقارنة الحتمية غير كافية للحكم؛ يحتاج قرار مراجع.",
+          rationale: "الأدلة متاحة، لكن المقارنة الحتمية غير كافية للحكم؛ يحتاج قرار مراجع.",
           activationReason: "inputs_available",
           uncertainty: "high",
           now,
@@ -290,8 +288,7 @@ export class DeterministicReviewEngine {
         sourceIds: [...new Set(relevantEvidence.map((e) => e.sourceId))],
         automatedStatus: "needs_clarification",
         automatedSeverity: severityFromArabic(crit.defaultSeverity),
-        rationale:
-          "الأدلة متاحة، لكن المقارنة الحتمية غير كافية للحكم؛ يحتاج قرار مراجع.",
+        rationale: "الأدلة متاحة، لكن المقارنة الحتمية غير كافية للحكم؛ يحتاج قرار مراجع.",
         activationReason: "inputs_available",
         uncertainty: "medium",
         now,
@@ -350,10 +347,7 @@ export class DeterministicReviewEngine {
   }
 }
 
-function latestConfirmedScope(
-  store: HimamStore,
-  caseId: string,
-): ReviewScopeSnapshot | null {
+function latestConfirmedScope(store: HimamStore, caseId: string): ReviewScopeSnapshot | null {
   const list = store.scopeSnapshots
     .filter((s) => s.reviewCaseId === caseId && s.confirmedAt !== null)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

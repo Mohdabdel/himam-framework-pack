@@ -83,6 +83,7 @@ export type { AuditEvent } from "./audit/audit-types";
 export {
   PHASE_LABELS_AR,
   phaseLabelAr,
+  phaseOrAgeLabelAr,
   STATUS_LABELS_AR,
   statusLabelAr,
   STATUS_BADGE_CLASSES,

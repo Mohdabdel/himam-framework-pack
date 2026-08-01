@@ -1,4 +1,5 @@
 # حزمة البرمجة الأولى لـ HIMAM
+
 ## Package 1A — Foundation, Review Case, Knowledge Loader, Gate 0
 
 **نوع المستند:** أمر تنفيذ واحد شامل يُنقل إلى مشروع HIMAM في Lovable
@@ -43,6 +44,7 @@ MANIFEST.md
 ```
 
 قواعد ملزمة:
+
 - لا تنسخ القواعد التربوية إلى شروط متناثرة داخل مكونات الواجهة.
 - ملفات المعرفة هي `read-only, versioned knowledge assets`.
 - لا تعدّل ملفات حزمة المعرفة في هذه الجولة.
@@ -56,6 +58,7 @@ HIMAM محرك مساندة إشرافية لمراجعة جودة قرارات 
 وحدة العمل هي `ReviewCase` لخطة واحدة في زمن واحد.
 
 ممنوع في هذه الجولة:
+
 - `Student Master Record`.
 - ملف متعلم دائم أو ربط تلقائي بين الحالات.
 - التشخيص أو الأهلية.
@@ -73,6 +76,7 @@ HIMAM محرك مساندة إشرافية لمراجعة جودة قرارات 
 ## 3. الهدف الوظيفي للحزمة
 
 بنهاية الجولة يجب أن يستطيع المستخدم:
+
 1. فتح لوحة حالات المراجعة.
 2. إنشاء حالة جديدة.
 3. إدخال العمر أو المرحلة.
@@ -93,6 +97,7 @@ HIMAM محرك مساندة إشرافية لمراجعة جودة قرارات 
 - اعزل هذه الحزمة في feature مستقلة إذا وجدت نماذج قديمة متعارضة.
 
 التخزين:
+
 - إن وجد Supabase: migration محدودة وآمنة.
 - إن لم يوجد backend مستقر: `ReviewCaseRepository` interface مع `LocalReviewCaseRepository` مؤقت قابل للاستبدال.
 
@@ -140,6 +145,7 @@ type ScopeItemStatus = "available" | "not_reviewable" | "not_applicable";
 ```
 
 Gate 0:
+
 - العمر/المرحلة + الخطة يتيحان نطاقًا أساسيًا.
 - غياب مدخل اختياري = `not_reviewable`.
 - لا تستخدم `failed` أو `not_met` بسبب غياب المدخل.
@@ -156,11 +162,7 @@ status = deferred_non_blocking
 ## 6. نموذج البيانات الأدنى
 
 ```ts
-type ReviewCaseStatus =
-  | "draft"
-  | "minimum_inputs_complete"
-  | "scope_confirmed"
-  | "closed";
+type ReviewCaseStatus = "draft" | "minimum_inputs_complete" | "scope_confirmed" | "closed";
 
 type ReviewCase = {
   id: string;
@@ -264,6 +266,7 @@ postsecondary_employment
 المسموح: PDF وDOCX ونص عادي إن كانت البنية الحالية تدعمه.
 
 في هذه الجولة:
+
 - سجّل الملف وmetadata.
 - تحقق من النوع والحجم.
 - لا استخراج نص.
@@ -335,6 +338,7 @@ src/features/himam/
 ## 13. اختبارات Package 1A
 
 أنشئ PKG1A-T01 إلى PKG1A-T12 لتغطية:
+
 - غياب العمر/المرحلة.
 - غياب الخطة.
 - اكتمال الحد الأدنى.
@@ -374,6 +378,7 @@ src/features/himam/
 ## 16. الرد النهائي المطلوب
 
 أرسل فقط:
+
 1. الملفات المعدلة.
 2. طبقة التخزين.
 3. الشاشات والمسارات.

@@ -8,9 +8,7 @@ export class ReviewCoverageService {
     const store = this.repo.load();
     const findings = store.reviewFindings.filter(
       (f) =>
-        f.caseId === caseId &&
-        !f.isStale &&
-        (versionId ? f.reviewVersionId === versionId : true),
+        f.caseId === caseId && !f.isStale && (versionId ? f.reviewVersionId === versionId : true),
     );
     return summarize(findings);
   }

@@ -64,8 +64,7 @@ export const REVIEW_GATE_LABELS_AR: Record<string, string> = {
   scope_needs_reconfirmation: "النطاق يحتاج إلى إعادة تأكيد.",
   extraction_not_confirmed: "تأكيد الأدلة لم يكتمل بعد.",
   identity_conflict_unresolved: "تعارض هوية لم يُقرَّ بعد.",
-  no_confirmed_evidence_and_no_not_reviewable:
-    "لا توجد أدلة مؤكدة ولا معايير قابلة للعرض.",
+  no_confirmed_evidence_and_no_not_reviewable: "لا توجد أدلة مؤكدة ولا معايير قابلة للعرض.",
 };
 // Arabic reasons shown next to every disabled report action.
 export const REPORT_GATE_LABELS_AR: Record<string, string> = {

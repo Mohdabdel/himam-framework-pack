@@ -1,11 +1,6 @@
 import { newAuditEvent } from "../audit/audit-service";
 import type { ReviewCaseRepository } from "../cases/case-repository";
-import type {
-  FindingSeverity,
-  FindingStatus,
-  HumanDecision,
-  ReviewFinding,
-} from "./review-types";
+import type { FindingSeverity, FindingStatus, HumanDecision, ReviewFinding } from "./review-types";
 
 export interface HumanReviewInput {
   findingId: string;
@@ -67,13 +62,15 @@ export class HumanReviewService {
         f.humanRecommendation = null;
         f.humanIncludeInReport = null;
       }
-      store.auditEvents.push(newAuditEvent(f.caseId, "finding_decided", {
-        findingId: f.findingId,
-        criterionId: f.criterionId,
-        decision: input.decision,
-        automatedStatus: f.automatedStatus,
-        humanStatus: f.humanStatus,
-      }));
+      store.auditEvents.push(
+        newAuditEvent(f.caseId, "finding_decided", {
+          findingId: f.findingId,
+          criterionId: f.criterionId,
+          decision: input.decision,
+          automatedStatus: f.automatedStatus,
+          humanStatus: f.humanStatus,
+        }),
+      );
       decided.push(f);
     }
     this.repo.save(store);

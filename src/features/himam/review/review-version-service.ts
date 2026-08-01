@@ -40,8 +40,7 @@ export class ReviewVersionService {
     if (identity?.status === "conflicting")
       return { ok: false, reason: "identity_conflict_unresolved" };
     const hasConfirmedEvidence = store.extractedEvidence.some(
-      (e) =>
-        e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
+      (e) => e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
     );
     // A case with zero confirmed evidence may still be reviewable if the
     // scope contains not_reviewable/not_applicable items to report on.
@@ -57,7 +56,10 @@ export class ReviewVersionService {
 
   // Runs the deterministic engine and stores a new version. Previous
   // versions for the same case are flagged stale.
-  runEngine(caseId: string, staleReason?: string): {
+  runEngine(
+    caseId: string,
+    staleReason?: string,
+  ): {
     version: ReviewVersion;
     findings: ReviewFinding[];
   } {
@@ -142,8 +144,7 @@ export class ReviewVersionService {
     if (!current) return { drifted: false, reason: null };
     const store = this.repo.load();
     const evidence = store.extractedEvidence.filter(
-      (e) =>
-        e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
+      (e) => e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
     );
     const digest = computeEvidenceDigest(evidence);
     if (digest !== current.evidenceDigest) {

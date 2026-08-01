@@ -11,12 +11,7 @@ export interface GateReasonProps {
 
 // Inline block used wherever the UI needs to explain a gate/blocker
 // without failure language.
-export function GateReason({
-  children,
-  variant = "warning",
-  className,
-  ...rest
-}: GateReasonProps) {
+export function GateReason({ children, variant = "warning", className, ...rest }: GateReasonProps) {
   return (
     <div
       role="note"

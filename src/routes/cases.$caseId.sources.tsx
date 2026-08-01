@@ -24,7 +24,13 @@ import {
   StageHeader,
   validatePlanFile,
 } from "@/features/himam";
-import type { InputImpactKey, InputSource, InputSourceType, ReviewCase, ReviewInputType } from "@/features/himam";
+import type {
+  InputImpactKey,
+  InputSource,
+  InputSourceType,
+  ReviewCase,
+  ReviewInputType,
+} from "@/features/himam";
 
 const SOURCE_TYPE_TO_IMPACT_KEY: Record<InputSourceType, InputImpactKey> = {
   plan: "plan",
@@ -395,54 +401,57 @@ function SourcesPage() {
 
       <section className="space-y-4">
         {!activePlan && (
-        <div
-          data-testid="plan-card"
-          className="rounded-md border-2 border-primary/30 bg-primary/5 p-4"
-          data-source-type="plan"
-        >
-          <div className="mb-2">
-            <h2 className="text-lg font-semibold">{planImpact.titleAr}</h2>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-900">
-                {planImpact.requirementLabelAr}
-              </span>
-              <span className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-destructive">
-                لا توجد خطة نشطة
-              </span>
+          <div
+            data-testid="plan-card"
+            className="rounded-md border-2 border-primary/30 bg-primary/5 p-4"
+            data-source-type="plan"
+          >
+            <div className="mb-2">
+              <h2 className="text-lg font-semibold">{planImpact.titleAr}</h2>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-900">
+                  {planImpact.requirementLabelAr}
+                </span>
+                <span className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-destructive">
+                  لا توجد خطة نشطة
+                </span>
+              </div>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              الخطة الحالية مدخل إلزامي لبدء المراجعة.
+            </p>
+            <div
+              data-testid="plan-upload-area"
+              className="rounded-md border border-dashed border-primary/40 bg-background p-4"
+            >
+              <label className="block text-sm">
+                رفع ملف الخطة (PDF / DOCX / TXT)
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  data-testid="plan-upload-input"
+                  onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
+                  disabled={readOnly || busy}
+                  className="mt-1 block w-full text-sm"
+                />
+              </label>
+              {planFile && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {planFile.name} · {formatBytes(planFile.size)}
+                </div>
+              )}
+              {planError && <p className="mt-2 text-sm text-destructive">{planError}</p>}
+              <button
+                type="button"
+                data-testid="plan-upload-submit"
+                disabled={readOnly || busy || !planFile}
+                onClick={() => void onUploadPlan()}
+                className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                رفع الخطة الحالية
+              </button>
             </div>
           </div>
-          <p className="mb-3 text-xs text-muted-foreground">
-            الخطة الحالية مدخل إلزامي لبدء المراجعة.
-          </p>
-          <div data-testid="plan-upload-area" className="rounded-md border border-dashed border-primary/40 bg-background p-4">
-            <label className="block text-sm">
-              رفع ملف الخطة (PDF / DOCX / TXT)
-              <input
-                type="file"
-                accept=".pdf,.docx,.txt"
-                data-testid="plan-upload-input"
-                onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
-                disabled={readOnly || busy}
-                className="mt-1 block w-full text-sm"
-              />
-            </label>
-            {planFile && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {planFile.name} · {formatBytes(planFile.size)}
-              </div>
-            )}
-            {planError && <p className="mt-2 text-sm text-destructive">{planError}</p>}
-            <button
-              type="button"
-              data-testid="plan-upload-submit"
-              disabled={readOnly || busy || !planFile}
-              onClick={() => void onUploadPlan()}
-              className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              رفع الخطة الحالية
-            </button>
-          </div>
-        </div>
         )}
 
         {/* 3) Plan file management — secondary, collapsed. */}
@@ -515,140 +524,142 @@ function SourcesPage() {
           </CollapsibleSection>
         )}
 
-      {/* 4) Optional supporting information — closed by default. */}
-      <section
-        className="rounded-md border border-border bg-background p-4"
-        data-testid="optional-inputs-toggle-section"
-      >
-        <div className="flex items-start gap-3">
-          <input
-            id={toggleId}
-            type="checkbox"
-            data-testid="optional-inputs-toggle"
-            className="mt-1 h-4 w-4"
-            checked={optionalOpen}
-            aria-expanded={optionalOpen}
-            aria-controls={panelId}
-            onChange={(e) => setOptionalOpen(e.target.checked)}
-            disabled={readOnly}
-          />
-          <div className="min-w-0 flex-1">
-            <label htmlFor={toggleId} className="block cursor-pointer text-sm font-medium">
-              إضافة معلومات داعمة (اختياري)
-            </label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              كل معلومة موثقة تضيفها تتيح للنظام مراجعة جوانب أكثر من الخطة. عدم إضافتها لا يعني
-              أن الخطة غير سليمة.
-            </p>
-            {optionalOpen && (
+        {/* 4) Optional supporting information — closed by default. */}
+        <section
+          className="rounded-md border border-border bg-background p-4"
+          data-testid="optional-inputs-toggle-section"
+        >
+          <div className="flex items-start gap-3">
+            <input
+              id={toggleId}
+              type="checkbox"
+              data-testid="optional-inputs-toggle"
+              className="mt-1 h-4 w-4"
+              checked={optionalOpen}
+              aria-expanded={optionalOpen}
+              aria-controls={panelId}
+              onChange={(e) => setOptionalOpen(e.target.checked)}
+              disabled={readOnly}
+            />
+            <div className="min-w-0 flex-1">
+              <label htmlFor={toggleId} className="block cursor-pointer text-sm font-medium">
+                إضافة معلومات داعمة (اختياري)
+              </label>
               <p className="mt-1 text-xs text-muted-foreground">
-                {sources.filter((s) => s.type !== "plan").length > 0
-                  ? `عدد المعلومات الداعمة المضافة: ${sources.filter((s) => s.type !== "plan").length}`
-                  : "لم تُضف أي معلومة داعمة بعد."}
+                كل معلومة موثقة تضيفها تتيح للنظام مراجعة جوانب أكثر من الخطة. عدم إضافتها لا يعني
+                أن الخطة غير سليمة.
               </p>
-            )}
+              {optionalOpen && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {sources.filter((s) => s.type !== "plan").length > 0
+                    ? `عدد المعلومات الداعمة المضافة: ${sources.filter((s) => s.type !== "plan").length}`
+                    : "لم تُضف أي معلومة داعمة بعد."}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {optionalOpen && (
-        <div id={panelId} className="space-y-6" data-testid="optional-inputs-panel">
-          {sources.some((s) => s.type !== "plan") && (
-            <section data-testid="added-optional-section">
+        {optionalOpen && (
+          <div id={panelId} className="space-y-6" data-testid="optional-inputs-panel">
+            {sources.some((s) => s.type !== "plan") && (
+              <section data-testid="added-optional-section">
+                <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                  المعلومات المضافة
+                </h3>
+                <ul className="space-y-2">
+                  {sources
+                    .filter((s) => s.type !== "plan")
+                    .map((s) => (
+                      <li
+                        key={s.id}
+                        className="rounded-md border border-border bg-background p-3 text-sm"
+                        data-testid={`added-source-${s.type}`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0 truncate font-medium">
+                            {SOURCE_TYPE_LABELS_AR[s.type]} —{" "}
+                            {s.manualTextArtifactId ? "نص مُدخَل يدويًا" : s.fileName}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={readOnly || busy}
+                            onClick={() => void onRemove(s.id)}
+                            className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            إزالة
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )}
+
+            <section data-testid="optional-source-cards">
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-                المعلومات المضافة
+                معلومات يمكن إضافتها
               </h3>
-              <ul className="space-y-2">
-                {sources
-                  .filter((s) => s.type !== "plan")
-                  .map((s) => (
-                    <li
-                      key={s.id}
-                      className="rounded-md border border-border bg-background p-3 text-sm"
-                      data-testid={`added-source-${s.type}`}
+              <p className="mb-3 text-xs text-muted-foreground">{GOVERNANCE_NOTE_AR}</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {OPTIONAL_TYPES.map((t) => {
+                  const items = sources.filter((s) => s.type === t);
+                  const added = items.length > 0;
+                  const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
+                  const isOpen = openSourceType === t;
+                  return (
+                    <div
+                      key={t}
+                      className="rounded-md border border-border bg-background p-3"
+                      data-source-type={t}
+                      data-testid={`compact-card-${t}`}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0 truncate font-medium">
-                          {SOURCE_TYPE_LABELS_AR[s.type]} —{" "}
-                          {s.manualTextArtifactId ? "نص مُدخَل يدويًا" : s.fileName}
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">{impact.titleAr}</div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px]">
+                            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
+                              اختياري
+                            </span>
+                            {added && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-900">
+                                {items.length === 1 ? "مصدر واحد" : `${items.length} مصادر`}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {OPTIONAL_SHORT_AR[t]}
+                          </p>
                         </div>
                         <button
                           type="button"
-                          disabled={readOnly || busy}
-                          onClick={() => void onRemove(s.id)}
-                          className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          ref={(el) => {
+                            openerRefs.current[t] = el;
+                          }}
+                          data-testid={`open-manage-${t}`}
+                          aria-expanded={isOpen}
+                          aria-controls={isOpen ? "source-manage-panel" : undefined}
+                          onClick={() => {
+                            activeOpenerRef.current = openerRefs.current[t] ?? null;
+                            setOpenSourceType(t);
+                            setAddType(t);
+                            setError(null);
+                            setAddFile(null);
+                            setAddManualText("");
+                          }}
+                          disabled={readOnly}
+                          className="shrink-0 rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent disabled:opacity-50"
                         >
-                          إزالة
+                          {added ? "عرض وإدارة" : "إضافة"}
                         </button>
                       </div>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          )}
-
-          <section data-testid="optional-source-cards">
-            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-              معلومات يمكن إضافتها
-            </h3>
-            <p className="mb-3 text-xs text-muted-foreground">{GOVERNANCE_NOTE_AR}</p>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {OPTIONAL_TYPES.map((t) => {
-                const items = sources.filter((s) => s.type === t);
-                const added = items.length > 0;
-                const impact = INPUT_IMPACTS[SOURCE_TYPE_TO_IMPACT_KEY[t]];
-                const isOpen = openSourceType === t;
-                return (
-                  <div
-                    key={t}
-                    className="rounded-md border border-border bg-background p-3"
-                    data-source-type={t}
-                    data-testid={`compact-card-${t}`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold">{impact.titleAr}</div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px]">
-                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
-                            اختياري
-                          </span>
-                          {added && (
-                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-900">
-                              {items.length === 1 ? "مصدر واحد" : `${items.length} مصادر`}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{OPTIONAL_SHORT_AR[t]}</p>
-                      </div>
-                      <button
-                        type="button"
-                        ref={(el) => {
-                          openerRefs.current[t] = el;
-                        }}
-                        data-testid={`open-manage-${t}`}
-                        aria-expanded={isOpen}
-                        aria-controls={isOpen ? "source-manage-panel" : undefined}
-                        onClick={() => {
-                          activeOpenerRef.current = openerRefs.current[t] ?? null;
-                          setOpenSourceType(t);
-                          setAddType(t);
-                          setError(null);
-                          setAddFile(null);
-                          setAddManualText("");
-                        }}
-                        disabled={readOnly}
-                        className="shrink-0 rounded-md border border-input px-3 py-1.5 text-xs hover:bg-accent disabled:opacity-50"
-                      >
-                        {added ? "عرض وإدارة" : "إضافة"}
-                      </button>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        )}
       </section>
 
       {/* 5) Impact counters — secondary detail, collapsed, at the bottom. */}
@@ -714,9 +725,7 @@ function SourcesPage() {
                   <li key={t} className="rounded-md border border-border bg-background p-2">
                     <div className="font-medium">
                       {impact.titleAr}{" "}
-                      <span className="text-muted-foreground">
-                        — {has ? "متاح" : "غير متاح"}
-                      </span>
+                      <span className="text-muted-foreground">— {has ? "متاح" : "غير متاح"}</span>
                     </div>
                     <div className="text-muted-foreground">عند الإضافة: {impact.whenPresentAr}</div>
                     <div className="text-muted-foreground">عند الغياب: {impact.whenAbsentAr}</div>
@@ -846,9 +855,7 @@ function SourcesPage() {
         continueLabelAr="تجهيز الخطة وبدء المراجعة"
         continueHref={planUsable ? `/cases/${caseId}/ingestion` : undefined}
         continueDisabled={!planUsable}
-        continueDisabledReasonAr={
-          !planUsable ? "أرفق الخطة الحالية واحفظها أولًا." : undefined
-        }
+        continueDisabledReasonAr={!planUsable ? "أرفق الخطة الحالية واحفظها أولًا." : undefined}
       />
       {planUsable && (
         <Link

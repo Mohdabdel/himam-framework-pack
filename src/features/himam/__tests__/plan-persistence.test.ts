@@ -89,9 +89,7 @@ describe("Plan file persistence regression fix", () => {
       mimeType: "text/plain",
     });
     const list = svc.sourcesFor(c.id);
-    const sorted = [...list].sort((a, b) =>
-      a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0,
-    );
+    const sorted = [...list].sort((a, b) => (a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0));
     expect(sorted[0].type).toBe("plan");
   });
 
