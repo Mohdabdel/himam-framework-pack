@@ -1,5 +1,9 @@
 import type { ReviewCaseRepository } from "../cases/case-repository";
-import type { ReviewCoverage, ReviewFinding } from "./review-types";
+import {
+  isSystemClassificationStatus,
+  type ReviewCoverage,
+  type ReviewFinding,
+} from "./review-types";
 
 export class ReviewCoverageService {
   constructor(private readonly repo: ReviewCaseRepository) {}
@@ -25,13 +29,20 @@ function summarize(findings: ReviewFinding[]): ReviewCoverage {
     rejected = 0,
     deferred = 0,
     requested = 0;
+  let systemClassifications = 0,
+    systemAcknowledged = 0,
+    systemPending = 0;
   for (const f of findings) {
     if (f.automatedStatus === "not_applicable") {
       notApplicable++;
-      continue;
     }
     if (f.automatedStatus === "not_reviewable") {
       notReviewable++;
+    }
+    if (isSystemClassificationStatus(f.automatedStatus)) {
+      systemClassifications++;
+      if (f.humanReviewStatus === "decided") systemAcknowledged++;
+      else systemPending++;
       continue;
     }
     active++;
@@ -60,6 +71,9 @@ function summarize(findings: ReviewFinding[]): ReviewCoverage {
   return {
     activeCriteriaCount: active,
     reviewedCriteriaCount: reviewed,
+    systemClassificationCount: systemClassifications,
+    systemClassificationAcknowledgedCount: systemAcknowledged,
+    systemClassificationPendingCount: systemPending,
     notReviewableCount: notReviewable,
     notApplicableCount: notApplicable,
     pendingHumanDecisionCount: pending,
