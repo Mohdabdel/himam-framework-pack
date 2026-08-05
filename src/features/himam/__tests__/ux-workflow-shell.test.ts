@@ -37,11 +37,23 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain("من 8");
   });
 
-  it("UXW-T04: locked steps show an Arabic reason plus a link to the required step", () => {
+  it("UXW-T04: journey steps are status indicators, never navigation links", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain('data-testid="workflow-step-locked"');
-    expect(s).toContain("هذه الخطوة غير متاحة بعد");
-    expect(s).toContain('data-testid="workflow-goto-required-step"');
+    expect(s).toContain("function StepIndicator");
+    expect(s).not.toContain("function StepLink");
+    expect(s).not.toContain("to={href}");
+  });
+
+  it("UXW-T04B: direct access to a locked step redirects to the required step", () => {
+    const s = read("src/features/himam/ui/WorkflowShell.tsx");
+    expect(s).toContain("<Navigate to={target}");
+    expect(s).not.toContain('data-testid="workflow-step-locked"');
+    expect(s).not.toContain("هذه الخطوة غير متاحة بعد");
+  });
+
+  it("UXW-T04C: every stage footer uses one fixed next-action label with an arrow", () => {
+    const s = read("src/features/himam/ui/StageFooter.tsx");
+    expect(s).toContain("`التالي: ${nextActionLabel} ←`");
   });
 
   it("UXW-T05: cases list shows a single start CTA and one continue button per case", () => {
