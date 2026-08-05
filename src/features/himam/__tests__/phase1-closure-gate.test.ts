@@ -107,6 +107,7 @@ describe("HIMAM — Phase 1 Closure Gate", () => {
     expect(review).toContain('data-testid="review-filter-count"');
     expect(review).toContain('data-testid="review-filter-pending"');
     expect(review).toContain('data-testid="review-filter-reset"');
+    expect(review).not.toContain('data-testid="accept-all-critical"');
   });
 
   it("P1-T16: blocked review/report screens link to the step that unblocks them", () => {
