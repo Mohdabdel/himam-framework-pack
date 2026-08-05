@@ -35,6 +35,7 @@ export type AuditEventType =
   | "review_marked_stale"
   | "review_completed"
   | "finding_decided"
+  | "system_classifications_acknowledged"
   | "report_published"
   // Package 1C.3 report events
   | "report_gate_checked"
