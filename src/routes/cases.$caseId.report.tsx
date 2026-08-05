@@ -55,6 +55,7 @@ const GATE_LABELS_AR: Record<string, string> = {
   extraction_not_confirmed: "لم يُختم تأكيد الاستخراج",
   identity_conflict_unresolved: "يوجد تعارض هوية غير محلول",
   critical_findings_pending: "توجد ملاحظات حرجة بدون قرار",
+  findings_pending_resolution: "توجد نتائج لم تُسوَّ بعد",
   evidence_drift_detected: "تغيّرت الأدلة المؤكدة بعد تشغيل المحرك",
   case_closed_read_only: "الحالة مغلقة — للقراءة فقط",
 };
