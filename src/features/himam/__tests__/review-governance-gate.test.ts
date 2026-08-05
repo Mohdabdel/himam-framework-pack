@@ -101,6 +101,37 @@ describe("HIMAM review/report resolution governance", () => {
     ).toBe(true);
   });
 
+  it("allows one attestation to accept all unchanged results before report approval", async () => {
+    const c = await preparedCase(h);
+    const { version, findings } = h.versions.runEngine(c.id);
+
+    const attested = h.human.attestReviewResults(c.id, version.versionId, "reviewer-1");
+    expect(attested).toHaveLength(findings.length);
+    expect(attested.every((f) => f.humanDecision === "accept")).toBe(true);
+    expect(attested.every((f) => f.humanReviewStatus === "decided")).toBe(true);
+    expect(h.versions.completeHumanReview(c.id).completedAt).not.toBeNull();
+    expect(
+      h.cases.auditFor(c.id).some((event) => event.eventType === "review_results_attested"),
+    ).toBe(true);
+  });
+
+  it("blocks the single attestation when a goal id cannot resolve to its original quote", async () => {
+    const c = await preparedCase(h);
+    const { version } = h.versions.runEngine(c.id);
+    const store = h.repo.load();
+    const goalFinding = store.reviewFindings.find(
+      (f) => f.reviewVersionId === version.versionId && f.targetType === "plan_goal",
+    );
+    expect(goalFinding).toBeTruthy();
+    goalFinding!.targetId = "missing-goal";
+    goalFinding!.evidenceIds = [];
+    h.repo.save(store);
+
+    expect(() => h.human.attestReviewResults(c.id, version.versionId)).toThrow(
+      /unresolved goal context/,
+    );
+  });
+
   it("produces a report in which every finding is represented or explicitly excluded", async () => {
     const c = await preparedCase(h);
     const { version, findings } = h.versions.runEngine(c.id);

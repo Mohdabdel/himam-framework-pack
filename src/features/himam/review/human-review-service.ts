@@ -83,6 +83,98 @@ export class HumanReviewService {
   }
 
   /**
+   * Records the reviewer's single attestation over the current review
+   * snapshot. Findings that the reviewer already modified, rejected,
+   * deferred or sent back for information are preserved. Every remaining
+   * result is accepted as displayed in one governed action.
+   *
+   * A goal-level result can never be attested while its original confirmed
+   * goal quote is missing. This keeps the compact review interaction from
+   * turning an opaque goal id into an unauditable decision.
+   */
+  attestReviewResults(
+    caseId: string,
+    versionId?: string,
+    actorId: string | null = null,
+  ): ReviewFinding[] {
+    const store = this.repo.load();
+    const c = store.cases.find((x) => x.id === caseId);
+    if (!c) throw new Error("Case not found");
+    if (c.status === "closed") throw new Error("Case is closed");
+
+    const candidates = store.reviewFindings.filter(
+      (f) =>
+        f.caseId === caseId &&
+        !f.isStale &&
+        (!versionId || f.reviewVersionId === versionId) &&
+        f.humanReviewStatus === "pending",
+    );
+
+    const confirmedGoalEvidenceIds = new Set(
+      store.extractedEvidence
+        .filter(
+          (e) =>
+            e.reviewCaseId === caseId &&
+            e.evidenceType === "plan_goal" &&
+            (e.status === "confirmed" || e.status === "edited"),
+        )
+        .map((e) => e.id),
+    );
+    const unresolvedGoal = candidates.find(
+      (f) =>
+        f.targetType === "plan_goal" &&
+        ![f.targetId, ...f.evidenceIds].some(
+          (id) => id !== null && confirmedGoalEvidenceIds.has(id),
+        ),
+    );
+    if (unresolvedGoal) {
+      throw new Error("Cannot attest review: unresolved goal context");
+    }
+
+    if (candidates.length === 0) return [];
+    const now = new Date().toISOString();
+    for (const f of candidates) {
+      f.humanDecision = "accept";
+      f.humanReviewStatus = "decided";
+      f.humanStatus = f.automatedStatus;
+      f.humanSeverity = f.automatedSeverity;
+      f.humanRationale = null;
+      f.humanRecommendation = null;
+      f.reviewedBy = actorId;
+      f.reviewedAt = now;
+      store.auditEvents.push(
+        newAuditEvent(caseId, "finding_decided", {
+          findingId: f.findingId,
+          criterionId: f.criterionId,
+          decision: "accept",
+          decisionMode: "single_review_attestation",
+          automatedStatus: f.automatedStatus,
+          humanStatus: f.humanStatus,
+        }),
+      );
+    }
+    store.auditEvents.push(
+      newAuditEvent(
+        caseId,
+        "review_results_attested",
+        {
+          versionId: versionId ?? candidates[0]?.reviewVersionId ?? null,
+          acceptedAsDisplayedCount: candidates.length,
+          professionalCount: candidates.filter(
+            (f) => !isSystemClassificationStatus(f.automatedStatus),
+          ).length,
+          systemClassificationCount: candidates.filter((f) =>
+            isSystemClassificationStatus(f.automatedStatus),
+          ).length,
+        },
+        actorId,
+      ),
+    );
+    this.repo.save(store);
+    return candidates;
+  }
+
+  /**
    * One explicit human acknowledgement for classifications produced by the
    * deterministic scope/review rules. The acknowledgement is stored on every
    * affected finding so no item can disappear from the governed report, and a

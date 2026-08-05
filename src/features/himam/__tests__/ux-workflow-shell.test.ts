@@ -73,8 +73,11 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain('testId="review-view-professional"');
     expect(s).toContain('testId="review-view-system"');
     expect(s).toContain("const taskFindings = findings.filter");
-    expect(s).toContain("لا يمكن للفلاتر المتقدمة تغيير أعداد المهام");
+    expect(s).toContain("لا يلزم إصدار قرار منفصل على كل هدف أو نتيجة");
     expect(s).not.toContain('data-testid="accept-all-critical"');
+    expect(s).not.toContain('data-testid="acknowledge-system-classifications"');
+    expect(s).toContain("attestReviewResults");
+    expect(s).toContain("راجعت النتائج واعتمدت مخرجات المراجعة");
   });
 
   it("UXW-T09: a goal decision exposes the exact plan quote and its provenance", () => {
