@@ -6,6 +6,7 @@ export { HumanReviewService } from "./human-review-service";
 export type { HumanReviewInput } from "./human-review-service";
 export { ReviewCoverageService } from "./review-coverage-service";
 export { GoalRelationshipService } from "./goal-relationship-service";
+export { resolveFindingGoalEvidence } from "./finding-goal-context";
 export { GovernedReportService } from "./governed-report-service";
 export type { GoalNode, GoalRelation, GoalRelationEdge } from "./goal-relationship-service";
 export * from "./review-types";
