@@ -114,6 +114,7 @@ describe("HIMAM — browser-parity journey through localStorage repository", () 
     human.applyDecisions(
       pending.map((f) => ({ findingId: f.findingId, decision: "accept" as const })),
     );
+    human.acknowledgeSystemClassifications(c.id, reviewVersionId);
 
     // Re-read from the serialized store — no in-memory shortcut.
     const reloaded = createLocalStorageRepository().load();
@@ -125,6 +126,11 @@ describe("HIMAM — browser-parity journey through localStorage repository", () 
         f.automatedSeverity === "action_required_before_goal_approval",
     );
     expect(stillPendingCritical).toHaveLength(0);
+    expect(
+      reloaded.reviewFindings.filter(
+        (f) => f.caseId === c.id && !f.isStale && f.humanReviewStatus === "pending",
+      ),
+    ).toHaveLength(0);
 
     const sealed = versions.completeHumanReview(c.id);
     expect(sealed.versionId).toBe(reviewVersionId);
