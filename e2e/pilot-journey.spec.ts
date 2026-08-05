@@ -51,7 +51,7 @@ test("رحلة تجريبية حقيقية من ملف الخطة إلى تقر�
     "أن يقرأ المتعلم عشرين كلمة بصرية بدقة ثمانين بالمئة",
   );
   const goalCard = goalContext.locator("xpath=ancestor::*[@data-testid='finding-card']");
-  await goalCard.getByRole("button", { name: "تفاصيل ونتيجة المراجعة" }).click();
+  await goalCard.getByRole("button", { name: "مراجعة وإصدار القرار" }).click();
   await expect(page.getByTestId("goal-context-in-decision")).toContainText(
     "أن يقرأ المتعلم عشرين كلمة بصرية بدقة ثمانين بالمئة",
   );
@@ -61,9 +61,12 @@ test("رحلة تجريبية حقيقية من ملف الخطة إلى تقر�
       .getByTestId("finding-card")
       .filter({ has: page.getByTestId("finding-awaiting-decision") })
       .first();
-    await pendingCard.getByRole("button", { name: "تفاصيل ونتيجة المراجعة" }).click();
+    await pendingCard.getByRole("button", { name: "مراجعة وإصدار القرار" }).click();
     await page.getByTestId("finding-panel").getByTestId("finding-decision-accept").click();
   }
+  await page.getByTestId("review-view-system").click();
+  const acknowledgeSystem = page.getByTestId("acknowledge-system-classifications");
+  if (await acknowledgeSystem.isVisible()) await acknowledgeSystem.click();
   await expect(page.getByTestId("complete-review-btn")).toBeEnabled();
   await page.getByTestId("complete-review-btn").click();
   await page.getByTestId("create-report-link").click();
