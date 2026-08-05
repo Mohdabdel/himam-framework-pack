@@ -40,8 +40,30 @@ test("رحلة تجريبية حقيقية من ملف الخطة إلى تقر�
   await page.getByTestId("primary-action-continue").click();
 
   await page.getByRole("button", { name: "تشغيل محرك المراجعة" }).click();
-  const bulkDecision = page.getByTestId("accept-all-critical");
-  if (await bulkDecision.isVisible()) await bulkDecision.click();
+  const goalContext = page.getByTestId("goal-context-trigger").first();
+  await expect(goalContext).toContainText("أن يقرأ المتعلم عشرين كلمة بصرية");
+  await goalContext.focus();
+  await expect(page.getByTestId("goal-context-tooltip").first()).toContainText(
+    "النص الأصلي في الخطة",
+  );
+  await goalContext.click();
+  await expect(page.getByTestId("goal-context-expanded").first()).toContainText(
+    "أن يقرأ المتعلم عشرين كلمة بصرية بدقة ثمانين بالمئة",
+  );
+  const goalCard = goalContext.locator("xpath=ancestor::*[@data-testid='finding-card']");
+  await goalCard.getByRole("button", { name: "تفاصيل ونتيجة المراجعة" }).click();
+  await expect(page.getByTestId("goal-context-in-decision")).toContainText(
+    "أن يقرأ المتعلم عشرين كلمة بصرية بدقة ثمانين بالمئة",
+  );
+  await page.getByTestId("finding-panel").getByRole("button", { name: "إغلاق" }).click();
+  while ((await page.getByTestId("finding-awaiting-decision").count()) > 0) {
+    const pendingCard = page
+      .getByTestId("finding-card")
+      .filter({ has: page.getByTestId("finding-awaiting-decision") })
+      .first();
+    await pendingCard.getByRole("button", { name: "تفاصيل ونتيجة المراجعة" }).click();
+    await page.getByTestId("finding-panel").getByTestId("finding-decision-accept").click();
+  }
   await expect(page.getByTestId("complete-review-btn")).toBeEnabled();
   await page.getByTestId("complete-review-btn").click();
   await page.getByTestId("create-report-link").click();
