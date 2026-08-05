@@ -2,7 +2,12 @@ import { newAuditEvent } from "../audit/audit-service";
 import type { ReviewCaseRepository } from "../cases/case-repository";
 import { DeterministicReviewEngine, computeEvidenceDigest } from "./deterministic-review-engine";
 import { getKnowledgeRegistry } from "./knowledge-registry";
-import { ENGINE_VERSION, type ReviewFinding, type ReviewVersion } from "./review-types";
+import {
+  ENGINE_VERSION,
+  isSystemClassificationStatus,
+  type ReviewFinding,
+  type ReviewVersion,
+} from "./review-types";
 
 function randomId(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
@@ -199,6 +204,20 @@ export class ReviewVersionService {
     );
     if (criticalPending) {
       throw new Error("Cannot complete review: critical findings still pending human decision");
+    }
+    const professionalPending = findings.find(
+      (f) => f.humanReviewStatus === "pending" && !isSystemClassificationStatus(f.automatedStatus),
+    );
+    if (professionalPending) {
+      throw new Error("Cannot complete review: professional findings still pending human decision");
+    }
+    const systemPending = findings.find(
+      (f) => f.humanReviewStatus === "pending" && isSystemClassificationStatus(f.automatedStatus),
+    );
+    if (systemPending) {
+      throw new Error(
+        "Cannot complete review: system classifications still require acknowledgement",
+      );
     }
     const drift = this.detectDrift(caseId);
     if (drift.drifted) throw new Error(`Cannot complete review: ${drift.reason}`);
