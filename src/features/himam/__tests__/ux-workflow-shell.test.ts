@@ -30,18 +30,19 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain('data-testid="workflow-back-to-cases"');
   });
 
-  it("UXW-T03: shell renders an 8-step indicator with desktop + mobile variants", () => {
+  it("UXW-T03: shell reveals the 8-step journey only when the user requests it", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain('data-testid="workflow-steps-desktop"');
-    expect(s).toContain('data-testid="workflow-steps-mobile"');
-    expect(s).toContain("من 8");
+    expect(s).toContain('data-testid="workflow-steps-toggle"');
+    expect(s).toContain('data-testid="workflow-steps-list"');
+    expect(s).toContain("إظهار مراحل المراجعة");
+    expect(s).toContain('aria-label="مسار المراجعة — 8 خطوات"');
   });
 
-  it("UXW-T04: locked steps show an Arabic reason plus a link to the required step", () => {
+  it("UXW-T04: the route guard redirects a locked step to the required route", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain('data-testid="workflow-step-locked"');
-    expect(s).toContain("هذه الخطوة غير متاحة بعد");
-    expect(s).toContain('data-testid="workflow-goto-required-step"');
+    expect(s).toContain("const locked = guard");
+    expect(s).toContain("locked ? <Navigate to={target}");
+    expect(s).toContain("nextAction?.ctaHref");
   });
 
   it("UXW-T05: cases list shows a single start CTA and one continue button per case", () => {
