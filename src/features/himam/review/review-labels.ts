@@ -30,7 +30,7 @@ export const FINDING_STATUS_LABELS_AR: Record<FindingStatus, string> = {
 };
 
 export const FINDING_SEVERITY_LABELS_AR: Record<FindingSeverity, string> = {
-  action_required_before_goal_approval: "معالجة لازمة قبل اعتماد الهدف",
+  action_required_before_goal_approval: "معالجة لازمة قبل اعتماد تقرير المراجعة",
   major_plan_gap: "فجوة جوهرية في الخطة",
   quality_improvement: "تحسين جودة",
   guidance_note: "ملاحظة إرشادية",
