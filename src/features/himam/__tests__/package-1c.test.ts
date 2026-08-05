@@ -16,6 +16,7 @@ import {
   computeEvidenceDigest,
   getKnowledgeRegistry,
   loadKnowledgeBundle,
+  resolveFindingGoalEvidence,
 } from "..";
 import type { ReviewCaseRepository } from "..";
 
@@ -167,6 +168,29 @@ describe("HIMAM Package 1C — Deterministic Review Engine", () => {
       expect(Array.isArray(f.evidenceIds)).toBe(true);
       expect(Array.isArray(f.sourceIds)).toBe(true);
     }
+  });
+
+  it("PKG1C-T07B: a goal finding resolves only to its confirmed original plan quote", async () => {
+    const { c, goal } = await fullyPreparedCase(h);
+    const { findings } = h.versions.runEngine(c.id);
+    const goalFinding = findings.find((finding) => finding.targetType === "plan_goal")!;
+    const evidenceById = new Map(h.repo.load().extractedEvidence.map((item) => [item.id, item]));
+
+    const resolved = resolveFindingGoalEvidence(goalFinding, evidenceById);
+
+    expect(resolved?.id).toBe(goal.id);
+    expect(resolved?.exactQuote).toBe("يقرأ كلمات");
+  });
+
+  it("PKG1C-T07C: a broken goal link never falls back to another goal", async () => {
+    const { c } = await fullyPreparedCase(h);
+    const { findings } = h.versions.runEngine(c.id);
+    const goalFinding = findings.find((finding) => finding.targetType === "plan_goal")!;
+    const evidenceById = new Map(h.repo.load().extractedEvidence.map((item) => [item.id, item]));
+
+    expect(
+      resolveFindingGoalEvidence({ ...goalFinding, targetId: "unknown-goal" }, evidenceById),
+    ).toBeNull();
   });
 
   it("PKG1C-T08: engine does not perform any network call (deterministic)", async () => {
