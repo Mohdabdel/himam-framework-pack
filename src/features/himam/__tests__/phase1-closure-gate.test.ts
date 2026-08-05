@@ -71,7 +71,8 @@ describe("HIMAM — Phase 1 Closure Gate", () => {
   it("P1-T09: ingestion screen summarises progress and folds settled sources", () => {
     expect(ingestion).toContain('data-testid="ingestion-counters"');
     expect(ingestion).toContain('data-testid="ingestion-settled-section"');
-    expect(ingestion).toContain("<CollapsibleSection");
+    expect(ingestion).toContain('data-testid="ingestion-details-toggle"');
+    expect(ingestion).toContain("{detailsOpen && (");
   });
 
   it("P1-T10: ingestion text preview opens in the shared panel", () => {
