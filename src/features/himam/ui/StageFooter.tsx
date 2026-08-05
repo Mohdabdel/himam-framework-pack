@@ -26,6 +26,9 @@ export function StageFooter({
   continueDisabled,
   continueDisabledReasonAr,
 }: StageFooterProps) {
+  const nextActionLabel = continueLabelAr
+    .replace(/^التالي\s*[:：-]?\s*/, "")
+    .replace(/^المتابعة إلى\s*/, "");
   const actions: PrimaryActionSpec[] = [];
   if (onBack || backHref) {
     actions.push({
@@ -46,7 +49,7 @@ export function StageFooter({
   }
   actions.push({
     id: "continue",
-    labelAr: continueLabelAr,
+    labelAr: `التالي: ${nextActionLabel} ←`,
     variant: "primary",
     onClick: onContinue,
     href: continueHref,
