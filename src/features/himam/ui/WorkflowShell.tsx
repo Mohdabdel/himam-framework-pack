@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { AppShell, type AppShellProps } from "./AppShell";
@@ -104,8 +104,7 @@ export function WorkflowShell({
             <ol className="mt-3 space-y-1.5" data-testid="workflow-steps-list">
               {JOURNEY_STEPS.map((s, i) => (
                 <li key={s.id}>
-                  <StepLink
-                    caseId={caseId}
+                  <StepIndicator
                     stepId={s.id}
                     labelAr={`${i + 1}. ${s.labelAr}`}
                     active={i === index}
@@ -126,8 +125,7 @@ export function WorkflowShell({
         >
           {JOURNEY_STEPS.map((s, i) => (
             <li key={s.id} className="flex items-center gap-1.5">
-              <StepLink
-                caseId={caseId}
+              <StepIndicator
                 stepId={s.id}
                 labelAr={`${i + 1}. ${s.labelAr}`}
                 active={i === index}
@@ -143,47 +141,24 @@ export function WorkflowShell({
         </ol>
       </div>
 
-      {locked ? (
-        <section
-          className="rounded-lg border border-border bg-card p-6"
-          data-testid="workflow-step-locked"
-        >
-          <h1 className="text-lg font-bold">هذه الخطوة غير متاحة بعد</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {currentStatus?.blockedReasonAr ?? "أكمل الخطوات السابقة للوصول إلى هذه الخطوة."}
-          </p>
-          <Link
-            to={target}
-            params={{ caseId }}
-            className="mt-4 min-h-11 inline-flex items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            data-testid="workflow-goto-required-step"
-          >
-            {nextAction?.ctaLabelAr ?? "الانتقال إلى الخطوة المطلوبة"}
-          </Link>
-        </section>
-      ) : (
-        children
-      )}
+      {locked ? <Navigate to={target} params={{ caseId }} replace /> : children}
     </AppShell>
   );
 }
 
-function StepLink({
-  caseId,
+function StepIndicator({
   stepId,
   labelAr,
   active,
   status,
   block,
 }: {
-  caseId: string;
   stepId: JourneyStepId;
   labelAr: string;
   active: boolean;
   status?: JourneyStepStatus;
   block?: boolean;
 }) {
-  const href = JOURNEY_STEP_HREF[stepId];
   const locked = isLocked(status);
   const base = cn(
     "min-h-11 inline-flex items-center gap-2 rounded-md border px-2.5 text-xs",
@@ -192,7 +167,7 @@ function StepLink({
       ? "border-primary bg-primary/10 font-semibold text-foreground"
       : locked
         ? "border-border/60 bg-muted/40 text-muted-foreground"
-        : "border-border bg-background hover:bg-accent",
+        : "border-border bg-background text-foreground",
   );
   const inner = (
     <>
@@ -204,28 +179,15 @@ function StepLink({
       )}
     </>
   );
-  if (locked || !href || active) {
-    return (
-      <span
-        className={base}
-        aria-disabled={locked || undefined}
-        aria-current={active ? "step" : undefined}
-        data-step-id={stepId}
-        data-step-state={status?.state}
-      >
-        {inner}
-      </span>
-    );
-  }
   return (
-    <Link
-      to={href}
-      params={{ caseId }}
+    <span
       className={base}
+      aria-disabled={locked || undefined}
+      aria-current={active ? "step" : undefined}
       data-step-id={stepId}
       data-step-state={status?.state}
     >
       {inner}
-    </Link>
+    </span>
   );
 }

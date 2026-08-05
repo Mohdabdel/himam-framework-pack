@@ -34,10 +34,10 @@ test("رحلة تجريبية حقيقية من ملف الخطة إلى تقر�
     await pendingEvidence.first().getByRole("button", { name: "تأكيد" }).click();
   }
   await page.getByRole("button", { name: "إكمال تأكيد الاستخراج" }).click();
-  await page.getByRole("link", { name: "المتابعة إلى تأكيد نطاق المراجعة" }).click();
+  await page.getByTestId("primary-action-continue").click();
 
   await page.getByTestId("confirm-scope-button").click();
-  await page.getByRole("link", { name: "الانتقال إلى مساحة المراجعة" }).click();
+  await page.getByTestId("primary-action-continue").click();
 
   await page.getByRole("button", { name: "تشغيل محرك المراجعة" }).click();
   const bulkDecision = page.getByTestId("accept-all-critical");
