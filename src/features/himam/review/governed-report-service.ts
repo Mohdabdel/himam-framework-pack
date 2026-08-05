@@ -34,6 +34,7 @@ import {
   type ReportGateResult,
   type ReportVersionDiff,
   type ReviewFinding,
+  isSystemClassificationStatus,
 } from "./review-types";
 
 function randomId(): string {
@@ -172,6 +173,9 @@ export class GovernedReportService {
         f.automatedSeverity === "action_required_before_goal_approval",
     );
     if (criticalPending) return { ok: false, reason: "critical_findings_pending" };
+    if (findings.some((f) => f.humanReviewStatus === "pending")) {
+      return { ok: false, reason: "findings_pending_resolution" };
+    }
     // Drift check against evidence.
     const evidence = store.extractedEvidence.filter(
       (e) => e.reviewCaseId === caseId && (e.status === "confirmed" || e.status === "edited"),
@@ -245,9 +249,10 @@ export class GovernedReportService {
         sections.limitations.push(crit.limitations);
       }
       if (f.humanReviewStatus !== "decided") {
-        // Skip pending findings; the gate ensures no critical pending, and
-        // non-critical pending are simply excluded from this draft.
-        continue;
+        // This is unreachable while the report gate is healthy. Keep the
+        // assertion here so a future gate regression can never omit a result
+        // silently from a governed report.
+        throw new Error(`Unresolved finding reached report generation: ${f.findingId}`);
       }
       if (f.humanDecision === "reject") {
         sections.excludedFindings.push({
@@ -320,11 +325,21 @@ export class GovernedReportService {
     sections.executiveSummary = buildExecutiveSummary(sections);
 
     // Coverage snapshot.
-    const decided = findings.filter((f) => f.humanReviewStatus === "decided");
+    const professional = findings.filter((f) => !isSystemClassificationStatus(f.automatedStatus));
+    const decided = professional.filter((f) => f.humanReviewStatus === "decided");
+    const systemClassifications = findings.filter((f) =>
+      isSystemClassificationStatus(f.automatedStatus),
+    );
+    const systemAcknowledged = systemClassifications.filter(
+      (f) => f.humanReviewStatus === "decided",
+    );
     const coverage: GovernedReportCoverage = {
-      activeCriteriaCount: findings.length,
+      activeCriteriaCount: professional.length,
       reviewedCriteriaCount: decided.length,
-      pendingHumanDecisionCount: findings.length - decided.length,
+      pendingHumanDecisionCount: professional.length - decided.length,
+      systemClassificationCount: systemClassifications.length,
+      systemClassificationAcknowledgedCount: systemAcknowledged.length,
+      systemClassificationPendingCount: systemClassifications.length - systemAcknowledged.length,
       acceptedCount: decided.filter((f) => f.humanDecision === "accept").length,
       modifiedCount: decided.filter((f) => f.humanDecision === "modify").length,
       rejectedCount: decided.filter((f) => f.humanDecision === "reject").length,
