@@ -14,7 +14,7 @@ import {
   ALLOWED_EVIDENCE_TYPES,
   isEvidenceTypeAllowed,
 } from "..";
-import type { ReviewCaseRepository } from "..";
+import type { DocumentTextExtractor, ReviewCaseRepository } from "..";
 import {
   MockEvidenceExtractionProvider,
   ExtractionRunService,
@@ -92,6 +92,33 @@ describe("HIMAM Package 1B — Ingestion, Extraction & Confirmation", () => {
     const res = await h.ingestion.ingestSource(sourceId);
     expect(res.artifact).toBeNull();
     expect(res.source.extractionStage).toBe("text_unavailable");
+  });
+
+  it("PKG1B-T03B: parser failure becomes a recoverable failed state instead of staying pending", async () => {
+    const { caseId, sourceId } = await attachTxtPlan(h);
+    const failingExtractor: DocumentTextExtractor = {
+      extract: async () => {
+        throw new Error("parser exploded");
+      },
+    };
+    const ingestion = new IngestionService(h.repo, h.storage, failingExtractor);
+
+    await expect(ingestion.ingestSource(sourceId)).rejects.toThrow(/تعذّرت قراءة ملف الخطة/);
+    expect(h.cases.sourcesFor(caseId)[0].extractionStage).toBe("failed");
+    expect(h.cases.get(caseId)?.extractionStage).toBe("sources_registered");
+    expect(h.cases.auditFor(caseId).at(-1)?.payload.reason).toBe("parser_failed");
+  });
+
+  it("PKG1B-T03C: extraction timeout becomes a recoverable failed state", async () => {
+    const { caseId, sourceId } = await attachTxtPlan(h);
+    const hangingExtractor: DocumentTextExtractor = {
+      extract: () => new Promise(() => undefined),
+    };
+    const ingestion = new IngestionService(h.repo, h.storage, hangingExtractor, 5);
+
+    await expect(ingestion.ingestSource(sourceId)).rejects.toThrow(/وقتًا أطول من المتوقع/);
+    expect(h.cases.sourcesFor(caseId)[0].extractionStage).toBe("failed");
+    expect(h.cases.auditFor(caseId).at(-1)?.payload.reason).toBe("extraction_timeout");
   });
 
   it("PKG1B-T04: no OCR / no image recognition path exists in the codebase", () => {

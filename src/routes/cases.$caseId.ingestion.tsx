@@ -114,14 +114,18 @@ function IngestionPage() {
       const repo = getDefaultRepository();
       const storage = getDefaultPlanFileStorage();
       const ingestion = new IngestionService(repo, storage, new DefaultDocumentTextExtractor());
+      let failed = false;
       for (const s of pending) {
         try {
           await ingestion.ingestSource(s.id);
         } catch {
-          // Per-source failure is surfaced by that source's own stage badge.
+          failed = true;
         }
       }
       await refresh();
+      if (failed) {
+        setError("تعذّرت قراءة ملف أو أكثر. أعد المحاولة من الملف الموضح أدناه أو استبدله.");
+      }
       setAutoRunning(false);
     })();
   }, [c, sources]);
@@ -293,11 +297,13 @@ function IngestionPage() {
         stepIndicatorAr="الخطوة 3 من 8"
         descriptionAr="يقرأ النظام محتوى الملفات تلقائيًا ليتمكن من عرض بنود الخطة عليك."
         requiredNowAr={
-          autoRunning
+          autoRunning || counts.pending > 0
             ? "جارٍ قراءة محتوى الملفات…"
-            : counts.ready > 0
-              ? "تمت قراءة المحتوى. تابع إلى مراجعة بنود الخطة."
-              : "اضغط قراءة المحتوى، أو عالج الملفات غير القابلة للقراءة."
+            : counts.attention > 0
+              ? "تعذّرت قراءة ملف أو أكثر. استخدم إعادة المحاولة أو استبدل الملف."
+              : counts.ready > 0
+                ? "تمت قراءة المحتوى. تابع إلى مراجعة بنود الخطة."
+                : "لا يوجد محتوى جاهز للمراجعة بعد."
         }
         trailing={
           <Link to="/cases/$caseId" params={{ caseId }} className="text-sm underline">

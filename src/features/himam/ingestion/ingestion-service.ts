@@ -37,7 +37,46 @@ export class IngestionService {
     private readonly repo: ReviewCaseRepository,
     private readonly storage: SourceArtifactStorage,
     private readonly extractor: DocumentTextExtractor,
+    private readonly extractionTimeoutMs = 45_000,
   ) {}
+
+  private markFailed(sourceId: string, reason: string): void {
+    const store = this.repo.load();
+    const source = store.sources.find((s) => s.id === sourceId);
+    if (!source) return;
+    source.extractionStage = "failed";
+    const reviewCase = store.cases.find((c) => c.id === source.reviewCaseId);
+    const anotherReadySource = store.sources.some(
+      (s) =>
+        s.reviewCaseId === source.reviewCaseId &&
+        s.id !== sourceId &&
+        s.extractionStage === "text_extracted",
+    );
+    if (reviewCase?.extractionStage === "text_ready" && !anotherReadySource) {
+      reviewCase.extractionStage = "sources_registered";
+    }
+    store.auditEvents.push(
+      newAuditEvent(source.reviewCaseId, "source_ingest_failed", { sourceId, reason }),
+    );
+    this.repo.save(store);
+  }
+
+  private async extractWithTimeout(blob: Blob, mimeType: string | null, fileName: string) {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        this.extractor.extract(blob, mimeType, fileName),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error("extraction_timeout")),
+            this.extractionTimeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    }
+  }
 
   async ingestSource(sourceId: string): Promise<IngestionResult> {
     const preStore = this.repo.load();
@@ -83,7 +122,13 @@ export class IngestionService {
       throw new Error(src.type === "plan" ? "ملف الخطة مفقود — أعد رفعه." : "File missing");
     }
 
-    const blobHash = await hashBlob(blob);
+    let blobHash: string;
+    try {
+      blobHash = await hashBlob(blob);
+    } catch {
+      this.markFailed(sourceId, "hash_failed");
+      throw new Error("تعذّرت تهيئة ملف الخطة للقراءة. أعد المحاولة.");
+    }
     // Same blob + already-extracted artifact → reuse everything.
     const existingArtifact = preStore.textArtifacts.find(
       (a) => a.sourceId === sourceId && a.sourceHash === blobHash,
@@ -100,7 +145,21 @@ export class IngestionService {
       return { artifact: existingArtifact, chunks, source: { ...s }, reused: true };
     }
 
-    const outcome = await this.extractor.extract(blob, src.mimeType, src.fileName);
+    let outcome;
+    try {
+      outcome = await this.extractWithTimeout(blob, src.mimeType, src.fileName);
+    } catch (error) {
+      const reason =
+        error instanceof Error && error.message === "extraction_timeout"
+          ? "extraction_timeout"
+          : "parser_failed";
+      this.markFailed(sourceId, reason);
+      throw new Error(
+        reason === "extraction_timeout"
+          ? "استغرقت قراءة الملف وقتًا أطول من المتوقع. أعد المحاولة أو استبدل الملف."
+          : "تعذّرت قراءة ملف الخطة. أعد المحاولة أو استبدل الملف.",
+      );
+    }
 
     // Blob has changed: invalidate old artifact + evidence for this source.
     const oldArtifacts = preStore.textArtifacts.filter((x) => x.sourceId === sourceId);
