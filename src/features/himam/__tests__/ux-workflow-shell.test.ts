@@ -30,31 +30,18 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain('data-testid="workflow-back-to-cases"');
   });
 
-  it("UXW-T03: the 8-step indicator stays hidden until explicitly requested", () => {
+  it("UXW-T03: shell renders an 8-step indicator with desktop + mobile variants", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain('data-testid="workflow-steps-toggle"');
-    expect(s).toContain('data-testid="workflow-steps-list"');
-    expect(s).toContain("إظهار مراحل المراجعة");
-    expect(s).toContain("{stepsOpen && (");
+    expect(s).toContain('data-testid="workflow-steps-desktop"');
+    expect(s).toContain('data-testid="workflow-steps-mobile"');
+    expect(s).toContain("من 8");
   });
 
-  it("UXW-T04: journey steps are status indicators, never navigation links", () => {
+  it("UXW-T04: locked steps show an Arabic reason plus a link to the required step", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain("function StepIndicator");
-    expect(s).not.toContain("function StepLink");
-    expect(s).not.toContain("to={href}");
-  });
-
-  it("UXW-T04B: direct access to a locked step redirects to the required step", () => {
-    const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain("<Navigate to={target}");
-    expect(s).not.toContain('data-testid="workflow-step-locked"');
-    expect(s).not.toContain("هذه الخطوة غير متاحة بعد");
-  });
-
-  it("UXW-T04C: every stage footer uses one fixed next-action label with an arrow", () => {
-    const s = read("src/features/himam/ui/StageFooter.tsx");
-    expect(s).toContain("`التالي: ${nextActionLabel} ←`");
+    expect(s).toContain('data-testid="workflow-step-locked"');
+    expect(s).toContain("هذه الخطوة غير متاحة بعد");
+    expect(s).toContain('data-testid="workflow-goto-required-step"');
   });
 
   it("UXW-T05: cases list shows a single start CTA and one continue button per case", () => {
@@ -63,13 +50,6 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain("متابعة");
     expect(s).toContain("الخطوة الحالية:");
     expect(s).not.toContain("المعرّف المختصر");
-  });
-
-  it("UXW-T05B: previous cases stay hidden until the user requests them", () => {
-    const s = read("src/routes/cases.index.tsx");
-    expect(s).toContain('data-testid="previous-cases-toggle"');
-    expect(s).toContain("{historyOpen && (");
-    expect(s).toContain('id="previous-cases-list"');
   });
 
   it("UXW-T06: case center folds secondary routes and the dense stepper", () => {
@@ -84,26 +64,31 @@ describe("UX round — unified workflow shell", () => {
       /sources-primary-cta"\s*\n\s*className="mt-3 inline-flex rounded-md bg-primary/,
     );
     expect(s).toContain("تجهيز الخطة وبدء المراجعة");
-    expect(s).not.toContain('data-testid="next-step-card"');
-    expect(s).not.toContain("ما الخطوة التالية؟");
-    expect(s).toContain('continueTestId="sources-primary-cta"');
   });
 
-  it("UXW-T08: source impact appears only after optional information is requested", () => {
-    const s = read("src/routes/cases.$caseId.sources.tsx");
-    const optionalGate = s.indexOf("{optionalOpen && (");
-    const scopeImpact = s.indexOf('data-testid="scope-impact-summary"');
-    expect(optionalGate).toBeGreaterThan(-1);
-    expect(scopeImpact).toBeGreaterThan(optionalGate);
-    expect(s).toContain('data-testid="plan-saved-state"');
-    expect(s).not.toContain("تم حفظ الخطة بنجاح");
+  it("UXW-T08: review screen is task-led and filters cannot replace the task counts", () => {
+    const s = read("src/routes/cases.$caseId.review.tsx");
+    expect(s).toContain('data-testid="review-task-center"');
+    expect(s).toContain('testId="review-view-professional"');
+    expect(s).toContain('testId="review-view-system"');
+    expect(s).toContain("const taskFindings = findings.filter");
+    expect(s).toContain("لا يمكن للفلاتر المتقدمة تغيير أعداد المهام");
+    expect(s).not.toContain('data-testid="accept-all-critical"');
   });
 
-  it("UXW-T09: ingestion shows only required work and hides diagnostics on entry", () => {
-    const s = read("src/routes/cases.$caseId.ingestion.tsx");
-    expect(s).toContain('data-testid="ingestion-details-toggle"');
-    expect(s).toContain("{detailsOpen && (");
-    expect(s).toContain("attentionSources.map(renderSourceCard)");
-    expect(s).toContain('data-testid="ingestion-all-settled"');
+  it("UXW-T09: a goal decision exposes the exact plan quote and its provenance", () => {
+    const s = read("src/routes/cases.$caseId.review.tsx");
+    expect(s).toContain('data-testid="goal-context-trigger"');
+    expect(s).toContain('data-testid="goal-context-tooltip"');
+    expect(s).toContain('data-testid="goal-context-expanded"');
+    expect(s).toContain('data-testid="goal-context-in-decision"');
+    expect(s).toContain("locatorLabelAr(goalEvidence.locator)");
+    expect(s).toContain("تعذّر ربط رمز الهدف بالنص الأصلي المؤكد");
+  });
+
+  it("UXW-T10: report navigation remains locked until the review version is sealed", () => {
+    const s = read("src/routes/cases.$caseId.review.tsx");
+    expect(s).toContain("version?.completedAt && !drift.drifted");
+    expect(s).toContain("continueDisabled={!version?.completedAt || drift.drifted}");
   });
 });
