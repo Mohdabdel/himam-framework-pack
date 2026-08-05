@@ -1,3 +1,8 @@
+npm notice
+npm notice New minor version of npm available! 11.9.0 -> 11.19.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.19.0
+npm notice To update run: npm install -g npm@11.19.0
+npm notice
 import { expect, test } from "@playwright/test";
 
 function createTextPdf(): Buffer {
@@ -27,6 +32,10 @@ function createTextPdf(): Buffer {
 
 test("PDF حقيقي ينتقل من الرفع إلى اكتمال القراءة دون طريق مسدود", async ({ page }) => {
   await page.goto("/cases/new");
+  await page.waitForFunction(() => {
+    const input = document.querySelector('[data-testid="plan-file-input"]');
+    return input && Object.keys(input).some((key) => key.startsWith("__reactProps$"));
+  });
   await page.getByLabel("العمر (سنوات)").fill("9");
   await page.getByTestId("plan-file-input").setInputFiles({
     name: "himam-plan.pdf",
