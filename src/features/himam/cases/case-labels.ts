@@ -45,7 +45,7 @@ export function phaseOrAgeLabelAr(
 ): string {
   if (phaseId) return phaseLabelAr(phaseId);
   if (ageYears != null) return `العمر ${ageYears} سنوات`;
-  return "العمر والمرحلة غير محددين";
+  return "غير محددة";
 }
 
 export const STATUS_LABELS_AR: Record<ReviewCaseStatus, string> = {
