@@ -609,7 +609,7 @@ function ReportScreenInner() {
           </section>
 
           <Section
-            title="نقاط تتطلب معالجة قبل اعتماد أهداف محددة"
+            title="نقاط تتطلب معالجة قبل اعتماد تقرير المراجعة"
             items={active.sections.actionRequired}
             emptyLabel="لا توجد ملاحظات حرجة."
             testId="section-action-required"
