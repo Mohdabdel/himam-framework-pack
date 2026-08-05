@@ -1,4 +1,5 @@
 import type { PageInput } from "./text-chunker";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 // Result of trying to convert a Blob into text. `text_unavailable` covers
 // scanned PDFs, empty documents, and unsupported file kinds. No image recognition is
@@ -88,11 +89,10 @@ async function defaultDocxExtractor(blob: Blob): Promise<string> {
 }
 
 async function defaultPdfExtractor(blob: Blob): Promise<{ pageNumber: number; text: string }[]> {
-  // Dynamic import — pdfjs is a browser library and should never load in the
-  // vitest node runtime.
-  const pdfjs = (await import(
-    /* @vite-ignore */ "pdfjs-dist/legacy/build/pdf.mjs"
-  )) as typeof import("pdfjs-dist");
+  // Keep PDF parsing local to the browser. The worker URL is bundled by Vite;
+  // using a bare @vite-ignore import leaves browsers unable to resolve pdfjs.
+  const pdfjs = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as typeof import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
   const buf = await blob.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
   const pages: { pageNumber: number; text: string }[] = [];
