@@ -30,6 +30,7 @@ export const Route = createFileRoute("/cases/")({
 function CasesDashboard() {
   const [cases, setCases] = useState<ReviewCase[]>([]);
   const [next, setNext] = useState<Record<string, CaseNextAction>>({});
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => {
     const list = new CaseService().list();
     setCases(list);
@@ -73,37 +74,58 @@ function CasesDashboard() {
           </Link>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {cases.map((c) => (
-            <li
-              key={c.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-semibold text-foreground">{c.referenceCode}</span>
-                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                    {statusLabelAr(c.status)}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {c.planType ?? "نوع الخطة غير محدد"} · {phaseOrAgeLabelAr(c.phaseId, c.ageYears)}{" "}
-                  · آخر تحديث {formatArabicDate(c.updatedAt ?? c.createdAt)}
-                </div>
-                <div className="mt-1 text-xs text-foreground">
-                  الخطوة الحالية: {next[c.id]?.stateSummaryAr ?? "قيد التحديث."}
-                </div>
-              </div>
-              <Link
-                to="/cases/$caseId"
-                params={{ caseId: c.id }}
-                className="min-h-11 inline-flex items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                متابعة
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <section className="rounded-lg border border-border bg-card">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((open) => !open)}
+            aria-expanded={historyOpen}
+            aria-controls="previous-cases-list"
+            data-testid="previous-cases-toggle"
+            className="min-h-14 flex w-full items-center justify-between gap-3 px-5 text-start text-sm font-semibold hover:bg-accent"
+          >
+            <span>الحالات السابقة</span>
+            <span className="flex items-center gap-2 text-xs font-normal text-muted-foreground">
+              <span>{cases.length} حالة</span>
+              <span aria-hidden>{historyOpen ? "⌃" : "⌄"}</span>
+            </span>
+          </button>
+          {historyOpen && (
+            <ul id="previous-cases-list" className="space-y-3 border-t border-border p-4">
+              {cases.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-base font-semibold text-foreground">
+                        {c.referenceCode}
+                      </span>
+                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {statusLabelAr(c.status)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {c.planType ?? "نوع الخطة غير محدد"} ·{" "}
+                      {phaseOrAgeLabelAr(c.phaseId, c.ageYears)} · آخر تحديث{" "}
+                      {formatArabicDate(c.updatedAt ?? c.createdAt)}
+                    </div>
+                    <div className="mt-1 text-xs text-foreground">
+                      الخطوة الحالية: {next[c.id]?.stateSummaryAr ?? "قيد التحديث."}
+                    </div>
+                  </div>
+                  <Link
+                    to="/cases/$caseId"
+                    params={{ caseId: c.id }}
+                    className="min-h-11 inline-flex items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    متابعة
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
       <div className="mt-10 border-t border-border pt-4 text-center">
         <Link
