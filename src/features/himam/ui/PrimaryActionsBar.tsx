@@ -7,6 +7,8 @@ export interface PrimaryActionSpec {
   href?: string;
   variant?: "primary" | "secondary" | "ghost";
   disabled?: boolean;
+  // Short contextual note shown on hover/focus without adding page clutter.
+  hintAr?: string;
   // Neutral Arabic sentence describing why the action is disabled.
   disabledReasonAr?: string;
   "data-testid"?: string;
@@ -57,7 +59,7 @@ export function PrimaryActionsBar({
         const testId = a["data-testid"] ?? `primary-action-${a.id}`;
         if (a.href && !a.disabled) {
           return (
-            <a key={a.id} href={a.href} className={cls} data-testid={testId}>
+            <a key={a.id} href={a.href} className={cls} data-testid={testId} title={a.hintAr}>
               {a.labelAr}
             </a>
           );
@@ -69,7 +71,7 @@ export function PrimaryActionsBar({
             className={cls}
             onClick={a.onClick}
             disabled={a.disabled}
-            title={a.disabled ? a.disabledReasonAr : undefined}
+            title={a.disabled ? a.disabledReasonAr : a.hintAr}
             aria-disabled={a.disabled}
             data-testid={testId}
             data-disabled-reason={a.disabled ? a.disabledReasonAr : undefined}

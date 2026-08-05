@@ -30,11 +30,12 @@ describe("UX round — unified workflow shell", () => {
     expect(s).toContain('data-testid="workflow-back-to-cases"');
   });
 
-  it("UXW-T03: shell renders an 8-step indicator with desktop + mobile variants", () => {
+  it("UXW-T03: the 8-step indicator stays hidden until explicitly requested", () => {
     const s = read("src/features/himam/ui/WorkflowShell.tsx");
-    expect(s).toContain('data-testid="workflow-steps-desktop"');
-    expect(s).toContain('data-testid="workflow-steps-mobile"');
-    expect(s).toContain("من 8");
+    expect(s).toContain('data-testid="workflow-steps-toggle"');
+    expect(s).toContain('data-testid="workflow-steps-list"');
+    expect(s).toContain("إظهار مراحل المراجعة");
+    expect(s).toContain("{stepsOpen && (");
   });
 
   it("UXW-T04: journey steps are status indicators, never navigation links", () => {
@@ -64,6 +65,13 @@ describe("UX round — unified workflow shell", () => {
     expect(s).not.toContain("المعرّف المختصر");
   });
 
+  it("UXW-T05B: previous cases stay hidden until the user requests them", () => {
+    const s = read("src/routes/cases.index.tsx");
+    expect(s).toContain('data-testid="previous-cases-toggle"');
+    expect(s).toContain("{historyOpen && (");
+    expect(s).toContain('id="previous-cases-list"');
+  });
+
   it("UXW-T06: case center folds secondary routes and the dense stepper", () => {
     const s = read("src/routes/cases.$caseId.index.tsx");
     expect(s).toContain("خيارات أخرى");
@@ -76,5 +84,26 @@ describe("UX round — unified workflow shell", () => {
       /sources-primary-cta"\s*\n\s*className="mt-3 inline-flex rounded-md bg-primary/,
     );
     expect(s).toContain("تجهيز الخطة وبدء المراجعة");
+    expect(s).not.toContain('data-testid="next-step-card"');
+    expect(s).not.toContain("ما الخطوة التالية؟");
+    expect(s).toContain('continueTestId="sources-primary-cta"');
+  });
+
+  it("UXW-T08: source impact appears only after optional information is requested", () => {
+    const s = read("src/routes/cases.$caseId.sources.tsx");
+    const optionalGate = s.indexOf("{optionalOpen && (");
+    const scopeImpact = s.indexOf('data-testid="scope-impact-summary"');
+    expect(optionalGate).toBeGreaterThan(-1);
+    expect(scopeImpact).toBeGreaterThan(optionalGate);
+    expect(s).toContain('data-testid="plan-saved-state"');
+    expect(s).not.toContain("تم حفظ الخطة بنجاح");
+  });
+
+  it("UXW-T09: ingestion shows only required work and hides diagnostics on entry", () => {
+    const s = read("src/routes/cases.$caseId.ingestion.tsx");
+    expect(s).toContain('data-testid="ingestion-details-toggle"');
+    expect(s).toContain("{detailsOpen && (");
+    expect(s).toContain("attentionSources.map(renderSourceCard)");
+    expect(s).toContain('data-testid="ingestion-all-settled"');
   });
 });

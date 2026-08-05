@@ -358,45 +358,24 @@ function SourcesPage() {
         </div>
       )}
 
-      {/* 1) Plan saved — the very first thing the user sees. */}
       {activePlan && (
-        <section
+        <div
           data-testid="plan-saved-card"
-          className="mb-4 rounded-md border-2 border-emerald-300 bg-emerald-50 p-4"
+          className="mb-4 flex flex-wrap items-center gap-2 text-sm text-emerald-800"
         >
-          <h2 className="text-lg font-semibold text-emerald-900">
-            {planUsable ? "تم حفظ الخطة بنجاح" : "سجل الخطة موجود — الملف غير قابل للقراءة"}
-          </h2>
-          <p className="mt-1 text-sm text-emerald-900" data-testid="plan-saved-filename">
-            {activePlan.fileName}
-          </p>
-          <p className="mt-1 text-xs text-emerald-800" data-testid="plan-saved-state">
-            {planUsable
-              ? "الملف محفوظ داخل متصفحك وجاهز للتجهيز."
-              : "أعد رفع الملف من قسم إدارة ملف الخطة بالأسفل."}
-          </p>
-        </section>
-      )}
-
-      {/* 2) One obvious next action. */}
-      {planUsable && (
-        <section
-          data-testid="next-step-card"
-          className="mb-6 rounded-md border-2 border-primary/40 bg-primary/5 p-4"
-        >
-          <h2 className="text-lg font-semibold">ما الخطوة التالية؟</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            سيقرأ النظام محتوى الخطة ويقترح بنودها لتراجعها وتؤكدها بنفسك.
-          </p>
-          <Link
-            to="/cases/$caseId/ingestion"
-            params={{ caseId }}
-            data-testid="sources-primary-cta"
-            className="mt-3 min-h-11 inline-flex items-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent"
+          <span
+            aria-hidden="true"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700"
           >
-            تجهيز الخطة وبدء المراجعة
-          </Link>
-        </section>
+            {planUsable ? "✓" : "!"}
+          </span>
+          <span className="font-medium" data-testid="plan-saved-state">
+            {planUsable ? "الخطة محفوظة" : "ملف الخطة يحتاج إلى إعادة رفع"}
+          </span>
+          <span className="text-muted-foreground" data-testid="plan-saved-filename">
+            {activePlan.fileName}
+          </span>
+        </div>
       )}
 
       <section className="space-y-4">
@@ -662,81 +641,84 @@ function SourcesPage() {
         )}
       </section>
 
-      {/* 5) Impact counters — secondary detail, collapsed, at the bottom. */}
-      <CollapsibleSection
-        className="mt-6"
-        titleAr="أثر المعلومات على نطاق المراجعة"
-        hintAr="تفاصيل اختيارية"
-        data-testid="scope-impact-summary"
-      >
-        <p className="mb-3 text-xs text-muted-foreground">
-          هذه مؤشرات لنطاق المراجعة الممكن، وليست درجة لجودة الخطة.
-        </p>
-        <div
-          className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3"
-          data-testid="scope-counters-grid"
+      {optionalOpen && (
+        <CollapsibleSection
+          className="mt-6"
+          titleAr="أثر المعلومات على نطاق المراجعة"
+          hintAr="تفاصيل اختيارية"
+          data-testid="scope-impact-summary"
         >
-          <div className="rounded-md border border-border bg-background p-3 text-center">
-            <div className="text-2xl font-bold" data-testid="count-available">
-              {bucketCounts.available}
-            </div>
-            <div className="text-xs text-muted-foreground">معايير قابلة للمراجعة</div>
-          </div>
-          <div className="rounded-md border border-border bg-background p-3 text-center">
-            <div className="text-2xl font-bold" data-testid="count-not-reviewable">
-              {bucketCounts.notReviewable}
-            </div>
-            <div className="text-xs text-muted-foreground">معايير غير قابلة للمراجعة</div>
-          </div>
-          <div className="rounded-md border border-border bg-background p-3 text-center">
-            <div className="text-2xl font-bold" data-testid="count-not-applicable">
-              {bucketCounts.notApplicable}
-            </div>
-            <div className="text-xs text-muted-foreground">معايير غير منطبقة</div>
-          </div>
-        </div>
-        {expandable.length > 0 && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            يمكن توسيع نطاق المراجعة بإضافة معلومات موثقة إضافية.
+          <p className="mb-3 text-xs text-muted-foreground">
+            هذه مؤشرات لنطاق المراجعة الممكن، وليست درجة لجودة الخطة.
           </p>
-        )}
-        <details
-          className="mt-3"
-          data-testid="impact-details"
-          open={impactDetailsOpen}
-          onToggle={(e) => setImpactDetailsOpen((e.target as HTMLDetailsElement).open)}
-        >
-          <summary className="cursor-pointer text-sm font-medium text-primary">
-            عرض تفاصيل الأثر
-          </summary>
-          <div className="mt-3 space-y-2 text-xs">
-            {expandable.length > 0 && (
-              <div className="text-muted-foreground" data-testid="expandable-sources">
-                <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
-                {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
+          <div
+            className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3"
+            data-testid="scope-counters-grid"
+          >
+            <div className="rounded-md border border-border bg-background p-3 text-center">
+              <div className="text-2xl font-bold" data-testid="count-available">
+                {bucketCounts.available}
               </div>
-            )}
-            <ul className="space-y-2">
-              {OPTIONAL_TYPES.map((t) => {
-                const key = SOURCE_TYPE_TO_IMPACT_KEY[t];
-                const impact = INPUT_IMPACTS[key];
-                const has = sources.some((s) => s.type === t);
-                return (
-                  <li key={t} className="rounded-md border border-border bg-background p-2">
-                    <div className="font-medium">
-                      {impact.titleAr}{" "}
-                      <span className="text-muted-foreground">— {has ? "متاح" : "غير متاح"}</span>
-                    </div>
-                    <div className="text-muted-foreground">عند الإضافة: {impact.whenPresentAr}</div>
-                    <div className="text-muted-foreground">عند الغياب: {impact.whenAbsentAr}</div>
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+              <div className="text-xs text-muted-foreground">معايير قابلة للمراجعة</div>
+            </div>
+            <div className="rounded-md border border-border bg-background p-3 text-center">
+              <div className="text-2xl font-bold" data-testid="count-not-reviewable">
+                {bucketCounts.notReviewable}
+              </div>
+              <div className="text-xs text-muted-foreground">معايير غير قابلة للمراجعة</div>
+            </div>
+            <div className="rounded-md border border-border bg-background p-3 text-center">
+              <div className="text-2xl font-bold" data-testid="count-not-applicable">
+                {bucketCounts.notApplicable}
+              </div>
+              <div className="text-xs text-muted-foreground">معايير غير منطبقة</div>
+            </div>
           </div>
-        </details>
-      </CollapsibleSection>
+          {expandable.length > 0 && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              يمكن توسيع نطاق المراجعة بإضافة معلومات موثقة إضافية.
+            </p>
+          )}
+          <details
+            className="mt-3"
+            data-testid="impact-details"
+            open={impactDetailsOpen}
+            onToggle={(e) => setImpactDetailsOpen((e.target as HTMLDetailsElement).open)}
+          >
+            <summary className="cursor-pointer text-sm font-medium text-primary">
+              عرض تفاصيل الأثر
+            </summary>
+            <div className="mt-3 space-y-2 text-xs">
+              {expandable.length > 0 && (
+                <div className="text-muted-foreground" data-testid="expandable-sources">
+                  <span className="font-medium">مصادر يمكن أن توسع النطاق عند إضافتها: </span>
+                  {expandable.map((s) => SOURCE_TYPE_LABELS_AR[s]).join("، ")}
+                </div>
+              )}
+              <ul className="space-y-2">
+                {OPTIONAL_TYPES.map((t) => {
+                  const key = SOURCE_TYPE_TO_IMPACT_KEY[t];
+                  const impact = INPUT_IMPACTS[key];
+                  const has = sources.some((s) => s.type === t);
+                  return (
+                    <li key={t} className="rounded-md border border-border bg-background p-2">
+                      <div className="font-medium">
+                        {impact.titleAr}{" "}
+                        <span className="text-muted-foreground">— {has ? "متاح" : "غير متاح"}</span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        عند الإضافة: {impact.whenPresentAr}
+                      </div>
+                      <div className="text-muted-foreground">عند الغياب: {impact.whenAbsentAr}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-muted-foreground">{PROVISIONAL_SCOPE_DISCLAIMER_AR}</p>
+            </div>
+          </details>
+        </CollapsibleSection>
+      )}
 
       {/* Single source-management panel: drawer on desktop, bottom sheet on mobile. */}
       {openSourceType && (
@@ -856,6 +838,8 @@ function SourcesPage() {
         continueHref={planUsable ? `/cases/${caseId}/ingestion` : undefined}
         continueDisabled={!planUsable}
         continueDisabledReasonAr={!planUsable ? "أرفق الخطة الحالية واحفظها أولًا." : undefined}
+        continueHintAr="سيقرأ النظام محتوى الخطة ويعرض فقط ما يحتاج إلى مراجعتك."
+        continueTestId="sources-primary-cta"
       />
       {planUsable && (
         <Link
