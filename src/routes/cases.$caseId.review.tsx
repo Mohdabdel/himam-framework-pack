@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   AppShell,
   WorkflowShell,
@@ -19,13 +19,17 @@ import {
   formatArabicDate,
   getDefaultRepository,
   getKnowledgeRegistry,
+  locatorLabelAr,
+  resolveFindingGoalEvidence,
   shortCaseId,
 } from "@/features/himam";
 import type {
   CriterionRecord,
+  ExtractedEvidence,
   FindingSeverity,
   FindingStatus,
   HumanDecision,
+  InputSource,
   ReviewCoverage,
   ReviewCase,
   ReviewFinding,
@@ -99,16 +103,16 @@ function ReviewWorkspace() {
   const [gate, setGate] = useState<ReviewGateResult | null>(null);
   const [version, setVersion] = useState<ReviewVersion | null>(null);
   const [findings, setFindings] = useState<ReviewFinding[]>([]);
+  const [evidence, setEvidence] = useState<ExtractedEvidence[]>([]);
+  const [sources, setSources] = useState<InputSource[]>([]);
   const [coverage, setCoverage] = useState<ReviewCoverage | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkResult, setBulkResult] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     domain: "" as string,
     level: "" as string,
     status: "" as FindingStatus | "",
-    severity: "" as FindingSeverity | "",
-    humanDecision: "" as HumanDecision | "pending" | "",
+    severity: "action_required_before_goal_approval" as FindingSeverity | "",
+    humanDecision: "pending" as HumanDecision | "pending" | "",
   });
   const [drift, setDrift] = useState<{ drifted: boolean; reason: string | null }>({
     drifted: false,
@@ -124,6 +128,8 @@ function ReviewWorkspace() {
     const cur = services.versions.currentVersion(caseId);
     setVersion(cur);
     setFindings(services.versions.findingsFor(caseId, cur?.versionId));
+    setEvidence(store.extractedEvidence.filter((item) => item.reviewCaseId === caseId));
+    setSources(store.sources.filter((source) => source.reviewCaseId === caseId));
     setCoverage(services.coverage.compute(caseId, cur?.versionId));
     setDrift(services.versions.detectDrift(caseId));
   }, [caseId, services]);
@@ -191,39 +197,6 @@ function ReviewWorkspace() {
       f.automatedSeverity === "action_required_before_goal_approval",
   );
 
-  // Explicit, human-initiated bulk decision: accepts the engine's outcome
-  // as-is for every blocking finding. It is still a recorded human decision
-  // per finding — no automatic judgment is issued.
-  const acceptAllCritical = async () => {
-    setError(null);
-    setBulkResult(null);
-    setBulkBusy(true);
-    try {
-      services.human.applyDecisions(
-        criticalPending.map((f) => ({ findingId: f.findingId, decision: "accept" as const })),
-      );
-      await Promise.resolve();
-      refresh();
-      const current = services.versions.currentVersion(caseId);
-      const fresh = services.versions.findingsFor(caseId, current?.versionId);
-      const remaining = fresh.filter(
-        (f) =>
-          !f.isStale &&
-          f.humanReviewStatus === "pending" &&
-          f.automatedSeverity === "action_required_before_goal_approval",
-      );
-      setBulkResult(
-        remaining.length === 0
-          ? `حُفظت ${criticalPending.length} قرارات بنجاح. يمكن الآن ختم المراجعة.`
-          : `حُفظت القرارات، وما زالت ${remaining.length} نتائج حرجة دون قرار.`,
-      );
-    } catch (e) {
-      setError(reviewErrorAr((e as Error).message));
-    } finally {
-      setBulkBusy(false);
-    }
-  };
-
   const filtered = findings.filter((f) => {
     if (filters.domain && f.domainId !== filters.domain) return false;
     if (filters.level && f.reviewLevel !== filters.level) return false;
@@ -238,6 +211,8 @@ function ReviewWorkspace() {
       return false;
     return true;
   });
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const sourceById = new Map(sources.map((source) => [source.id, source]));
 
   return (
     <WorkflowShell caseId={caseId} currentStep="review" width="wide">
@@ -302,8 +277,8 @@ function ReviewWorkspace() {
                 قرارات مطلوبة قبل ختم المراجعة: {criticalPending.length}
               </p>
               <p className="mt-1">
-                هذه ملاحظات تتطلب قرارًا صريحًا منك. راجعها واحدة واحدة، أو اعتمد نتيجة المحرك لها
-                جميعًا بقرار واحد مسجَّل باسمك.
+                راجع كل ملاحظة مع هدفها أو دليلها الأصلي، ثم أصدر قرارًا مستقلًا عليها. لا يعتمد
+                النظام هذه القرارات جماعيًا.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -322,26 +297,8 @@ function ReviewWorkspace() {
                 >
                   عرض الملاحظات المطلوبة
                 </button>
-                <button
-                  type="button"
-                  data-testid="accept-all-critical"
-                  onClick={acceptAllCritical}
-                  disabled={bulkBusy}
-                  className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
-                >
-                  {bulkBusy ? "جارٍ حفظ القرارات…" : "اعتماد نتيجة المحرك لجميع الملاحظات المطلوبة"}
-                </button>
               </div>
             </section>
-          )}
-          {bulkResult && (
-            <p
-              role="status"
-              data-testid="bulk-decision-result"
-              className="mb-4 text-sm text-muted-foreground"
-            >
-              {bulkResult}
-            </p>
           )}
           <section className="mb-4 rounded-md border border-border p-4">
             <div className="flex items-center justify-between">
@@ -387,7 +344,6 @@ function ReviewWorkspace() {
                 onClick={completeReview}
                 disabled={
                   readOnly ||
-                  bulkBusy ||
                   drift.drifted ||
                   criticalPending.length > 0 ||
                   Boolean(version.completedAt)
@@ -547,23 +503,28 @@ function ReviewWorkspace() {
       )}
 
       <ul className="space-y-3">
-        {filtered.map((f) => (
-          <FindingCard
-            key={f.findingId}
-            finding={f}
-            criterion={services.registry.criterion(f.criterionId)}
-            readOnly={readOnly}
-            onDecide={(input) => {
-              setError(null);
-              try {
-                services.human.applyDecision(input);
-                refresh();
-              } catch (e) {
-                setError((e as Error).message);
-              }
-            }}
-          />
-        ))}
+        {filtered.map((f) => {
+          const goalEvidence = resolveFindingGoalEvidence(f, evidenceById);
+          return (
+            <FindingCard
+              key={f.findingId}
+              finding={f}
+              criterion={services.registry.criterion(f.criterionId)}
+              goalEvidence={goalEvidence}
+              goalSource={goalEvidence ? (sourceById.get(goalEvidence.sourceId) ?? null) : null}
+              readOnly={readOnly}
+              onDecide={(input) => {
+                setError(null);
+                try {
+                  services.human.applyDecision(input);
+                  refresh();
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+            />
+          );
+        })}
       </ul>
 
       <StageFooter
@@ -597,11 +558,15 @@ function Kpi({ label, value }: { label: string; value: number }) {
 function FindingCard({
   finding: f,
   criterion,
+  goalEvidence,
+  goalSource,
   readOnly,
   onDecide,
 }: {
   finding: ReviewFinding;
   criterion: CriterionRecord | null;
+  goalEvidence: ExtractedEvidence | null;
+  goalSource: InputSource | null;
   readOnly: boolean;
   onDecide: (input: {
     findingId: string;
@@ -625,7 +590,7 @@ function FindingCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span className="me-2 rounded-full border border-border px-2 py-0.5 text-xs">
-            {f.criterionId}
+            معيار المراجعة {f.criterionId}
           </span>
           <span className="text-xs text-muted-foreground">
             {DOMAIN_LABELS_AR[f.domainId] ?? f.domainId} · {f.reviewLevel}
@@ -654,6 +619,9 @@ function FindingCard({
       </div>
       {criterion && (
         <p className="mt-1 text-sm font-medium">{criterion.reviewQuestion || criterion.nameAr}</p>
+      )}
+      {f.targetType === "plan_goal" && (
+        <GoalContextDisclosure evidence={goalEvidence} source={goalSource} />
       )}
       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span>
@@ -690,6 +658,9 @@ function FindingCard({
           returnFocusTo={openerRef}
         >
           <div className="space-y-3 text-xs">
+            {f.targetType === "plan_goal" && (
+              <GoalDecisionContext evidence={goalEvidence} source={goalSource} />
+            )}
             <div>
               <div className="font-medium">تفسير النتيجة</div>
               <p className="mt-1 text-muted-foreground">{f.rationale}</p>
@@ -794,5 +765,119 @@ function FindingCard({
         </ResponsivePanel>
       )}
     </li>
+  );
+}
+
+function GoalContextDisclosure({
+  evidence,
+  source,
+}: {
+  evidence: ExtractedEvidence | null;
+  source: InputSource | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const disclosureId = useId();
+  const tooltipId = useId();
+
+  if (!evidence) {
+    return (
+      <p
+        role="alert"
+        data-testid="goal-context-missing"
+        className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900"
+      >
+        تعذّر ربط هذه النتيجة بنص الهدف الأصلي. لا تتخذ قرارًا قبل مراجعة الاستخراج.
+      </p>
+    );
+  }
+
+  const preview =
+    evidence.exactQuote.length > 110
+      ? `${evidence.exactQuote.slice(0, 107).trimEnd()}…`
+      : evidence.exactQuote;
+
+  return (
+    <div className="mt-3 rounded-md border border-sky-200 bg-sky-50/60 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold text-sky-950">الهدف محل القرار</div>
+          <div className="group relative mt-1 inline-block max-w-full">
+            <button
+              type="button"
+              data-testid="goal-context-trigger"
+              aria-expanded={expanded}
+              aria-controls={disclosureId}
+              aria-describedby={tooltipId}
+              title={evidence.exactQuote}
+              onClick={() => setExpanded((value) => !value)}
+              className="max-w-full rounded-sm text-start text-sm font-medium text-foreground underline decoration-sky-400 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            >
+              {preview}
+            </button>
+            <span
+              id={tooltipId}
+              role="tooltip"
+              data-testid="goal-context-tooltip"
+              className="pointer-events-none absolute end-0 top-full z-20 mt-2 hidden w-80 max-w-[80vw] rounded-md bg-slate-950 p-3 text-start text-xs leading-6 text-white shadow-lg group-hover:block group-focus-within:block"
+            >
+              النص الأصلي في الخطة: {evidence.exactQuote}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="shrink-0 rounded-md border border-sky-300 bg-background px-2 py-1 text-xs hover:bg-sky-100"
+        >
+          {expanded ? "إخفاء النص" : "فتح الهدف"}
+        </button>
+      </div>
+      {expanded && (
+        <div
+          id={disclosureId}
+          data-testid="goal-context-expanded"
+          className="mt-3 border-t border-sky-200 pt-3"
+        >
+          <blockquote className="border-e-2 border-sky-500 pe-3 text-sm leading-7">
+            {evidence.exactQuote}
+          </blockquote>
+          <p className="mt-2 text-xs text-muted-foreground">
+            من الخطة الأصلية{source?.fileName ? `: ${source.fileName}` : ""} ·{" "}
+            {locatorLabelAr(evidence.locator)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GoalDecisionContext({
+  evidence,
+  source,
+}: {
+  evidence: ExtractedEvidence | null;
+  source: InputSource | null;
+}) {
+  if (!evidence) {
+    return (
+      <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+        نص الهدف الأصلي غير متاح. ارجع إلى استخراج الأدلة قبل إصدار القرار.
+      </div>
+    );
+  }
+
+  return (
+    <section
+      data-testid="goal-context-in-decision"
+      className="rounded-md border border-sky-200 bg-sky-50/60 p-3"
+    >
+      <div className="font-semibold text-sky-950">الهدف الذي سيُطبّق عليه القرار</div>
+      <blockquote className="mt-2 border-e-2 border-sky-500 pe-3 text-sm leading-7">
+        {evidence.exactQuote}
+      </blockquote>
+      <p className="mt-2 text-muted-foreground">
+        المصدر{source?.fileName ? `: ${source.fileName}` : ""} · {locatorLabelAr(evidence.locator)}
+      </p>
+    </section>
   );
 }
