@@ -92,6 +92,10 @@ const REVIEW_ERROR_AR: Array<[string, string]> = [
     "system classifications still require acknowledgement",
     "لا يمكن ختم المراجعة: راجع التصنيفات النظامية وأقرّ بها أولًا.",
   ],
+  [
+    "unresolved goal context",
+    "لا يمكن اعتماد المراجعة: يوجد رمز هدف غير مربوط بنصه الأصلي المؤكد.",
+  ],
   ["scope needs reconfirmation", "لا يمكن ختم المراجعة: النطاق يحتاج إلى إعادة تأكيد."],
   ["No active review version", "لم يُشغَّل محرك المراجعة بعد."],
   ["Case is closed", "الحالة مغلقة — العرض للقراءة فقط."],
@@ -184,23 +188,19 @@ function ReviewWorkspace() {
 
   const completeReview = async () => {
     setError(null);
+    setBulkResult(null);
+    setBulkBusy(true);
     try {
-      refresh();
-      await Promise.resolve();
       const freshVersion = services.versions.currentVersion(caseId);
-      const freshFindings = services.versions.findingsFor(caseId, freshVersion?.versionId);
-      const blocking = freshFindings.filter((f) => !f.isStale && f.humanReviewStatus === "pending");
-      if (blocking.length > 0) {
-        setError(
-          `لا يمكن ختم المراجعة: ما زالت ${blocking.length === 1 ? "نتيجة واحدة" : `${blocking.length} نتائج`} دون تسوية موثقة.`,
-        );
-        refresh();
-        return;
-      }
+      if (!freshVersion) throw new Error("No active review version");
+      services.human.attestReviewResults(caseId, freshVersion.versionId);
       services.versions.completeHumanReview(caseId);
       refresh();
+      setBulkResult("تم تسجيل المراجعة الشاملة وختم النسخة الحالية.");
     } catch (e) {
       setError(reviewErrorAr((e as Error).message));
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -212,8 +212,9 @@ function ReviewWorkspace() {
     isSystemClassificationStatus(f.automatedStatus),
   );
 
-  // Critical findings remain visually prioritised, but every professional
-  // finding now requires a decision before completion.
+  // Critical findings remain visually prioritised for inspection. The
+  // reviewer may edit or exclude any result, while one final attestation
+  // accepts every remaining result as displayed.
   const criticalPending = findings.filter(
     (f) =>
       !f.isStale &&
@@ -237,33 +238,9 @@ function ReviewWorkspace() {
     setTaskView(view);
   };
 
-  const acknowledgeSystemClassifications = async () => {
-    if (!version) return;
-    setError(null);
-    setBulkResult(null);
-    setBulkBusy(true);
-    try {
-      const acknowledged = services.human.acknowledgeSystemClassifications(
-        caseId,
-        version.versionId,
-      );
-      await Promise.resolve();
-      refresh();
-      setBulkResult(
-        acknowledged.length > 0
-          ? `تم تسجيل الإقرار على ${acknowledged.length} تصنيفًا نظاميًا وإدراجها ضمن سجل التقرير.`
-          : "لا توجد تصنيفات نظامية معلقة.",
-      );
-    } catch (e) {
-      setError(reviewErrorAr((e as Error).message));
-    } finally {
-      setBulkBusy(false);
-    }
-  };
-
   const taskFindings = findings.filter((f) => {
     if (taskView === "professional") {
-      return f.humanReviewStatus === "pending" && !isSystemClassificationStatus(f.automatedStatus);
+      return !isSystemClassificationStatus(f.automatedStatus);
     }
     if (taskView === "system") return isSystemClassificationStatus(f.automatedStatus);
     if (taskView === "completed") return f.humanReviewStatus === "decided";
@@ -291,19 +268,15 @@ function ReviewWorkspace() {
         caseCodeAr={c.referenceCode}
         titleAr="مساحة المراجعة المهنية"
         stepIndicatorAr="الخطوة 6 من 8"
-        descriptionAr="تشغيل محرك المراجعة الحتمي، ثم إصدار قرارات مهنية على النتائج."
+        descriptionAr="تشغيل محرك المراجعة الحتمي، ثم مراجعة الملاحظات قبل اعتمادها مرة واحدة."
         requiredNowAr={
           readOnly
             ? "عرض للقراءة فقط."
             : !version
               ? "شغّل محرك المراجعة لبدء العمل."
-              : professionalPending.length > 0
-                ? `أصدر قرارًا مهنيًا على ${professionalPending.length} نتيجة.`
-                : systemPending.length > 0
-                  ? `راجع ${systemPending.length} تصنيفًا نظاميًا ثم سجّل إقرارك.`
-                  : version.completedAt
-                    ? "اكتملت المراجعة — انتقل إلى التقرير."
-                    : "جميع النتائج مسوّاة — اختم المراجعة."
+              : version.completedAt
+                ? "اكتملت المراجعة — انتقل إلى التقرير."
+                : "راجع النتائج، وعدّل الاستثناءات عند الحاجة، ثم اعتمد المراجعة مرة واحدة."
         }
         statusLabelAr={readOnly ? "للقراءة فقط" : "نشطة"}
         statusVariant={readOnly ? "locked" : "info"}
@@ -356,7 +329,7 @@ function ReviewWorkspace() {
             <div>
               <h2 className="text-lg font-semibold">المهام المطلوبة الآن</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                اعمل على نوع واحد من النتائج في كل مرة. لا يمكن للفلاتر المتقدمة تغيير أعداد المهام.
+                راجع الملاحظات وحدود التغطية. لا يلزم إصدار قرار منفصل على كل هدف أو نتيجة.
               </p>
             </div>
             <div className="text-xs text-muted-foreground">
@@ -371,16 +344,18 @@ function ReviewWorkspace() {
           >
             <TaskViewButton
               active={taskView === "professional"}
-              label="قرارات مهنية"
-              value={professionalPending.length}
+              label="ملاحظات المراجعة"
+              value={
+                findings.filter((f) => !isSystemClassificationStatus(f.automatedStatus)).length
+              }
               attention={criticalPending.length > 0}
               onClick={() => showTaskView("professional")}
               testId="review-view-professional"
             />
             <TaskViewButton
               active={taskView === "system"}
-              label="تصنيفات نظامية"
-              value={systemPending.length}
+              label="حدود التغطية"
+              value={findings.filter((f) => isSystemClassificationStatus(f.automatedStatus)).length}
               onClick={() => showTaskView("system")}
               testId="review-view-system"
             />
@@ -411,12 +386,12 @@ function ReviewWorkspace() {
             >
               <p className="font-semibold">
                 {criticalPending.length > 0
-                  ? `${criticalPending.length} نتائج حرجة تتطلب قرارًا فرديًا`
-                  : `${professionalPending.length} نتائج مهنية تتطلب قرارًا`}
+                  ? `${criticalPending.length} ملاحظات جوهرية تستحق مراجعة دقيقة`
+                  : `${professionalPending.length} ملاحظات جاهزة للمراجعة`}
               </p>
               <p className="mt-1 text-xs">
-                افتح كل نتيجة، راجع الهدف والدليل، ثم أصدر قرارك. لا يعتمد النظام النتائج الحرجة
-                جماعيًا.
+                يظهر نص الهدف الأصلي مع كل ملاحظة مرتبطة به. عدّل أو استبعد الملاحظة عند الحاجة؛ وما
+                يبقى كما هو سيشمله الاعتماد الشامل أدناه.
               </p>
               {criticalPending.length > 0 && (
                 <button
@@ -445,27 +420,22 @@ function ReviewWorkspace() {
               data-testid="system-classification-banner"
               className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-3 text-sm text-slate-900"
             >
-              <p className="font-semibold">راجع التصنيفات النظامية قبل الإقرار</p>
+              <p className="font-semibold">حدود التغطية المسجلة آليًا</p>
               <p className="mt-1 text-xs">
                 غير قابلة للمراجعة: {coverage.notReviewableCount} · غير منطبقة:{" "}
-                {coverage.notApplicableCount}. سيُحفظ كل عنصر في التقرير أو سجل الاستبعاد.
+                {coverage.notApplicableCount}. لا تتطلب هذه العناصر قرارات منفصلة؛ تُحفظ ضمن حدود
+                التقرير وسجل المراجعة.
               </p>
-              <button
-                type="button"
-                data-testid="acknowledge-system-classifications"
-                onClick={acknowledgeSystemClassifications}
-                disabled={bulkBusy}
-                className="mt-2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {bulkBusy ? "جارٍ تسجيل الإقرار…" : "راجعت التصنيفات وأقرّ بها"}
-              </button>
             </div>
           )}
 
-          {!readOnly && pendingFindings.length === 0 && !version.completedAt && (
+          {!readOnly && !version.completedAt && (
             <div className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-950">
-              <p className="font-semibold">تمت تسوية جميع النتائج</p>
-              <p className="mt-1 text-xs">اختم نسخة المراجعة الحالية قبل الانتقال إلى التقرير.</p>
+              <p className="font-semibold">المراجعة البشرية الشاملة</p>
+              <p className="mt-1 text-xs">
+                بتأكيدك، تُعتمد النتائج المتبقية كما تظهر الآن، مع الاحتفاظ بأي تعديل أو استبعاد سبق
+                تسجيله، ثم تُختم نسخة المراجعة للانتقال إلى التقرير.
+              </p>
               <button
                 type="button"
                 onClick={completeReview}
@@ -473,7 +443,7 @@ function ReviewWorkspace() {
                 data-testid="complete-review-btn"
                 className="mt-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                ختم المراجعة
+                {bulkBusy ? "جارٍ اعتماد المراجعة…" : "راجعت النتائج واعتمدت مخرجات المراجعة"}
               </button>
             </div>
           )}
@@ -511,14 +481,20 @@ function ReviewWorkspace() {
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
               <Kpi label="معايير نشطة" value={coverage.activeCriteriaCount} />
               <Kpi label="مراجَعة" value={coverage.reviewedCriteriaCount} />
-              <Kpi label="بانتظار قرار" value={coverage.pendingHumanDecisionCount} />
+              <Kpi label="يشملها الاعتماد الشامل" value={coverage.pendingHumanDecisionCount} />
               <Kpi label="غير قابلة للمراجعة" value={coverage.notReviewableCount} />
               <Kpi label="غير منطبقة" value={coverage.notApplicableCount} />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 text-xs md:grid-cols-3">
               <Kpi label="تصنيفات نظامية" value={coverage.systemClassificationCount} />
-              <Kpi label="تم الإقرار بها" value={coverage.systemClassificationAcknowledgedCount} />
-              <Kpi label="تنتظر الإقرار" value={coverage.systemClassificationPendingCount} />
+              <Kpi
+                label="سُجلت ضمن مراجعة سابقة"
+                value={coverage.systemClassificationAcknowledgedCount}
+              />
+              <Kpi
+                label="يشملها الاعتماد الشامل"
+                value={coverage.systemClassificationPendingCount}
+              />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
               <Kpi label="اعتماد" value={coverage.acceptedCount} />
@@ -544,8 +520,8 @@ function ReviewWorkspace() {
             </div>
             {pendingFindings.length > 0 && (
               <p className="mt-2 text-xs text-amber-800" data-testid="complete-blocked-reason">
-                لا يمكن ختم المراجعة قبل تسوية {pendingFindings.length} نتيجة:{" "}
-                {professionalPending.length} قرارًا مهنيًا و{systemPending.length} تصنيفًا نظاميًا.
+                ستشمل المراجعة الواحدة {pendingFindings.length} نتيجة متبقية كما تظهر حاليًا:{" "}
+                {professionalPending.length} ملاحظة و{systemPending.length} عنصرًا من حدود التغطية.
               </p>
             )}
           </details>
@@ -573,7 +549,7 @@ function ReviewWorkspace() {
                 onClick={() => showTaskView("professional")}
                 className="rounded-md border border-input px-2 py-1 hover:bg-accent"
               >
-                القرارات المطلوبة
+                ملاحظات المراجعة
               </button>
               <button
                 type="button"
@@ -646,8 +622,8 @@ function ReviewWorkspace() {
                   })
                 }
               >
-                <option value="">كل قرارات المراجع</option>
-                <option value="pending">بانتظار قرار</option>
+                <option value="">كل معالجات المراجع</option>
+                <option value="pending">يشملها الاعتماد الشامل</option>
                 {(Object.keys(HUMAN_DECISION_LABELS_AR) as HumanDecision[]).map((k) => (
                   <option key={k} value={k}>
                     {HUMAN_DECISION_LABELS_AR[k]}
@@ -671,25 +647,27 @@ function ReviewWorkspace() {
           className="mb-4 rounded-md border border-dashed border-border p-4 text-sm"
         >
           <p className="font-medium">
-            {taskView === "professional" && professionalPending.length === 0
-              ? "اكتملت جميع القرارات المهنية."
+            {taskView === "professional" && taskFindings.length === 0
+              ? "لا توجد ملاحظات مهنية ضمن هذه النسخة."
               : "لا توجد نتائج ظاهرة ضمن العرض الحالي."}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {taskView === "professional" && systemPending.length > 0
-              ? "الخطوة التالية هي مراجعة التصنيفات النظامية والإقرار بها."
+            {taskView === "professional" && taskFindings.length === 0 && systemPending.length > 0
+              ? "يمكنك الاطلاع على حدود التغطية، ثم اعتماد المراجعة مرة واحدة."
               : "قد تكون خيارات التصفية المتقدمة هي التي أخفت النتائج."}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {taskView === "professional" && systemPending.length > 0 && (
-              <button
-                type="button"
-                onClick={() => showTaskView("system")}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground"
-              >
-                التالي: مراجعة التصنيفات النظامية
-              </button>
-            )}
+            {taskView === "professional" &&
+              taskFindings.length === 0 &&
+              systemPending.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => showTaskView("system")}
+                  className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground"
+                >
+                  التالي: مراجعة التصنيفات النظامية
+                </button>
+              )}
             <button
               type="button"
               onClick={resetAdvancedFilters}
@@ -741,7 +719,7 @@ function ReviewWorkspace() {
             : drift.drifted
               ? "أعد تشغيل المحرك بعد تغيّر الأدلة."
               : !version.completedAt
-                ? "أكمل جميع القرارات والإقرارات ثم اختم المراجعة."
+                ? "راجع النتائج ثم اعتمد مخرجات المراجعة مرة واحدة."
                 : undefined
         }
       />
@@ -847,7 +825,7 @@ function FindingCard({
           {f.humanDecision ? (
             <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5">
               {systemClassification
-                ? "تم الإقرار بالتصنيف"
+                ? "شملها اعتماد المراجعة"
                 : HUMAN_DECISION_LABELS_AR[f.humanDecision]}
             </span>
           ) : (
@@ -855,7 +833,7 @@ function FindingCard({
               className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-900"
               data-testid="finding-awaiting-decision"
             >
-              بانتظار قرار المراجع
+              {systemClassification ? "مسجل ضمن حدود التغطية" : "سيشمله الاعتماد الشامل"}
             </span>
           )}
         </div>
@@ -869,6 +847,8 @@ function FindingCard({
             type="button"
             data-testid="goal-context-trigger"
             aria-expanded={goalExpanded}
+            aria-label={`عرض نص الهدف الأصلي: ${goalEvidence.exactQuote}`}
+            title={goalEvidence.exactQuote}
             onClick={() => setGoalExpanded((expanded) => !expanded)}
             className="w-full rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-start text-xs text-sky-950 hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
           >
@@ -900,7 +880,7 @@ function FindingCard({
           data-testid="goal-context-missing"
           className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-950"
         >
-          تعذّر ربط رمز الهدف بالنص الأصلي المؤكد في الخطة. لا تصدر قرارًا قبل مراجعة الاستخراج.
+          تعذّر ربط رمز الهدف بالنص الأصلي المؤكد في الخطة. لا تعتمد المراجعة قبل تصحيح الربط.
         </p>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -918,12 +898,12 @@ function FindingCard({
           onClick={() => setOpen(true)}
           className="rounded-md border border-input px-2 py-1 text-xs text-foreground hover:bg-accent"
         >
-          {systemClassification ? "عرض السبب والسياق" : "مراجعة وإصدار القرار"}
+          {systemClassification ? "عرض السبب والسياق" : "عرض الملاحظة أو تعديلها"}
         </button>
       </div>
       {f.isStale && (
         <p className="mt-2 text-xs text-amber-800" data-testid="finding-stale-note">
-          هذه النتيجة قديمة — أعد تشغيل المحرك قبل اتخاذ قرار.
+          هذه النتيجة قديمة — أعد تشغيل المحرك قبل اعتماد المراجعة.
         </p>
       )}
 
@@ -943,7 +923,7 @@ function FindingCard({
                 data-testid="goal-context-in-decision"
                 className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sky-950"
               >
-                <div className="font-semibold">الهدف الأصلي محل القرار</div>
+                <div className="font-semibold">الهدف الأصلي المرتبط بالملاحظة</div>
                 <p className="mt-1 leading-6">{goalEvidence.exactQuote}</p>
                 <p className="mt-1 text-sky-800">
                   {goalSourceName ?? "ملف الخطة"} · {locatorLabelAr(goalEvidence.locator)}
@@ -952,7 +932,7 @@ function FindingCard({
             )}
             {f.targetType === "plan_goal" && !goalEvidence && (
               <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950">
-                تعذّر إظهار النص الأصلي للهدف. ارجع إلى استخراج الأدلة قبل اتخاذ القرار.
+                تعذّر إظهار النص الأصلي للهدف. ارجع إلى استخراج الأدلة قبل اعتماد المراجعة.
               </div>
             )}
             <div>
@@ -987,11 +967,15 @@ function FindingCard({
               <p className="text-amber-800">أعد تشغيل المحرك لتحديث النتيجة قبل القرار.</p>
             ) : systemClassification && f.humanReviewStatus === "pending" ? (
               <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-slate-800">
-                هذا تصنيف نظامي لا يمثل حكمًا مهنيًا. راجع السبب والسياق، ثم استخدم الإقرار الجماعي
-                من تبويب «تصنيفات نظامية».
+                هذا تصنيف آلي لحدود التغطية وليس حكمًا مهنيًا مستقلًا. سيُسجل ضمن المراجعة الشاملة
+                دون أن يطلب منك قرارًا منفصلًا.
               </p>
             ) : (
               <div className="space-y-2 rounded-md border border-border/60 p-2">
+                <p className="text-muted-foreground">
+                  التعديل أو الاستبعاد اختياري عند الحاجة. إذا تركت الملاحظة كما هي فسيشملها
+                  الاعتماد الشامل.
+                </p>
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   <select
                     data-autofocus
