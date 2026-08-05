@@ -9,7 +9,6 @@ import {
   IngestionService,
   StageFooter,
   StageHeader,
-  CollapsibleSection,
   ResponsivePanel,
   SOURCE_TYPE_LABELS_AR,
   getDefaultPlanFileStorage,
@@ -58,6 +57,7 @@ function IngestionPage() {
   const activeOpenerRef = useRef<HTMLElement | null>(null);
   const autoRanRef = useRef(false);
   const [autoRunning, setAutoRunning] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const refresh = async () => {
     const svc = new CaseService();
@@ -184,6 +184,9 @@ function IngestionPage() {
     a.type === "plan" ? -1 : b.type === "plan" ? 1 : 0;
   const activeSources = [...sources].filter((s) => !isSettled(s)).sort(planFirst);
   const settledSources = [...sources].filter(isSettled).sort(planFirst);
+  const attentionSources = activeSources.filter(
+    (s) => s.extractionStage === "failed" || s.extractionStage === "text_unavailable",
+  );
   const previewSource = openPreview ? (sources.find((s) => s.id === openPreview) ?? null) : null;
 
   const renderSourceCard = (s: InputSource) => {
@@ -328,44 +331,82 @@ function IngestionPage() {
         </div>
       ) : (
         <>
-          <section
-            className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3"
-            data-testid="ingestion-counters"
-          >
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
-              <div className="text-xs text-muted-foreground">ملفات تمت قراءتها</div>
-              <div className="mt-1 text-lg font-semibold">{counts.ready}</div>
-            </div>
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
-              <div className="text-xs text-muted-foreground">بانتظار القراءة</div>
-              <div className="mt-1 text-lg font-semibold">{counts.pending}</div>
-            </div>
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
-              <div className="text-xs text-muted-foreground">تحتاج انتباهًا</div>
-              <div className="mt-1 text-lg font-semibold">{counts.attention}</div>
-            </div>
-          </section>
-
-          {activeSources.length === 0 ? (
-            <p
-              className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground"
-              data-testid="ingestion-all-settled"
+          {(autoRunning || counts.pending > 0) && (
+            <div
+              className="mb-4 flex items-center gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+              role="status"
             >
-              كل المصادر جاهزة أو تمّت معالجتها.
-            </p>
-          ) : (
-            <ul className="space-y-3">{activeSources.map(renderSourceCard)}</ul>
+              <span
+                aria-hidden="true"
+                className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500"
+              />
+              جارٍ قراءة محتوى الخطة تلقائيًا…
+            </div>
           )}
 
-          {settledSources.length > 0 && (
-            <CollapsibleSection
-              className="mt-4"
-              titleAr={`مصادر مكتملة (${settledSources.length})`}
-              hintAr="تفاصيل ثانوية"
-              data-testid="ingestion-settled-section"
+          {attentionSources.length > 0 && (
+            <section className="mb-4" aria-labelledby="attention-title">
+              <h2 id="attention-title" className="mb-2 text-base font-semibold">
+                مطلوب منك معالجة {attentionSources.length} من الملفات
+              </h2>
+              <ul className="space-y-3">{attentionSources.map(renderSourceCard)}</ul>
+            </section>
+          )}
+
+          {activeSources.length === 0 && (
+            <div
+              className="mb-4 flex items-center gap-2 text-sm text-emerald-800"
+              data-testid="ingestion-all-settled"
             >
-              <ul className="space-y-3">{settledSources.map(renderSourceCard)}</ul>
-            </CollapsibleSection>
+              <span
+                aria-hidden="true"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700"
+              >
+                ✓
+              </span>
+              تمت قراءة الخطة وأصبحت جاهزة للمراجعة.
+            </div>
+          )}
+
+          <button
+            type="button"
+            data-testid="ingestion-details-toggle"
+            aria-expanded={detailsOpen}
+            aria-controls="ingestion-details"
+            onClick={() => setDetailsOpen((open) => !open)}
+            className="mt-2 text-sm text-primary underline underline-offset-4"
+          >
+            {detailsOpen ? "إخفاء تفاصيل القراءة" : "عرض تفاصيل القراءة"}
+          </button>
+
+          {detailsOpen && (
+            <div id="ingestion-details" className="mt-4 space-y-4">
+              <section
+                className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+                data-testid="ingestion-counters"
+              >
+                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+                  <div className="text-xs text-muted-foreground">ملفات تمت قراءتها</div>
+                  <div className="mt-1 text-lg font-semibold">{counts.ready}</div>
+                </div>
+                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+                  <div className="text-xs text-muted-foreground">بانتظار القراءة</div>
+                  <div className="mt-1 text-lg font-semibold">{counts.pending}</div>
+                </div>
+                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+                  <div className="text-xs text-muted-foreground">تحتاج انتباهًا</div>
+                  <div className="mt-1 text-lg font-semibold">{counts.attention}</div>
+                </div>
+              </section>
+              {settledSources.length > 0 && (
+                <section data-testid="ingestion-settled-section">
+                  <h2 className="mb-2 text-sm font-medium">
+                    الملفات المقروءة ({settledSources.length})
+                  </h2>
+                  <ul className="space-y-3">{settledSources.map(renderSourceCard)}</ul>
+                </section>
+              )}
+            </div>
           )}
         </>
       )}
@@ -400,6 +441,9 @@ function IngestionPage() {
         returnToCaseHref={`/cases/${caseId}`}
         continueLabelAr="مراجعة بنود الخطة"
         continueHref={`/cases/${caseId}/extraction`}
+        continueDisabled={activeSources.length > 0 || autoRunning}
+        continueDisabledReasonAr="انتظر اكتمال قراءة الخطة أو عالج الملفات التي تحتاج إلى انتباه."
+        continueHintAr="ستنتقل إلى تأكيد الأدلة المستخرجة من الخطة قبل تحديد نطاق المراجعة."
       />
     </WorkflowShell>
   );
