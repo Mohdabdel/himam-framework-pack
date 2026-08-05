@@ -13,6 +13,8 @@ export interface StageFooterProps {
   continueHref?: string;
   continueDisabled?: boolean;
   continueDisabledReasonAr?: string;
+  continueHintAr?: string;
+  continueTestId?: string;
 }
 
 export function StageFooter({
@@ -25,6 +27,8 @@ export function StageFooter({
   continueHref,
   continueDisabled,
   continueDisabledReasonAr,
+  continueHintAr,
+  continueTestId,
 }: StageFooterProps) {
   const nextActionLabel = continueLabelAr
     .replace(/^التالي\s*[:：-]?\s*/, "")
@@ -55,6 +59,8 @@ export function StageFooter({
     href: continueHref,
     disabled: continueDisabled,
     disabledReasonAr: continueDisabledReasonAr,
+    hintAr: continueHintAr,
+    "data-testid": continueTestId,
   });
   return <PrimaryActionsBar actions={actions} align="between" />;
 }
