@@ -29,8 +29,8 @@ function isLocked(s: JourneyStepStatus | undefined): boolean {
   return !s || s.state === "not_started";
 }
 
-// Compact 8-step indicator: horizontal chips on desktop, a single
-// "الخطوة X من 8" line plus an expandable list on mobile.
+// The journey is progressive disclosure: identity is always visible, while
+// the complete stage map stays closed until the user explicitly requests it.
 export function WorkflowShell({
   caseId,
   currentStep,
@@ -43,7 +43,6 @@ export function WorkflowShell({
   const { loading, reviewCase, statuses, nextAction } = useCaseJourney(caseId);
   const [stepsOpen, setStepsOpen] = useState(false);
   const index = journeyStepIndex(currentStep);
-  const current = JOURNEY_STEPS[index];
   const currentStatus = statuses[index];
   const locked = guard && !loading && !!reviewCase && isLocked(currentStatus);
 
@@ -84,61 +83,44 @@ export function WorkflowShell({
           </div>
         </div>
 
-        {/* Mobile: compact current-step line + expandable list */}
-        <div className="border-t border-border px-4 py-3 md:hidden">
+        <div className="border-t border-border px-4 py-2.5">
           <button
             type="button"
             onClick={() => setStepsOpen((o) => !o)}
             aria-expanded={stepsOpen}
-            className="min-h-11 flex w-full items-center justify-between gap-2 text-start"
-            data-testid="workflow-steps-mobile"
+            aria-controls="workflow-steps-list"
+            className="min-h-11 inline-flex items-center gap-2 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            data-testid="workflow-steps-toggle"
           >
-            <span className="text-sm font-medium">
-              الخطوة {index + 1} من 8 — {current.labelAr}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {stepsOpen ? "إخفاء الخطوات" : "عرض الخطوات"}
-            </span>
+            <span>{stepsOpen ? "إخفاء مراحل المراجعة" : "إظهار مراحل المراجعة"}</span>
+            <span aria-hidden>{stepsOpen ? "⌃" : "⌄"}</span>
           </button>
           {stepsOpen && (
-            <ol className="mt-3 space-y-1.5" data-testid="workflow-steps-list">
+            <ol
+              id="workflow-steps-list"
+              className="mt-2 flex flex-wrap items-center gap-1.5"
+              data-testid="workflow-steps-list"
+              aria-label="مسار المراجعة — 8 خطوات"
+            >
               {JOURNEY_STEPS.map((s, i) => (
-                <li key={s.id}>
+                <li key={s.id} className="flex items-center gap-1.5">
                   <StepIndicator
                     stepId={s.id}
                     labelAr={`${i + 1}. ${s.labelAr}`}
                     active={i === index}
                     status={statuses[i]}
-                    block
+                    hintAr={s.id === nextAction?.stepId ? nextAction.stateSummaryAr : undefined}
                   />
+                  {i < JOURNEY_STEPS.length - 1 && (
+                    <span aria-hidden className="text-muted-foreground/50">
+                      ‹
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>
           )}
         </div>
-
-        {/* Desktop: horizontal compact chips */}
-        <ol
-          className="hidden flex-wrap items-center gap-1.5 border-t border-border px-4 py-2.5 md:flex"
-          data-testid="workflow-steps-desktop"
-          aria-label="مسار المراجعة — 8 خطوات"
-        >
-          {JOURNEY_STEPS.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-1.5">
-              <StepIndicator
-                stepId={s.id}
-                labelAr={`${i + 1}. ${s.labelAr}`}
-                active={i === index}
-                status={statuses[i]}
-              />
-              {i < JOURNEY_STEPS.length - 1 && (
-                <span aria-hidden className="text-muted-foreground/50">
-                  ‹
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
       </div>
 
       {locked ? <Navigate to={target} params={{ caseId }} replace /> : children}
@@ -151,18 +133,17 @@ function StepIndicator({
   labelAr,
   active,
   status,
-  block,
+  hintAr,
 }: {
   stepId: JourneyStepId;
   labelAr: string;
   active: boolean;
   status?: JourneyStepStatus;
-  block?: boolean;
+  hintAr?: string;
 }) {
   const locked = isLocked(status);
   const base = cn(
     "min-h-11 inline-flex items-center gap-2 rounded-md border px-2.5 text-xs",
-    block && "w-full justify-between",
     active
       ? "border-primary bg-primary/10 font-semibold text-foreground"
       : locked
@@ -186,6 +167,7 @@ function StepIndicator({
       aria-current={active ? "step" : undefined}
       data-step-id={stepId}
       data-step-state={status?.state}
+      title={hintAr}
     >
       {inner}
     </span>
