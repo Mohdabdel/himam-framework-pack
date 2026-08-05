@@ -24,6 +24,14 @@ export type FindingSeverity =
 
 export type HumanReviewStatus = "pending" | "decided";
 
+export const SYSTEM_CLASSIFICATION_STATUSES = ["not_reviewable", "not_applicable"] as const;
+
+export function isSystemClassificationStatus(status: FindingStatus): boolean {
+  return SYSTEM_CLASSIFICATION_STATUSES.includes(
+    status as (typeof SYSTEM_CLASSIFICATION_STATUSES)[number],
+  );
+}
+
 export type HumanDecision = "accept" | "modify" | "reject" | "request_more_information" | "defer";
 
 // Why the engine activated this criterion for this case.
@@ -98,6 +106,9 @@ export interface ReviewVersion {
 export interface ReviewCoverage {
   activeCriteriaCount: number;
   reviewedCriteriaCount: number;
+  systemClassificationCount: number;
+  systemClassificationAcknowledgedCount: number;
+  systemClassificationPendingCount: number;
   notReviewableCount: number;
   notApplicableCount: number;
   pendingHumanDecisionCount: number;
@@ -127,6 +138,7 @@ export type ReportGateReason =
   | "extraction_not_confirmed"
   | "identity_conflict_unresolved"
   | "critical_findings_pending"
+  | "findings_pending_resolution"
   | "evidence_drift_detected"
   | "case_closed_read_only";
 
@@ -225,6 +237,9 @@ export interface GovernedReportCoverage {
   activeCriteriaCount: number;
   reviewedCriteriaCount: number;
   pendingHumanDecisionCount: number;
+  systemClassificationCount: number;
+  systemClassificationAcknowledgedCount: number;
+  systemClassificationPendingCount: number;
   acceptedCount: number;
   modifiedCount: number;
   rejectedCount: number;

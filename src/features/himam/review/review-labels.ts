@@ -76,6 +76,7 @@ export const REPORT_GATE_LABELS_AR: Record<string, string> = {
   extraction_not_confirmed: "تأكيد الأدلة لم يكتمل بعد.",
   identity_conflict_unresolved: "تعارض هوية لم يُقرَّ بعد.",
   critical_findings_pending: "توجد ملاحظات حرجة بدون قرار مراجع.",
+  findings_pending_resolution: "توجد نتائج لم تُسوَّ بقرار مهني أو إقرار نظامي.",
   evidence_drift_detected: "تغيّرت الأدلة المؤكدة بعد تشغيل المحرك.",
   case_closed_read_only: "الحالة مغلقة — عرض للقراءة فقط.",
 };
@@ -86,6 +87,7 @@ export const GATE_REASON_TARGET_STEP_AR: Record<string, { hrefSuffix: string; la
   review_not_completed: { hrefSuffix: "/review", labelAr: "الانتقال إلى المراجعة المهنية" },
   review_stale: { hrefSuffix: "/review", labelAr: "إعادة تشغيل المحرك في المراجعة" },
   critical_findings_pending: { hrefSuffix: "/review", labelAr: "استكمال قرارات المراجع" },
+  findings_pending_resolution: { hrefSuffix: "/review", labelAr: "استكمال تسوية نتائج المراجعة" },
   evidence_drift_detected: { hrefSuffix: "/review", labelAr: "إعادة تشغيل المحرك في المراجعة" },
   scope_needs_reconfirmation: { hrefSuffix: "/scope", labelAr: "الانتقال إلى نطاق المراجعة" },
   scope_not_confirmed: { hrefSuffix: "/scope", labelAr: "الانتقال إلى تأكيد نطاق المراجعة" },

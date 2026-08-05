@@ -1,5 +1,6 @@
 import { newAuditEvent } from "../audit/audit-service";
 import type { ReviewCaseRepository } from "../cases/case-repository";
+import { isSystemClassificationStatus } from "./review-types";
 import type { FindingSeverity, FindingStatus, HumanDecision, ReviewFinding } from "./review-types";
 
 export interface HumanReviewInput {
@@ -79,6 +80,65 @@ export class HumanReviewService {
 
   applyDecision(input: HumanReviewInput): ReviewFinding {
     return this.applyDecisions([input])[0];
+  }
+
+  /**
+   * One explicit human acknowledgement for classifications produced by the
+   * deterministic scope/review rules. The acknowledgement is stored on every
+   * affected finding so no item can disappear from the governed report, and a
+   * single aggregate audit event records the reviewer action.
+   */
+  acknowledgeSystemClassifications(
+    caseId: string,
+    versionId?: string,
+    actorId: string | null = null,
+  ): ReviewFinding[] {
+    const store = this.repo.load();
+    const c = store.cases.find((x) => x.id === caseId);
+    if (!c) throw new Error("Case not found");
+    if (c.status === "closed") throw new Error("Case is closed");
+
+    const candidates = store.reviewFindings.filter(
+      (f) =>
+        f.caseId === caseId &&
+        !f.isStale &&
+        (!versionId || f.reviewVersionId === versionId) &&
+        f.humanReviewStatus === "pending" &&
+        isSystemClassificationStatus(f.automatedStatus),
+    );
+    if (candidates.length === 0) return [];
+
+    const now = new Date().toISOString();
+    for (const f of candidates) {
+      f.humanDecision = "accept";
+      f.humanReviewStatus = "decided";
+      f.humanStatus = f.automatedStatus;
+      f.humanSeverity = f.automatedSeverity;
+      f.humanRationale = null;
+      f.humanRecommendation = null;
+      f.reviewedBy = actorId;
+      f.reviewedAt = now;
+      store.auditEvents.push(
+        newAuditEvent(caseId, "finding_decided", {
+          findingId: f.findingId,
+          criterionId: f.criterionId,
+          decision: "accept",
+          decisionMode: "system_classification_acknowledgement",
+          automatedStatus: f.automatedStatus,
+          humanStatus: f.humanStatus,
+        }),
+      );
+    }
+    store.auditEvents.push(
+      newAuditEvent(caseId, "system_classifications_acknowledged", {
+        versionId: versionId ?? candidates[0]?.reviewVersionId ?? null,
+        count: candidates.length,
+        notReviewableCount: candidates.filter((f) => f.automatedStatus === "not_reviewable").length,
+        notApplicableCount: candidates.filter((f) => f.automatedStatus === "not_applicable").length,
+      }),
+    );
+    this.repo.save(store);
+    return candidates;
   }
 
   listForCase(caseId: string): ReviewFinding[] {

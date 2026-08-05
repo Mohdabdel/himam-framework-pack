@@ -263,6 +263,7 @@ export const CASE_GATE_REASONS_AR: Record<string, string> = {
   review_not_completed: "المراجعة المهنية لم تُكتمل بعد.",
   review_stale: "نتائج المراجعة قديمة — أعد تشغيل المراجعة.",
   critical_findings_pending: "توجد نتائج حرجة بلا قرار بشري.",
+  findings_pending_resolution: "توجد نتائج لم تُسوَّ بقرار مهني أو إقرار نظامي.",
   evidence_drift_detected: "تغيّرت الأدلة المؤكدة منذ آخر تشغيل.",
   plan_missing: "الخطة الحالية غير مرفقة.",
   plan_unreadable: "ملف الخطة غير قابل للقراءة.",
